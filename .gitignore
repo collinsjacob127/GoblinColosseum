@@ -2,3 +2,6 @@
 *.x
 *.out
 
+# Ignore vscode settings
+.vscode/
+
