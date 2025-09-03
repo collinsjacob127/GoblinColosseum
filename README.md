@@ -5,7 +5,9 @@
 
 Built on Ubuntu 24.04, but should work on any platform with emscripten support and a modern browser.
 
-### Clone the repo
+### Clone
+
+Make sure you have 
 
 ```{sh}
 # Clone the repo, including the emsdk module
@@ -15,43 +17,20 @@ git clone --recurse-submodules git@github.com:collinsjacob127/GoblinColosseum.gi
 cd GoblinColosseum/
 ```
 
-### Set-up Emscripten
+### Build
 
-Original instructions [here](https://emscripten.org/docs/getting_started/downloads.html).
+(Instructions based loosely on those given by [SDL3 docs](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-cmake.md))
 
 ```{sh}
-# Enter the emsdk directory
-cd emsdk
+# Move into the game subdirectory (GoblinColosseum/game)
+cd game
 
-# Fetch latest version
-git pull
+# Build SDL library files
+cmake -S . -B build
 
-# Install version 4.0.13 (latest at time of writing)
-./emsdk install 4.0.13
+# Build the game (-j4 builds in parallel)
+cmake --build build -j4
 
-# Activate the sdk
-./emsdk activate 4.0.13
-
-# Set PATH and environment variables
-source ./emsdk_env.sh
-
-# Return to project root directory
-cd ../
+# Run the game
+./build/src/GOBLIN
 ```
-
-Windows & Mac users, see the linked [emscripten docs](https://emscripten.org/docs/getting_started/downloads.html) for platform-specific instructions.
-
-**Verify that Emscripten works:**
-```{sh}
-# Move to tutorial dir
-cd emscripten-tutorial/
-
-# Build simple example project files
-make
-
-# Run the example project locally
-emrun hello.html
-```
-
-This should open a page in your web browser with a colorful square and some example text.
-
