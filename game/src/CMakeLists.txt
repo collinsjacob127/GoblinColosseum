@@ -1,5 +1,5 @@
 # Point to main.cpp as executable for the project
-add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/main.cpp)
+add_executable(GOBLIN)
+target_sources(GOBLIN PRIVATE main.cpp)
 # libs is an interface, link source code to libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE libs)
+target_link_libraries(GOBLIN PRIVATE libs)
