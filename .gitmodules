@@ -1,6 +1,6 @@
-[submodule "game/libs/emsdk"]
-	path = game/libs/emsdk
-	url = https://github.com/emscripten-core/emsdk.git
+#[submodule "game/libs/emsdk"]
+#	path = game/libs/emsdk
+#	url = https://github.com/emscripten-core/emsdk.git
 [submodule "game/libs/SDL"]
 	path = game/libs/SDL
   url = https://github.com/libsdl-org/SDL.git
