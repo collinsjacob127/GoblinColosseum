@@ -5,3 +5,5 @@
 # Ignore vscode settings
 .vscode/
 
+*build/
+
