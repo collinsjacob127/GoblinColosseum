@@ -4,7 +4,8 @@
  *  Handles initialization and cleanup of game.
  */
  
-#include <iostream>
+#include <iostream> // cout
+// #include <cstdlib>  // read environment variables
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -14,12 +15,20 @@
 
 // #define CUSTOM_CHECK_RENDER_DRIVERS
 
-// Skeleton of SDL initialization provided by [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
+// Skeleton of SDL basic calls provided by [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
 
 int main(int argc, char* argv[]) {
     test_render_include_works();
     test_engine_include_works();
     test_net_include_works();
+
+    // const char* cwd = std::getenv("GOBLIN_ROOT_CWD");
+    // if (cwd) {
+    //     std::cout << "Worked!" << std::endl;
+    //     std::cout << "Goblin CWD: \n" << cwd << std::endl;
+    // } else {
+    //     std::cout << "Not worked!" << std::endl;
+    // }
 
     /* INITIALIZATION OF RENDERER AND WINDOW */
     SDL_Init(SDL_INIT_VIDEO);
@@ -49,7 +58,7 @@ int main(int argc, char* argv[]) {
     /* END INITIALIZATION OF RENDERER AND WINDOW */
 
     // Load a font
-    TTF_Font *font = TTF_OpenFont("FreeSans.ttf", 24);
+    TTF_Font *font = TTF_OpenFont("build/assets/fonts/OpenSans-Regular.ttf", 24);
     if (!font) {
         std::cerr << "Font load error: " << SDL_GetError() << std::endl;
         exit(EXIT_FAILURE);
