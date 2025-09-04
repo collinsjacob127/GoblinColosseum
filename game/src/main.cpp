@@ -7,9 +7,9 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 
-#include "render/render.hpp"
-#include "net/net.hpp"
 #include "engine/engine.hpp"
+#include "net/net.hpp"
+#include "render/render.hpp"
 
 // #define CUSTOM_CHECK_RENDER_DRIVERS
 
