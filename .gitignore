@@ -5,5 +5,6 @@
 # Ignore vscode settings
 .vscode/
 
+# Ignore standard and windows builds
 *build/
-
+*win-build/
