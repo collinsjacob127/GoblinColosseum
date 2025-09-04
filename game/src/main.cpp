@@ -6,6 +6,7 @@
  
 #include <iostream>
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 #include "engine/engine.hpp"
 #include "net/net.hpp"
@@ -22,6 +23,7 @@ int main(int argc, char* argv[]) {
 
     /* INITIALIZATION OF RENDERER AND WINDOW */
     SDL_Init(SDL_INIT_VIDEO);
+    TTF_Init();
 
     SDL_Window* win = SDL_CreateWindow("Goblin Colosseum",1920, 1080, SDL_WINDOW_OPENGL);
     if (win == nullptr) {
@@ -46,15 +48,24 @@ int main(int argc, char* argv[]) {
     }
     /* END INITIALIZATION OF RENDERER AND WINDOW */
 
+    // Load a font
+    TTF_Font *font = TTF_OpenFont("FreeSans.ttf", 24);
+    if (!font) {
+        std::cerr << "Font load error: " << SDL_GetError() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
     SDL_Event e;
     bool quit = false;
 
     // Define a rectangle
-    SDL_FRect greenSquare {270, 190, 100, 100};
+    float x_pos = 150, y_pos = 100;
+
+    SDL_FRect greenSquare {x_pos, y_pos, 100, 100};
 
     while (!quit) {
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_QUIT) {
+            if (e.key.key == SDLK_ESCAPE) {
                 quit = true;
             }
         }
