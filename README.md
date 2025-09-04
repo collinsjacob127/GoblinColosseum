@@ -1,13 +1,9 @@
 
 # Goblin Colosseum
 
-## Installation Instructions
+## Download Instructions
 
-Built on Ubuntu 24.04, but should work on any platform with emscripten support and a modern browser.
-
-### Clone
-
-Make sure you have 
+Make sure you have git installed
 
 ```{sh}
 # Clone the repo, including the emsdk module
@@ -17,7 +13,13 @@ git clone --recurse-submodules git@github.com:collinsjacob127/GoblinColosseum.gi
 cd GoblinColosseum/
 ```
 
-### Build
+## Build
+
+### Linux
+
+Prerequisites:
+- cmake
+- git
 
 (Instructions based loosely on those given by [SDL3 docs](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-cmake.md))
 
@@ -34,3 +36,18 @@ cmake --build build -j4
 # Run the game
 ./build/src/GOBLIN
 ```
+
+### Windows
+
+Compilation on windows is a little tricky, here are the [SDL3 Docs for getting set up on windows](https://wiki.libsdl.org/SDL3/README-windows).
+
+Essentially, you'll need to:
+- Download MinGW-w64
+- update it
+- install the x86_64 toolchain
+- update again
+- build SDL
+- install SDL
+- build project
+
+I plan to add a script that will make Windows compilation easier.
