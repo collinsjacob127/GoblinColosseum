@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
   while (!quit) {
 
     // HANDLE EVENTS
+    // TODO: Update with [SDL3 KEYBOARD BEST PRACTICES](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       switch (e.type) {
