@@ -19,115 +19,45 @@
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
 
 int main(int argc, char* argv[]) {
-  // test_render_include_works();
-  // test_engine_include_works();
-  // test_net_include_works();
-
-  // const char* cwd = std::getenv("GOBLIN_ROOT_CWD");
-  // if (cwd) {
-  //     std::cout << "Worked!" << std::endl;
-  //     std::cout << "Goblin CWD: \n" << cwd << std::endl;
-  // } else {
-  //     std::cout << "Not worked!" << std::endl;
-  // }
-
   /* INITIALIZATION OF RENDERER AND WINDOW */
-  SDL_Init(SDL_INIT_VIDEO);
-  TTF_Init();
-
-  SDL_Window* win =
-      SDL_CreateWindow("Goblin Colosseum", 1920, 1080, SDL_WINDOW_OPENGL);
-  if (win == nullptr) {
-    std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-    SDL_Quit();
-    exit(EXIT_FAILURE);
-  }
-
-#ifdef CUSTOM_CHECK_RENDER_DRIVERS
-  int n_drivers = SDL_GetNumRenderDrivers();
-  for (int i = 0; i < n_drivers; i++) {
-    std::cout << SDL_GetRenderDriver(i) << "\n";
-  }
-#endif
-
-  SDL_Renderer* ren = SDL_CreateRenderer(win, "gpu");
-  if (ren == nullptr) {
-    std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-    SDL_DestroyWindow(win);
-    SDL_Quit();
-    exit(EXIT_FAILURE);
-  }
+  RenderEngine renderer;
   /* END INITIALIZATION OF RENDERER AND WINDOW */
+  PlayerState player;
+  InputSystem inputSystem;
 
-  // Load a font
-  TTF_Font* font = TTF_OpenFont("build/assets/fonts/OpenSans-Regular.ttf", 24);
-  if (!font) {
-    std::cerr << "Font load error: " << SDL_GetError() << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  bool quit = false;
-
-  // Define a rectangle
-  float x_pos = 150, y_pos = 100;
-
-  SDL_FRect greenSquare{x_pos, y_pos, 100, 100};
-  Inputs cur_inputs;
-
-  SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
-  SDL_RenderClear(ren);         // Clear the renderer
   // MAIN GAME LOOP
+  bool quit = false;
   while (!quit) {
+    // Clear screen each new frame
+    renderer.clearScreen();
 
     // HANDLE EVENTS
-    // TODO: Update with [SDL3 KEYBOARD BEST PRACTICES](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-      switch (e.type) {
-        case SDL_EVENT_KEY_DOWN:
-        {
-          if (e.key.repeat) { break; }
-          if (e.key.key == SDLK_W || e.key.key == SDLK_UP) { cur_inputs.up = true; }
-          if (e.key.key == SDLK_S || e.key.key == SDLK_DOWN) { cur_inputs.down = true; }
-          if (e.key.key == SDLK_A || e.key.key == SDLK_LEFT) { cur_inputs.left = true; }
-          if (e.key.key == SDLK_D || e.key.key == SDLK_RIGHT) { cur_inputs.right = true; }
-          break;
-        }
-
-        case SDL_EVENT_KEY_UP:
-        {
-          if (e.key.key == SDLK_ESCAPE) { quit = true; }
-
-          if (e.key.repeat) { break; }
-          if (e.key.key == SDLK_W || e.key.key == SDLK_UP) { cur_inputs.up = false; }
-          if (e.key.key == SDLK_S || e.key.key == SDLK_DOWN) { cur_inputs.down = false; }
-          if (e.key.key == SDLK_A || e.key.key == SDLK_LEFT) { cur_inputs.left = false; }
-          if (e.key.key == SDLK_D || e.key.key == SDLK_RIGHT) { cur_inputs.right = false; }
-          break;
-        }
-      }
-
-      int move_speed = 10;
-      if (cur_inputs.up) { y_pos -= move_speed; }
-      if (cur_inputs.down) { y_pos += move_speed; }
-      if (cur_inputs.left) { x_pos -= move_speed; }
-      if (cur_inputs.right) { x_pos += move_speed; }
-
-      greenSquare.x = x_pos;
-      greenSquare.y = y_pos;
-
-      SDL_SetRenderDrawColor(ren, 0, 0, 0, 200);  // Set render draw color to black
-      SDL_RenderClear(ren);         // Clear the renderer
-
-      SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);            // Set render draw color to green
-      SDL_RenderFillRect(ren, &greenSquare);  // Render the rectangle
-
-      SDL_RenderPresent(ren);  // Render the screen
+      // Let the game quit lol
+      if (e.type == SDL_EVENT_QUIT) { quit = true; }
+      // Escape will quit also
+      if (e.type == SDL_EVENT_KEY_DOWN)
+        if (e.key.key == SDLK_ESCAPE) { quit = true; }
+      // Send keyboard to game inputs
+      inputSystem.updateInputState(&e);
     }
+    // Pass inputs to player
+    player.processInputs(&inputSystem.inputState);
+    player.computeNextState();
+
+    // Render player
+    renderer.renderPlayer(&player);
+
+    SDL_RenderPresent(renderer.ren);  // Render the screen
+
+    // inputSystem.inputState.reset();
+    // Only attack on-press
+    inputSystem.inputState.attack = false;
   }
 
-  SDL_DestroyRenderer(ren);
-  SDL_DestroyWindow(win);
+  SDL_DestroyRenderer(renderer.ren);
+  SDL_DestroyWindow(renderer.win);
   SDL_Quit();
 
   return 0;

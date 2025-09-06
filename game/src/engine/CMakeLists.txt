@@ -13,3 +13,9 @@ target_include_directories(engine
     PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}
     )
+
+# Allow render to access SDL
+target_link_libraries(engine 
+PRIVATE
+    libs
+)

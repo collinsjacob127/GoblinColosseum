@@ -53,4 +53,12 @@ Essentially, you'll need to:
 - install SDL
 - build project
 
+```{cmd}
+# in game/ directory
+cmake -G "MinGW Makefiles" -S . -B dist
+
+# cd dist
+cmake --build .
+```
+
 I plan to add a script that will make Windows compilation easier.

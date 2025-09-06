@@ -19,4 +19,5 @@ PUBLIC
 target_link_libraries(render 
 PRIVATE
     libs
+    engine
 )
