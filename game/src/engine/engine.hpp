@@ -13,6 +13,11 @@
 
 #define MAX_INPUT_FRAMES 60
 
+#define ENV_DIM_WALL_THICKNESS 20
+#define ENV_DIM_FLOOR_HEIGHT 880
+#define ENV_DIM_LEFT_WALL_X 0
+#define ENV_DIM_RIGHT_WALL_X 1900
+
 void test_engine_include_works();
 
 class InputState {
@@ -54,13 +59,23 @@ class InputSystem {
 
 class PlayerAction {
  public:
+  // Frames
   int startup;
   int active;
   int recovery;
+
+  // Hitboxes
   float x_offset;
   float y_offset;
   float x_width;
   float y_width;
+
+  // DMG Values
+  float damage;
+  float hit_vel_x;
+  float hit_vel_y;
+
+  // Tags
   std::string name;
 
   PlayerAction();
@@ -68,10 +83,15 @@ class PlayerAction {
 
 class PlayerState {
  public: 
+  float width;
+  float height;
+
   float x_pos;
   float y_pos;
+
   int x_vel;
   int y_vel;
+
   int x_acc;
   int y_acc;
 
@@ -79,6 +99,8 @@ class PlayerState {
 
   // Walking speed in px / frame
   int walking_speed;
+  int jumping_v0;
+  float fastfall_v;
 
   int startup_frames;
   int active_frames;
@@ -88,4 +110,6 @@ class PlayerState {
 
   void processInputs(const InputState *inputs);
   void computeNextState();
+  bool computeCollision(const PlayerState *opp);
 };
+

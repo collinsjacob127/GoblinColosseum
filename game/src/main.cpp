@@ -23,6 +23,8 @@ int main(int argc, char* argv[]) {
   RenderEngine renderer;
   /* END INITIALIZATION OF RENDERER AND WINDOW */
   PlayerState player;
+  PlayerState dummy;
+
   InputSystem inputSystem;
 
   // MAIN GAME LOOP

@@ -51,8 +51,8 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
   SDL_FRect green_square{ 
     player->x_pos,
     player->y_pos, 
-    100,
-    100
+    player->width,
+    player->height
   };
 
   SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);            // Set render draw color to green
@@ -61,13 +61,16 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
   if (player->active_frames + player->startup_frames + player->recovery_frames == 0) { return; }
 
   if (player->startup_frames > 0) {
-    SDL_SetRenderDrawColor(ren, 0, 255, 255, 255);            // Set render draw color to green
+    // startup
+    SDL_SetRenderDrawColor(ren, 255, 247, 0, 255);     
   }
   if (player->active_frames > 0) {
-    SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);            // Set render draw color to green
+    // active
+    SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);     
   }
   if (player->recovery_frames > 0) {
-    SDL_SetRenderDrawColor(ren, 255, 0, 255, 255);            // Set render draw color to green
+    // recovery
+    SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
   }
 
   // Active frames > 0
@@ -83,8 +86,36 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
 
 void RenderEngine::clearScreen() {
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
-  // SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
+
+  SDL_SetRenderDrawColor(ren, 150, 123, 68, 255); 
+  SDL_FRect floor{
+    0,
+    ENV_DIM_FLOOR_HEIGHT,
+    1920,
+    200
+  };
+  SDL_RenderFillRect(ren, &floor);  // Render the rectangle
+
+  SDL_SetRenderDrawColor(ren, 100, 100, 100, 255); 
+  SDL_FRect left_wall{
+    ENV_DIM_LEFT_WALL_X,
+    0,
+    ENV_DIM_WALL_THICKNESS,
+    1080
+  };
+
+  SDL_FRect right_wall{
+    ENV_DIM_RIGHT_WALL_X,
+    0,
+    ENV_DIM_WALL_THICKNESS,
+    1080
+  };
+
+  SDL_RenderFillRect(ren, &left_wall);  // Render the rectangle
+  SDL_RenderFillRect(ren, &right_wall);  // Render the rectangle
+
+  // SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
 }
 
 
