@@ -5,10 +5,6 @@
 
 #include "engine.hpp"
 
-void test_engine_include_works() {
-  std::cout << "Engine include works!\n";
-}
-
 /* Input State
  * Tracks the boolean value of each input
  */
@@ -92,8 +88,8 @@ PlayerState::PlayerState() {
   y_acc = 0;
 
   walking_speed = 10;
-  jumping_v0 = -40;
-  fastfall_v = 10;
+  jumping_v0 = -15;
+  fastfall_v = 2;
 
   startup_frames = 0;
   active_frames = 0;
@@ -175,6 +171,7 @@ void PlayerState::computeNextState() {
   }
 }
 
+// Needs work
 bool PlayerState::computeCollision(const PlayerState *opp) {
   if (active_frames == 0) {
     return false;
@@ -185,11 +182,62 @@ bool PlayerState::computeCollision(const PlayerState *opp) {
   float atk_low_y = y_pos + attack.y_offset;
   float atk_high_y = y_pos + attack.y_offset + attack.y_width;
 
-  float opp_low_x = 
-  float opp_high_x = 
-  float opp_low_y = 
-  float opp_high_y = 
+  float opp_low_x = 0;
+  float opp_high_x = 0;
+  float opp_low_y = 0;
+  float opp_high_y = 0;
 
-  if (attack.x_offset + x_pos)
-
+  // if (attack.x_offset + x_pos) {
+  //   return true;
+  // }
+  return false;
 }
+
+GameScene::GameScene() {
+  merged = false;
+  cur_tick = 0;
+};
+
+GameScene::GameScene(PlayerState p1, InputState i1, PlayerState p2, InputState i2) {
+  player1 = p1;
+  inputs1 = i1;
+
+  player2 = p2;
+  inputs2 = i2;
+
+  merged = false;
+  unsigned int cur_tick = 0;
+}
+
+void GameScene::copyFrom(const GameScene* diff_scene) {
+  
+}
+
+GameManager::GameManager() {
+  // Initialize scene list
+  for (unsigned int i = 0; i < MAX_ROLLBACK_FRAMES; ++i) {
+    scenes[i] = GameScene();
+  }
+  cur_scene_index = 0;
+  total_ticks = 0;
+}
+
+/**
+ * @brief Calculate the next game state and overwrite next index with it
+ */
+bool GameManager::tick(InputState p1_inputs, InputState p2_inputs) {
+  // TODO:
+  // Copy current frame to next
+
+  // Update total_ticks
+  total_ticks++;
+  // Update cur_scene_index
+  cur_scene_index = next_index();
+
+  return true;
+}
+
+unsigned int GameManager::next_index() {
+  return (cur_scene_index + 1) % MAX_ROLLBACK_FRAMES;
+}
+

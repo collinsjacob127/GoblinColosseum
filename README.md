@@ -42,23 +42,10 @@ cmake --build build -j4
 
 ### Windows
 
-Compilation on windows is a little tricky, here are the [SDL3 Docs for getting set up on windows](https://wiki.libsdl.org/SDL3/README-windows).
+Here's how to setup for windows: [MinGW SDL3 Instructions](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-mingw.md)
 
 Essentially, you'll need to:
 - Download MinGW-w64
 - update it
-- install the x86_64 toolchain
-- update again
+- install the tools
 - build SDL
-- install SDL
-- build project
-
-```{cmd}
-# in game/ directory
-cmake -G "MinGW Makefiles" -S . -B dist
-
-# cd dist
-cmake --build .
-```
-
-I plan to add a script that will make Windows compilation easier.

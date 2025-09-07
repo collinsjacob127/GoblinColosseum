@@ -30,7 +30,7 @@ RenderEngine::RenderEngine() {
   }
 
   // Load a font
-  TTF_Font* font = TTF_OpenFont("build/assets/fonts/OpenSans-Regular.ttf", 24);
+  TTF_Font* font = TTF_OpenFont("assets/fonts/OpenSans-Regular.ttf", 24);
   if (!font) {
     std::cerr << "Font load error: " << SDL_GetError() << std::endl;
     exit(EXIT_FAILURE);

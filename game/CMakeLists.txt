@@ -16,5 +16,5 @@ add_subdirectory(libs)
 # Link the source code
 add_subdirectory(src)
 
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/assets/")
-
+# Copy assets to mf
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/OpenSans-Regular.ttf" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/src/")
