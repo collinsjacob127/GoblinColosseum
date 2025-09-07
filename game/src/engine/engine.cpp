@@ -198,12 +198,12 @@ GameScene::GameScene() {
   cur_tick = 0;
 };
 
-GameScene::GameScene(PlayerState p1, InputState i1, PlayerState p2, InputState i2) {
-  player1 = p1;
-  inputs1 = i1;
+GameScene::GameScene(const PlayerState* p1, const InputState* i1, const PlayerState* p2, const InputState* i2) {
+  player1 = *p1;
+  inputs1 = *i1;
 
-  player2 = p2;
-  inputs2 = i2;
+  player2 = *p2;
+  inputs2 = *i2;
 
   merged = false;
   unsigned int cur_tick = 0;

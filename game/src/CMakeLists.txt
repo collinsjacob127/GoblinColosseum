@@ -17,7 +17,7 @@ target_link_libraries(GOBLIN PRIVATE
     net
 )
 
-target_link_options(GOBLIN PRIVATE -static)
+target_link_options(GOBLIN PRIVATE)
 
 if(WIN32)
   add_custom_command(

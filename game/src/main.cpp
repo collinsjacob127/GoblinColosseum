@@ -33,14 +33,17 @@ int main(int argc, char* argv[]) {
   InputSystem input_system;
 
   Timer game_timer;
+  game_timer.start();
 
   // MAIN GAME LOOP
   bool quit = false;
   while (!quit) {
-    game_timer.start();
-
     // Clear screen each new frame
     renderer.clearScreen();
+
+    double frame_rate = (double) 1 / game_timer.duration();
+    game_timer.start();
+
 
     // HANDLE EVENTS
     SDL_Event e;
@@ -62,6 +65,8 @@ int main(int argc, char* argv[]) {
     // Render player
     renderer.renderPlayer(&player);
 
+    renderer.displayFPS(frame_rate);
+
     SDL_RenderPresent(renderer.ren);  // Render the screen
 
     // input_system.inputState.reset();
@@ -69,7 +74,7 @@ int main(int argc, char* argv[]) {
     input_system.inputState.attack = false;
 
     // Cap Render Frame Rate
-    while (((double)1 / (double)FRAME_RATE_CAP) - game_timer.duration() > 0.001) {
+    while (((double)1 / (double)FRAME_RATE_CAP) - game_timer.duration() > 0) {
       #ifdef _WIN32
         std::this_thread::sleep_for(std::chrono::nanoseconds(1));
       #endif

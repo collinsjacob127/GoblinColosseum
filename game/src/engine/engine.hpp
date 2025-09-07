@@ -117,19 +117,19 @@ class PlayerState {
   PlayerState copy();
 };
 
-class Entity {
-  float x_pos;
-  float y_pos;
+// class Entity {
+//   float x_pos;
+//   float y_pos;
 
-  float x_vel;
-  float y_vel;
+//   float x_vel;
+//   float y_vel;
 
-  float x_acc;
-  float y_acc;
+//   float x_acc;
+//   float y_acc;
 
-  float width;
-  float height;
-}
+//   float width;
+//   float height;
+// };
 
 // All essential information for the game state in a given frame
 class GameScene {

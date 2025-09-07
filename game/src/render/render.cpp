@@ -30,7 +30,7 @@ RenderEngine::RenderEngine() {
   }
 
   // Load a font
-  TTF_Font* font = TTF_OpenFont("assets/fonts/OpenSans-Regular.ttf", 24);
+  font = TTF_OpenFont("assets/fonts/OpenSans-Regular.ttf", 24);
   if (!font) {
     std::cerr << "Font load error: " << SDL_GetError() << std::endl;
     exit(EXIT_FAILURE);
@@ -82,6 +82,34 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
   };
 
   SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle
+}
+
+void RenderEngine::displayFPS(double FPS) {
+  SDL_Color color = { 120, 0, 150, 255 };
+
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(1) << FPS << std::endl;
+  std::string fps_string = ss.str();
+  
+  // std::cout << "FPS: " << fps_string << std::endl;
+  
+  SDL_Surface *surface = TTF_RenderText_Solid(font, fps_string.c_str(), fps_string.size()-1, color);
+  // SDL_Surface *surface = TTF_RenderText_Solid(font, "Hello Test", 10, color);
+  // if (!font) { std::cerr << "Bad font\n"; }
+  // if (!surface) { std::cerr << "Bad surface\n"; }
+
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(ren, surface);
+  // if (!texture) { std::cerr << "Bad texture\n"; }
+
+  float texW = 0, texH = 0;
+  SDL_GetTextureSize(texture, &texW, &texH);
+
+  SDL_FRect dst = {1870 - texW, 20, texW, texH};
+
+  SDL_RenderTexture(ren, texture, NULL, &dst);
+
+  SDL_DestroyTexture(texture);
+  SDL_DestroySurface(surface);
 }
 
 void RenderEngine::clearScreen() {
