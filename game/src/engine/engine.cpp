@@ -24,14 +24,12 @@ void InputState::reset() {
   attack = false;
 }
 
-InputState InputState::copy() {
-  InputState cur_state;
-  cur_state.up = up;
-  cur_state.down = down;
-  cur_state.left = left;
-  cur_state.right = right;
-  cur_state.attack = attack;
-  return cur_state;
+void InputState::copyFrom(const InputState *src) {
+  up = src->up;
+  down = src->down;
+  left = src->left;
+  right = src->right;
+  attack = src->attack;
 }
 
 InputSystem::InputSystem() {
@@ -74,22 +72,24 @@ PlayerAction::PlayerAction() {
   hit_vel_y = -5.0;
 }
 
-PlayerState::PlayerState() {
+PlayerBase::PlayerBase() {
   width = 100;
   height = 150;
 
+  walking_speed = 10;
+  jumping_v0 = -15;
+  fastfall_v = 2;
+}
+
+PlayerState::PlayerState() {
   x_pos = 480;
-  y_pos = 880-height;
+  y_pos = 880-(base->height);
 
   x_vel = 0;
   y_vel = 0;
 
   x_acc = 0;
   y_acc = 0;
-
-  walking_speed = 10;
-  jumping_v0 = -15;
-  fastfall_v = 2;
 
   startup_frames = 0;
   active_frames = 0;
@@ -99,16 +99,16 @@ PlayerState::PlayerState() {
 void PlayerState::processInputs(const InputState *inputs) {
   // Handle movement requests
   // Only jump if on the ground
-  if (inputs->up && y_pos + height >= ENV_DIM_FLOOR_HEIGHT) { y_vel = jumping_v0; }
+  if (inputs->up && y_pos + base->height >= ENV_DIM_FLOOR_HEIGHT) { y_vel = base->jumping_v0; }
   // fastfall
-  if (inputs->down) { y_vel += fastfall_v; }
+  if (inputs->down) { y_vel += base->fastfall_v; }
   // walk left / right
-  if (inputs->left && x_vel <= 0) { x_vel = -walking_speed; }
-  if (inputs->right && x_vel >= 0) { x_vel = walking_speed; }
+  if (inputs->left && x_vel <= 0) { x_vel = -base->walking_speed; }
+  if (inputs->right && x_vel >= 0) { x_vel = base->walking_speed; }
 
   // Handle action requests
   if (inputs->attack && (startup_frames + active_frames + recovery_frames == 0)) {
-    startup_frames = attack->startup;
+    startup_frames = base->attack->startup;
   }
 }
 
@@ -120,20 +120,20 @@ void PlayerState::computeNextState() {
   } 
 
   // Don't collide right
-  if (x_pos + x_vel + width > ENV_DIM_RIGHT_WALL_X) {
-    x_vel = ENV_DIM_RIGHT_WALL_X - (x_pos + width);
+  if (x_pos + x_vel + base->width > ENV_DIM_RIGHT_WALL_X) {
+    x_vel = ENV_DIM_RIGHT_WALL_X - (x_pos + base->width);
   } 
   x_pos += x_vel;
 
   // Don't collide down
-  if (y_pos + y_vel + height > ENV_DIM_FLOOR_HEIGHT) {
-    y_vel = ENV_DIM_FLOOR_HEIGHT - (y_pos + height);
+  if (y_pos + y_vel + base->height > ENV_DIM_FLOOR_HEIGHT) {
+    y_vel = ENV_DIM_FLOOR_HEIGHT - (y_pos + base->height);
   }
   // apply velocity
   y_pos += y_vel;
 
   // gravity
-  if (y_pos + height < ENV_DIM_FLOOR_HEIGHT) {
+  if (y_pos + base->height < ENV_DIM_FLOOR_HEIGHT) {
     y_vel++;
   }
 
@@ -150,7 +150,7 @@ void PlayerState::computeNextState() {
     startup_frames--;
     // At end of startup frames, begin attack frames
     if (startup_frames == 0) {
-      active_frames = attack->active;
+      active_frames = base->attack->active;
     }
     return;
   }
@@ -159,7 +159,7 @@ void PlayerState::computeNextState() {
   if (active_frames > 0) {
     active_frames--; 
     if (active_frames == 0) {
-      recovery_frames = attack->recovery;
+      recovery_frames = base->attack->recovery;
     }
     return;
   }
@@ -177,10 +177,10 @@ bool PlayerState::computeCollision(const PlayerState *opp) {
     return false;
   }
 
-  float atk_low_x = x_pos + attack->x_offset;
-  float atk_high_x = x_pos + attack->x_offset + attack->x_width;
-  float atk_low_y = y_pos + attack->y_offset;
-  float atk_high_y = y_pos + attack->y_offset + attack->y_width;
+  float atk_low_x = x_pos + base->attack->x_offset;
+  float atk_high_x = x_pos + base->attack->x_offset + base->attack->x_width;
+  float atk_low_y = y_pos + base->attack->y_offset;
+  float atk_high_y = y_pos + base->attack->y_offset + base->attack->y_width;
 
   float opp_low_x = 0;
   float opp_high_x = 0;
@@ -194,14 +194,16 @@ bool PlayerState::computeCollision(const PlayerState *opp) {
 }
 
 void PlayerState::copyFrom(const PlayerState *src) {
-  width = src->width;
-  height = src->height;
+  base = src->base;
 
   x_pos = src->x_pos;
   y_pos = src->y_pos;
 
   x_vel = src->x_vel;
   y_vel = src->y_vel;
+
+  x_acc = src->x_acc;
+  y_acc = src->y_acc;
 
   startup_frames = src->startup_frames;
   active_frames = src->active_frames;
@@ -213,21 +215,19 @@ GameScene::GameScene() {
   cur_tick = 0;
 };
 
-GameScene::GameScene(const PlayerState* p1, const InputState* i1, const PlayerState* p2, const InputState* i2) {
-  player1 = *p1;
-  inputs1 = *i1;
-
-  player2 = *p2;
-  inputs2 = *i2;
-
-  merged = false;
-  unsigned int cur_tick = 0;
-}
-
 void GameScene::copyFrom(const GameScene* src) {
+  // Copy player info
   player1.copyFrom(&src->player1);
   player2.copyFrom(&src->player2);
+
   // Copy inputs
+  inputs1.copyFrom(&src->inputs1);
+  inputs2.copyFrom(&src->inputs2);
+
+  merged = false;
+
+  // Increment tick
+  cur_tick = src->cur_tick+1;
 }
 
 GameManager::GameManager() {
@@ -236,20 +236,33 @@ GameManager::GameManager() {
     scenes[i] = GameScene();
   }
   cur_scene_index = 0;
-  total_ticks = 0;
+  total_ticks = INITIAL_FRAME;
+  last_merged_tick = INITIAL_FRAME;
 }
 
 /**
  * @brief Calculate the next game state and overwrite next index with it
  */
-bool GameManager::tick(InputState p1_inputs, InputState p2_inputs) {
-  // TODO:
+bool GameManager::tick(const InputState *p1_inputs, const InputState *p2_inputs, bool rb) {
+  unsigned int new_index = next_index();
+
   // Copy current frame to next
+  scenes[next_index()].copyFrom(&scenes[cur_scene_index]); 
 
   // Update total_ticks
-  total_ticks++;
+  if (rb) {
+    total_ticks++;
+  }
+
   // Update cur_scene_index
   cur_scene_index = next_index();
+
+  GameScene* scene = getCurrentScene();
+
+  scene->player1.processInputs(p1_inputs);
+  scene->player2.processInputs(p2_inputs);
+  scene->player1.computeNextState();
+  scene->player2.computeNextState();
 
   return true;
 }
@@ -258,3 +271,10 @@ unsigned int GameManager::next_index() {
   return (cur_scene_index + 1) % MAX_ROLLBACK_FRAMES;
 }
 
+bool GameManager::rollback(const InputState *p2_inputs, unsigned int rb_tick) {
+  return true;
+}
+
+GameScene* GameManager::getCurrentScene() {
+  return &scenes[cur_scene_index];
+}

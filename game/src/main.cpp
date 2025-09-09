@@ -27,10 +27,9 @@ int main(int argc, char* argv[]) {
   /* INITIALIZATION OF RENDERER AND WINDOW */
   RenderEngine renderer;
   /* END INITIALIZATION OF RENDERER AND WINDOW */
-  PlayerState player;
-  PlayerState dummy;
-
+  GameManager game_manager;
   InputSystem input_system;
+  InputState empty_inputs;
 
   Timer game_timer;
   game_timer.start();
@@ -44,7 +43,6 @@ int main(int argc, char* argv[]) {
     double frame_rate = (double) 1 / game_timer.duration();
     game_timer.start();
 
-
     // HANDLE EVENTS
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -56,14 +54,13 @@ int main(int argc, char* argv[]) {
       // Send keyboard to game inputs
       input_system.updateInputState(&e);
     }
-    // Pass inputs to player
-    player.processInputs(&input_system.inputState);
-    
-    // Handle Events
-    player.computeNextState();
+    // Pass inputs to game manager
+    game_manager.tick(&input_system.inputState, &empty_inputs, false);
 
+    GameScene* scene = game_manager.getCurrentScene();
     // Render player
-    renderer.renderPlayer(&player);
+    renderer.renderPlayer(&scene->player1);
+    renderer.renderPlayer(&scene->player2);
 
     renderer.displayFPS(frame_rate);
 
@@ -71,7 +68,7 @@ int main(int argc, char* argv[]) {
 
     // input_system.inputState.reset();
     // Only attack on-press
-    input_system.inputState.attack = false;
+    // input_system.inputState.attack = false;
 
     // Cap Render Frame Rate
     while (((double)1 / (double)FRAME_RATE_CAP) - game_timer.duration() > 0) {

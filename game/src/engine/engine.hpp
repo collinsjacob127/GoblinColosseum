@@ -11,7 +11,7 @@
 #include <string.h>
 #include <SDL3/SDL.h>
 
-#define MAX_ROLLBACK_FRAMES 20
+#define MAX_ROLLBACK_FRAMES 60
 #define FRAME_ADVANTAGE_LIMIT 5
 #define INITIAL_FRAME 0
 
@@ -34,7 +34,7 @@ class InputState {
 
   void reset();
 
-  InputState copy();
+  void copyFrom(const InputState *src);
 };
 
 class InputSystem {
@@ -83,10 +83,26 @@ class PlayerAction {
   PlayerAction();
 };
 
-class PlayerState {
- public: 
+// Constants that vary from character to character
+class PlayerBase {
+ public:
   float width;
   float height;
+
+  PlayerAction* attack;
+
+  // Walking speed in px / frame
+  int walking_speed;
+  int jumping_v0;
+  float fastfall_v;
+
+  PlayerBase();
+};
+
+// Tracks the moving parts of a player
+class PlayerState {
+ public: 
+  PlayerBase* base;
 
   float x_pos;
   float y_pos;
@@ -96,13 +112,6 @@ class PlayerState {
 
   int x_acc;
   int y_acc;
-
-  PlayerAction* attack;
-
-  // Walking speed in px / frame
-  int walking_speed;
-  int jumping_v0;
-  float fastfall_v;
 
   int startup_frames;
   int active_frames;
@@ -116,20 +125,6 @@ class PlayerState {
 
   void copyFrom(const PlayerState *src);
 };
-
-// class Entity {
-//   float x_pos;
-//   float y_pos;
-
-//   float x_vel;
-//   float y_vel;
-
-//   float x_acc;
-//   float y_acc;
-
-//   float width;
-//   float height;
-// };
 
 // All essential information for the game state in a given frame
 class GameScene {
@@ -146,8 +141,13 @@ class GameScene {
   unsigned int cur_tick;
 
   GameScene();
-  GameScene(const PlayerState*, const InputState*, const PlayerState*, const InputState*);
   
+  /**
+   * @brief Copies one game scene into another.
+   * Meant to build a baseline to go from one frame to another.
+   * Defaults to unmerged.
+   * Increments tick
+   */
   void copyFrom(const GameScene* src);
 };
 
@@ -165,15 +165,33 @@ class GameManager {
 
   // How many ticks has the game experienced so far
   unsigned int total_ticks;
+  unsigned int last_merged_tick;
 
   GameManager();
 
   // Push a new game state, updating from one to the next given inputs
-  bool tick(InputState p1_inputs, InputState p2_inputs);
+  bool tick(const InputState *p1_inputs, const InputState *p2_inputs, bool rb);
   // Roll back to state at rb_tick and resimulate with updated inputs
-  bool rollback(InputState p2_inputs, unsigned int rb_tick);
+  bool rollback(const InputState *p2_inputs, unsigned int rb_tick);
+
+  GameScene* getCurrentScene();
 
  private:
   unsigned int next_index();
 
 };
+
+
+// class Entity {
+//   float x_pos;
+//   float y_pos;
+
+//   float x_vel;
+//   float y_vel;
+
+//   float x_acc;
+//   float y_acc;
+
+//   float width;
+//   float height;
+// };

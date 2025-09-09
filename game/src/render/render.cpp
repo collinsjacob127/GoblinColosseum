@@ -51,8 +51,8 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
   SDL_FRect green_square{ 
     player->x_pos,
     player->y_pos, 
-    player->width,
-    player->height
+    player->base->width,
+    player->base->height
   };
 
   SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);            // Set render draw color to green
@@ -75,10 +75,10 @@ void RenderEngine::renderPlayer(const PlayerState *player) {
 
   // Active frames > 0
   SDL_FRect atk_square{
-    player->x_pos + player->attack.x_offset,
-    player->y_pos + player->attack.y_offset,
-    player->attack.x_width,
-    player->attack.y_width,
+    player->x_pos + player->base->attack->x_offset,
+    player->y_pos + player->base->attack->y_offset,
+    player->base->attack->x_width,
+    player->base->attack->y_width,
   };
 
   SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle
