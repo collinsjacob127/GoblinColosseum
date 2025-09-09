@@ -108,7 +108,7 @@ void PlayerState::processInputs(const InputState *inputs) {
 
   // Handle action requests
   if (inputs->attack && (startup_frames + active_frames + recovery_frames == 0)) {
-    startup_frames = attack.startup;
+    startup_frames = attack->startup;
   }
 }
 
@@ -150,7 +150,7 @@ void PlayerState::computeNextState() {
     startup_frames--;
     // At end of startup frames, begin attack frames
     if (startup_frames == 0) {
-      active_frames = attack.active;
+      active_frames = attack->active;
     }
     return;
   }
@@ -159,7 +159,7 @@ void PlayerState::computeNextState() {
   if (active_frames > 0) {
     active_frames--; 
     if (active_frames == 0) {
-      recovery_frames = attack.recovery;
+      recovery_frames = attack->recovery;
     }
     return;
   }
@@ -177,20 +177,35 @@ bool PlayerState::computeCollision(const PlayerState *opp) {
     return false;
   }
 
-  float atk_low_x = x_pos + attack.x_offset;
-  float atk_high_x = x_pos + attack.x_offset + attack.x_width;
-  float atk_low_y = y_pos + attack.y_offset;
-  float atk_high_y = y_pos + attack.y_offset + attack.y_width;
+  float atk_low_x = x_pos + attack->x_offset;
+  float atk_high_x = x_pos + attack->x_offset + attack->x_width;
+  float atk_low_y = y_pos + attack->y_offset;
+  float atk_high_y = y_pos + attack->y_offset + attack->y_width;
 
   float opp_low_x = 0;
   float opp_high_x = 0;
   float opp_low_y = 0;
   float opp_high_y = 0;
 
-  // if (attack.x_offset + x_pos) {
+  // if (attack->x_offset + x_pos) {
   //   return true;
   // }
   return false;
+}
+
+void PlayerState::copyFrom(const PlayerState *src) {
+  width = src->width;
+  height = src->height;
+
+  x_pos = src->x_pos;
+  y_pos = src->y_pos;
+
+  x_vel = src->x_vel;
+  y_vel = src->y_vel;
+
+  startup_frames = src->startup_frames;
+  active_frames = src->active_frames;
+  recovery_frames = src->recovery_frames;
 }
 
 GameScene::GameScene() {
@@ -209,8 +224,10 @@ GameScene::GameScene(const PlayerState* p1, const InputState* i1, const PlayerSt
   unsigned int cur_tick = 0;
 }
 
-void GameScene::copyFrom(const GameScene* diff_scene) {
-  
+void GameScene::copyFrom(const GameScene* src) {
+  player1.copyFrom(&src->player1);
+  player2.copyFrom(&src->player2);
+  // Copy inputs
 }
 
 GameManager::GameManager() {

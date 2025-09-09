@@ -13,9 +13,9 @@ git clone --recurse-submodules git@github.com:collinsjacob127/GoblinColosseum.gi
 cd GoblinColosseum/
 ```
 
-## Build
+## Build Instructions
 
-### Linux
+### Building on Linux
 
 Prerequisites:
 - cmake
@@ -40,12 +40,22 @@ cmake --build build -j4
 ./build/src/GOBLIN
 ```
 
-### Windows
+### Building on Windows
 
-Here's how to setup for windows: [MinGW SDL3 Instructions](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-mingw.md)
+1. Download [MSYS2](https://www.msys2.org/)
+2. Open MSYS2 UCRT64.
+3. Install working toolchain
+```{sh}
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-sdl3
+```
+4. Build (while in GoblinColosseum/game directory)
+```{sh}
+cmake -S . -B build
+cmake --build build --parallel
+```
+5. Run
+```{sh}
+./build/src/GOBLIN.exe
+```
 
-Essentially, you'll need to:
-- Download MinGW-w64
-- update it
-- install the tools
-- build SDL
+If you run into issues, here is what I referenced to figure it out: [MinGW SDL3 Instructions](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-mingw.md)

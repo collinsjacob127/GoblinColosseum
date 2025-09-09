@@ -97,7 +97,7 @@ class PlayerState {
   int x_acc;
   int y_acc;
 
-  PlayerAction attack;
+  PlayerAction* attack;
 
   // Walking speed in px / frame
   int walking_speed;
@@ -114,7 +114,7 @@ class PlayerState {
   void computeNextState();
   bool computeCollision(const PlayerState *opp);
 
-  PlayerState copy();
+  void copyFrom(const PlayerState *src);
 };
 
 // class Entity {
@@ -148,7 +148,7 @@ class GameScene {
   GameScene();
   GameScene(const PlayerState*, const InputState*, const PlayerState*, const InputState*);
   
-  void copyFrom(const GameScene* diff_scene);
+  void copyFrom(const GameScene* src);
 };
 
 /**
