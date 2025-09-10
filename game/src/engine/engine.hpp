@@ -102,8 +102,6 @@ class PlayerBase {
 // Tracks the moving parts of a player
 class PlayerState {
  public: 
-  PlayerBase* base;
-
   float x_pos;
   float y_pos;
 
@@ -117,13 +115,20 @@ class PlayerState {
   int active_frames;
   int recovery_frames;
 
-  PlayerState();
-
-  void processInputs(const InputState *inputs);
-  void computeNextState();
-  bool computeCollision(const PlayerState *opp);
+  PlayerState(const PlayerBase* base);
 
   void copyFrom(const PlayerState *src);
+};
+
+class PlayerManager {
+  PlayerBase* base;
+
+  PlayerManager();
+
+  void processInputs(const InputState *inputs, PlayerState* state);
+  void computeNextState(PlayerState* state);
+  // Will probably need to also pass opponent base
+  bool computeCollision(PlayerState* state, PlayerState *opp_state);
 };
 
 // All essential information for the game state in a given frame
@@ -140,7 +145,7 @@ class GameScene {
   // What game tick is this scene from
   unsigned int cur_tick;
 
-  GameScene();
+  GameScene(const PlayerBase* pbase1, const PlayerBase* pbase2);
   
   /**
    * @brief Copies one game scene into another.
@@ -159,6 +164,8 @@ class GameManager {
  public:
   // List of scenes
   GameScene scenes[MAX_ROLLBACK_FRAMES];
+  PlayerManager p1_mgr;
+  PlayerManager p2_mgr;
 
   // Index of the current frame
   unsigned int cur_scene_index;

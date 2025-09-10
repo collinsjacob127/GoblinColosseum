@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
   /* INITIALIZATION OF RENDERER AND WINDOW */
   RenderEngine renderer;
   /* END INITIALIZATION OF RENDERER AND WINDOW */
-  GameManager game_manager;
+  // GameManager game_manager;
   InputSystem input_system;
-  InputState empty_inputs;
+  // InputState empty_inputs;
 
   Timer game_timer;
   game_timer.start();
@@ -55,12 +55,14 @@ int main(int argc, char* argv[]) {
       input_system.updateInputState(&e);
     }
     // Pass inputs to game manager
-    game_manager.tick(&input_system.inputState, &empty_inputs, false);
+    // game_manager.tick(&input_system.inputState, &empty_inputs, false);
 
-    GameScene* scene = game_manager.getCurrentScene();
+    // GameScene* scene = game_manager.getCurrentScene();
+
     // Render player
-    renderer.renderPlayer(&scene->player1);
-    renderer.renderPlayer(&scene->player2);
+
+    // renderer.renderPlayer(&scene->player1);
+    // renderer.renderPlayer(&scene->player2);
 
     renderer.displayFPS(frame_rate);
 

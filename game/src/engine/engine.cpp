@@ -81,7 +81,7 @@ PlayerBase::PlayerBase() {
   fastfall_v = 2;
 }
 
-PlayerState::PlayerState() {
+PlayerState::PlayerState(const PlayerBase* base) {
   x_pos = 480;
   y_pos = 880-(base->height);
 
@@ -96,106 +96,7 @@ PlayerState::PlayerState() {
   recovery_frames = 0;
 }
 
-void PlayerState::processInputs(const InputState *inputs) {
-  // Handle movement requests
-  // Only jump if on the ground
-  if (inputs->up && y_pos + base->height >= ENV_DIM_FLOOR_HEIGHT) { y_vel = base->jumping_v0; }
-  // fastfall
-  if (inputs->down) { y_vel += base->fastfall_v; }
-  // walk left / right
-  if (inputs->left && x_vel <= 0) { x_vel = -base->walking_speed; }
-  if (inputs->right && x_vel >= 0) { x_vel = base->walking_speed; }
-
-  // Handle action requests
-  if (inputs->attack && (startup_frames + active_frames + recovery_frames == 0)) {
-    startup_frames = base->attack->startup;
-  }
-}
-
-void PlayerState::computeNextState() {
-  // Apply movement
-  // Don't collide left
-  if (x_pos + x_vel < ENV_DIM_WALL_THICKNESS) {
-    x_vel = ENV_DIM_WALL_THICKNESS - x_pos;
-  } 
-
-  // Don't collide right
-  if (x_pos + x_vel + base->width > ENV_DIM_RIGHT_WALL_X) {
-    x_vel = ENV_DIM_RIGHT_WALL_X - (x_pos + base->width);
-  } 
-  x_pos += x_vel;
-
-  // Don't collide down
-  if (y_pos + y_vel + base->height > ENV_DIM_FLOOR_HEIGHT) {
-    y_vel = ENV_DIM_FLOOR_HEIGHT - (y_pos + base->height);
-  }
-  // apply velocity
-  y_pos += y_vel;
-
-  // gravity
-  if (y_pos + base->height < ENV_DIM_FLOOR_HEIGHT) {
-    y_vel++;
-  }
-
-  // Apply friction (gradual stop)
-  if (x_vel < 0) {
-    x_vel++;
-  } else if (x_vel > 0) {
-    x_vel--;
-  }
-
-  // Update attack
-  // Startup
-  if (startup_frames > 0) {
-    startup_frames--;
-    // At end of startup frames, begin attack frames
-    if (startup_frames == 0) {
-      active_frames = base->attack->active;
-    }
-    return;
-  }
-
-  // Decrement active frames
-  if (active_frames > 0) {
-    active_frames--; 
-    if (active_frames == 0) {
-      recovery_frames = base->attack->recovery;
-    }
-    return;
-  }
-
-  // Decrement recovery frames
-  if (recovery_frames > 0) {
-    recovery_frames--;
-    return;
-  }
-}
-
-// Needs work
-bool PlayerState::computeCollision(const PlayerState *opp) {
-  if (active_frames == 0) {
-    return false;
-  }
-
-  float atk_low_x = x_pos + base->attack->x_offset;
-  float atk_high_x = x_pos + base->attack->x_offset + base->attack->x_width;
-  float atk_low_y = y_pos + base->attack->y_offset;
-  float atk_high_y = y_pos + base->attack->y_offset + base->attack->y_width;
-
-  float opp_low_x = 0;
-  float opp_high_x = 0;
-  float opp_low_y = 0;
-  float opp_high_y = 0;
-
-  // if (attack->x_offset + x_pos) {
-  //   return true;
-  // }
-  return false;
-}
-
 void PlayerState::copyFrom(const PlayerState *src) {
-  base = src->base;
-
   x_pos = src->x_pos;
   y_pos = src->y_pos;
 
@@ -210,7 +111,107 @@ void PlayerState::copyFrom(const PlayerState *src) {
   recovery_frames = src->recovery_frames;
 }
 
-GameScene::GameScene() {
+
+void PlayerManager::processInputs(const InputState *inputs, PlayerState* state) {
+  // Handle movement requests
+  // Only jump if on the ground
+  if (inputs->up && state->y_pos + base->height >= ENV_DIM_FLOOR_HEIGHT) { state->y_vel = base->jumping_v0; }
+  // fastfall
+  if (inputs->down) { state->y_vel += base->fastfall_v; }
+  // walk left / right
+  if (inputs->left && state->x_vel <= 0) { state->x_vel = -base->walking_speed; }
+  if (inputs->right && state->x_vel >= 0) { state->x_vel = base->walking_speed; }
+
+  // Handle action requests
+  if (inputs->attack && (state->startup_frames + state->active_frames + state->recovery_frames == 0)) {
+    state->startup_frames = base->attack->startup;
+  }
+}
+
+void PlayerManager::computeNextState(PlayerState* state) {
+  // Apply movement
+  // Don't collide left
+  if (state->x_pos + state->x_vel < ENV_DIM_WALL_THICKNESS) {
+    state->x_vel = ENV_DIM_WALL_THICKNESS - state->x_pos;
+  } 
+
+  // Don't collide right
+  if (state->x_pos + state->x_vel + base->width > ENV_DIM_RIGHT_WALL_X) {
+    state->x_vel = ENV_DIM_RIGHT_WALL_X - (state->x_pos + base->width);
+  } 
+  state->x_pos += state->x_vel;
+
+  // Don't collide down
+  if (state->y_pos + state->y_vel + base->height > ENV_DIM_FLOOR_HEIGHT) {
+    state->y_vel = ENV_DIM_FLOOR_HEIGHT - (state->y_pos + base->height);
+  }
+  // apply velocity
+  state->y_pos += state->y_vel;
+
+  // gravity
+  if (state->y_pos + base->height < ENV_DIM_FLOOR_HEIGHT) {
+    state->y_vel++;
+  }
+
+  // Apply friction (gradual stop)
+  if (state->x_vel < 0) {
+    state->x_vel++;
+  } else if (state->x_vel > 0) {
+    state->x_vel--;
+  }
+
+  // Update attack
+  // Startup
+  if (state->startup_frames > 0) {
+    state->startup_frames--;
+    // At end of startup frames, begin attack frames
+    if (state->startup_frames == 0) {
+      state->active_frames = base->attack->active;
+    }
+    return;
+  }
+
+  // Decrement active frames
+  if (state->active_frames > 0) {
+    state->active_frames--; 
+    if (state->active_frames == 0) {
+      state->recovery_frames = base->attack->recovery;
+    }
+    return;
+  }
+
+  // Decrement recovery frames
+  if (state->recovery_frames > 0) {
+    state->recovery_frames--;
+    return;
+  }
+}
+
+// Needs work
+bool PlayerManager::computeCollision(PlayerState* state, PlayerState *opp_state) {
+  if (state->active_frames == 0) {
+    return false;
+  }
+
+  float atk_low_x = state->x_pos + base->attack->x_offset;
+  float atk_high_x = state->x_pos + base->attack->x_offset + base->attack->x_width;
+  float atk_low_y = state->y_pos + base->attack->y_offset;
+  float atk_high_y = state->y_pos + base->attack->y_offset + base->attack->y_width;
+
+  float opp_low_x = 0;
+  float opp_high_x = 0;
+  float opp_low_y = 0;
+  float opp_high_y = 0;
+
+  // if (attack->x_offset + state->x_pos) {
+  //   return true;
+  // }
+  return false;
+}
+
+GameScene::GameScene(const PlayerBase* pbase1, const PlayerBase* pbase2) {
+  player1 = PlayerState(pbase1);
+  player2 = PlayerState(pbase2);
   merged = false;
   cur_tick = 0;
 };
@@ -259,10 +260,11 @@ bool GameManager::tick(const InputState *p1_inputs, const InputState *p2_inputs,
 
   GameScene* scene = getCurrentScene();
 
-  scene->player1.processInputs(p1_inputs);
-  scene->player2.processInputs(p2_inputs);
-  scene->player1.computeNextState();
-  scene->player2.computeNextState();
+  p1_mgr.processInputs(p1_inputs, &scene->player1);
+  p2_mgr.processInputs(p2_inputs, &scene->player2);
+
+  p1_mgr.computeNextState(&scene->player1);
+  p2_mgr.computeNextState(&scene->player2);
 
   return true;
 }
