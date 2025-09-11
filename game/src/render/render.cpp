@@ -47,38 +47,38 @@ void RenderEngine::checkRenderDrivers() {
   }
 }
 
-void RenderEngine::renderPlayer(const PlayerState *player) {
+void RenderEngine::renderPlayer(const PlayerEntity *p) {
   SDL_FRect green_square{ 
-    player->x_pos,
-    player->y_pos, 
-    player->base->width,
-    player->base->height
+    p->x_pos,
+    p->y_pos, 
+    p->width,
+    p->height
   };
 
   SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);            // Set render draw color to green
   SDL_RenderFillRect(ren, &green_square);  // Render the rectangle
 
-  if (player->active_frames + player->startup_frames + player->recovery_frames == 0) { return; }
+  if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
 
-  if (player->startup_frames > 0) {
+  if (p->f_startup > 0) {
     // startup
     SDL_SetRenderDrawColor(ren, 255, 247, 0, 255);     
   }
-  if (player->active_frames > 0) {
+  if (p->f_active > 0) {
     // active
     SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);     
   }
-  if (player->recovery_frames > 0) {
+  if (p->f_recovery > 0) {
     // recovery
     SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
   }
 
   // Active frames > 0
   SDL_FRect atk_square{
-    player->x_pos + player->base->attack->x_offset,
-    player->y_pos + player->base->attack->y_offset,
-    player->base->attack->x_width,
-    player->base->attack->y_width,
+    p->x_pos + p->width,
+    p->y_pos + p->height / 2,
+    30,
+    15,
   };
 
   SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle

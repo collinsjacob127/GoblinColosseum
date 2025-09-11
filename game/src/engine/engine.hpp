@@ -22,183 +22,80 @@
 #define ENV_DIM_LEFT_WALL_X 0
 #define ENV_DIM_RIGHT_WALL_X 1900
 
-class InputState {
- public:
-  bool up;
-  bool down;
-  bool left;
-  bool right;
-  bool attack;
-
-  InputState();
-
-  void reset();
-
-  void copyFrom(const InputState *src);
+struct ButtonStates {
+  bool up = false;
+  bool down = false;
+  bool left = false;
+  bool right = false;
+  bool b1 = false; // ps square
+  bool b2 = false; // ps triangle
+  bool b3 = false; // ps X
+  bool b4 = false; // ps circle
+  bool l1 = false;
+  bool r1 = false;
+  bool l2 = false;
+  bool r2 = false;
 };
 
 class InputSystem {
  public:
-  // uint MAX_INPUT_FRAMES = 60;
-
-  // uint local_player_index = 1;
-  // uint local_player_index = 2;
-
-  InputState inputState;
-
-  InputState remotePlayerState;
-
-  // polledInput;
-
-  // InputState playerCommandBuffer[MAX_INPUT_FRAMES];
-
-  unsigned int inputDelay;
+  ButtonStates buttons;
 
   InputSystem();
-
-  void updateInputState(const SDL_Event *e);
+  void updateButtonStates(const SDL_Event *e);
 };
 
-class PlayerAction {
- public:
-  // Frames
-  int startup;
-  int active;
-  int recovery;
+struct PlayerEntity {
+  float x_pos = 1920.0/2.0;
+  float y_pos = 1080.0/2.0;
 
-  // Hitboxes
-  float x_offset;
-  float y_offset;
-  float x_width;
-  float y_width;
+  float x_vel = 0.0;
+  float y_vel = 0.0;
 
-  // DMG Values
-  float damage;
-  float hit_vel_x;
-  float hit_vel_y;
+  float width = 50.0;
+  float height = 100.0;
 
-  // Tags
-  std::string name;
+  float walking_v = 15.0;
+  float jumping_v = -15.0;
+  float fastfall_v = 3.0;
 
-  PlayerAction();
+  int f_startup = 0;
+  int f_active = 0;
+  int f_recovery = 0;
+
+  float gravity = 0.5;
+  float friction = 5.0;
 };
 
-// Constants that vary from character to character
-class PlayerBase {
- public:
-  float width;
-  float height;
+// TODO: Implement rollback :)
+// struct GameScene {
+//   PlayerEntity p1;  
+//   PlayerEntity p2;  
+// };
 
-  PlayerAction* attack;
+// class GameAllocator {
+//  public: 
+//   getCurrentScene();
 
-  // Walking speed in px / frame
-  int walking_speed;
-  int jumping_v0;
-  float fastfall_v;
+//  private:
+//   GameScene history_buffer[MAX_ROLLBACK_FRAMES];
+//   void getIndex();
+// };
 
-  PlayerBase();
-};
-
-// Tracks the moving parts of a player
-class PlayerState {
- public: 
-  float x_pos;
-  float y_pos;
-
-  int x_vel;
-  int y_vel;
-
-  int x_acc;
-  int y_acc;
-
-  int startup_frames;
-  int active_frames;
-  int recovery_frames;
-
-  PlayerState(const PlayerBase* base);
-
-  void copyFrom(const PlayerState *src);
-};
-
-class PlayerManager {
-  PlayerBase* base;
-
-  PlayerManager();
-
-  void processInputs(const InputState *inputs, PlayerState* state);
-  void computeNextState(PlayerState* state);
-  // Will probably need to also pass opponent base
-  bool computeCollision(PlayerState* state, PlayerState *opp_state);
-};
-
-// All essential information for the game state in a given frame
-class GameScene {
- public:
-  PlayerState player1;
-  InputState inputs1;
-
-  PlayerState player2;
-  InputState inputs2;
-
-  // Has this scene recieved verified input from p2?
-  bool merged;
-  // What game tick is this scene from
-  unsigned int cur_tick;
-
-  GameScene(const PlayerBase* pbase1, const PlayerBase* pbase2);
-  
-  /**
-   * @brief Copies one game scene into another.
-   * Meant to build a baseline to go from one frame to another.
-   * Defaults to unmerged.
-   * Increments tick
-   */
-  void copyFrom(const GameScene* src);
-};
-
-/**
- * @brief Stores a list of game scenes, handles passing from
- * one scene to the next
- */
 class GameManager {
  public:
-  // List of scenes
-  GameScene scenes[MAX_ROLLBACK_FRAMES];
-  PlayerManager p1_mgr;
-  PlayerManager p2_mgr;
-
-  // Index of the current frame
-  unsigned int cur_scene_index;
-
-  // How many ticks has the game experienced so far
-  unsigned int total_ticks;
-  unsigned int last_merged_tick;
+  // PlayerBase p1_base;
+  PlayerEntity p1;
+  InputSystem p1_inputs;
 
   GameManager();
 
-  // Push a new game state, updating from one to the next given inputs
-  bool tick(const InputState *p1_inputs, const InputState *p2_inputs, bool rb);
-  // Roll back to state at rb_tick and resimulate with updated inputs
-  bool rollback(const InputState *p2_inputs, unsigned int rb_tick);
-
-  GameScene* getCurrentScene();
+  // Sends inputs from SDL_Event to InputSystem
+  void updateLocalInputs(SDL_Event* e);
+  void setActions(PlayerEntity* p, const ButtonStates* in);
+  void applyMovement(PlayerEntity* p);
+  void tick();
 
  private:
-  unsigned int next_index();
-
+  void updateFrames(PlayerEntity* p, const ButtonStates* in);
 };
-
-
-// class Entity {
-//   float x_pos;
-//   float y_pos;
-
-//   float x_vel;
-//   float y_vel;
-
-//   float x_acc;
-//   float y_acc;
-
-//   float width;
-//   float height;
-// };

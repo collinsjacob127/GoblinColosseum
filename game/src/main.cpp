@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
   /* INITIALIZATION OF RENDERER AND WINDOW */
   RenderEngine renderer;
   /* END INITIALIZATION OF RENDERER AND WINDOW */
-  // GameManager game_manager;
-  InputSystem input_system;
+  GameManager game_manager;
+  // InputSystem input_system;
   // InputState empty_inputs;
 
   Timer game_timer;
@@ -52,15 +52,16 @@ int main(int argc, char* argv[]) {
       if (e.type == SDL_EVENT_KEY_DOWN)
         if (e.key.key == SDLK_ESCAPE) { quit = true; }
       // Send keyboard to game inputs
-      input_system.updateInputState(&e);
+      game_manager.updateLocalInputs(&e);
     }
     // Pass inputs to game manager
     // game_manager.tick(&input_system.inputState, &empty_inputs, false);
 
-    // GameScene* scene = game_manager.getCurrentScene();
+    game_manager.tick();
 
     // Render player
 
+    renderer.renderPlayer(&game_manager.p1);
     // renderer.renderPlayer(&scene->player1);
     // renderer.renderPlayer(&scene->player2);
 

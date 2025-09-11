@@ -28,7 +28,7 @@ class RenderEngine {
   RenderEngine();
 
   void checkRenderDrivers();
-  void renderPlayer(const PlayerState *player);
+  void renderPlayer(const PlayerEntity *player);
   void displayFPS(double FPS);
   void clearScreen();
 
