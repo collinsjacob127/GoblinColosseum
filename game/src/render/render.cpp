@@ -76,9 +76,9 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
   // Active frames > 0
   SDL_FRect atk_square{
     p->x_pos + p->width,
-    p->y_pos + p->height / 2,
-    30,
-    15,
+    p->y_pos + p->height / 4,
+    100,
+    50,
   };
 
   SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle

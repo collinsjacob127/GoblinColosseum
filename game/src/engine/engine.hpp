@@ -52,18 +52,18 @@ struct PlayerEntity {
   float x_vel = 0.0;
   float y_vel = 0.0;
 
-  float width = 50.0;
-  float height = 100.0;
+  float width = 100.0;
+  float height = 300.0;
 
   float walking_v = 15.0;
-  float jumping_v = -15.0;
+  float jumping_v = -35.0;
   float fastfall_v = 3.0;
 
   int f_startup = 0;
   int f_active = 0;
   int f_recovery = 0;
 
-  float gravity = 0.5;
+  float gravity = 2.5;
   float friction = 5.0;
 };
 

@@ -24,26 +24,19 @@ void highPrecisionSleep(double duration);
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
 
 int main(int argc, char* argv[]) {
-  /* INITIALIZATION OF RENDERER AND WINDOW */
   RenderEngine renderer;
-  /* END INITIALIZATION OF RENDERER AND WINDOW */
   GameManager game_manager;
-  // InputSystem input_system;
-  // InputState empty_inputs;
 
+  double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
+  double frame_rate = -1.0;
   Timer game_timer;
   game_timer.start();
 
   // MAIN GAME LOOP
   bool quit = false;
   while (!quit) {
-    // Clear screen each new frame
-    renderer.clearScreen();
 
-    double frame_rate = (double) 1 / game_timer.duration();
-    game_timer.start();
-
-    // HANDLE EVENTS
+    // Handle Events / Hardware Inputs
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       // Let the game quit lol
@@ -54,30 +47,23 @@ int main(int argc, char* argv[]) {
       // Send keyboard to game inputs
       game_manager.updateLocalInputs(&e);
     }
-    // Pass inputs to game manager
-    // game_manager.tick(&input_system.inputState, &empty_inputs, false);
 
-    game_manager.tick();
+    // Cap frame rate at 60 fps
+    if (game_timer.duration() >= min_frame_duration) {
+      // Reset Timer
+      frame_rate = (double) 1 / game_timer.duration();
+      game_timer.start();
 
-    // Render player
+      // Move to next frame
+      game_manager.tick();
 
-    renderer.renderPlayer(&game_manager.p1);
-    // renderer.renderPlayer(&scene->player1);
-    // renderer.renderPlayer(&scene->player2);
+      // Clear screen
+      renderer.clearScreen();
 
-    renderer.displayFPS(frame_rate);
-
-    SDL_RenderPresent(renderer.ren);  // Render the screen
-
-    // input_system.inputState.reset();
-    // Only attack on-press
-    // input_system.inputState.attack = false;
-
-    // Cap Render Frame Rate
-    while (((double)1 / (double)FRAME_RATE_CAP) - game_timer.duration() > 0) {
-      #ifdef _WIN32
-        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
-      #endif
+      // Render player
+      renderer.renderPlayer(&game_manager.p1);
+      renderer.displayFPS(frame_rate);
+      SDL_RenderPresent(renderer.ren);  // Render the screen
     }
   }
 
