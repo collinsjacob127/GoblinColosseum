@@ -5,6 +5,9 @@
 
 #include "engine.hpp"
 
+/**
+ * INPUT SYSTEM
+ */
 InputSystem::InputSystem() {}
 
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
@@ -26,6 +29,20 @@ void InputSystem::updateButtonStates(const SDL_Event *e) {
   }
 }
 
+/**
+ * GAME ALLOCATOR
+ */
+GameAllocator::GameAllocator() {
+
+}
+
+GameScene* GameAllocator::getCurrentScene() {
+  return &history_buffer[0];
+}
+
+/**
+ * GAME MANAGER
+ */
 GameManager::GameManager() {
   // p1 = PlayerEntity();
   // p1_inputs = InputSystem();

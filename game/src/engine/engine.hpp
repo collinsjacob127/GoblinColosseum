@@ -1,8 +1,25 @@
 /**
- * The input system is an abstraction layer between system input and input commands
+ * Author: Jacob Collins
+ * Description:
+ * This file contains headers for:
  * 
+ * - Input System
+ * The input system is an abstraction layer between system input and input commands
  * Based on input system designed by rcmagic (wrote GGST netcode)
  * https://github.com/rcmagic/DemoFighterWithNetcode/blob/master/game/InputSystem.lua
+ * 
+ * - Game Allocator
+ * Allocates game state memory buffer, enabling rollback
+ * Essentially an interface for the list of game scenes
+ * 
+ * - GameScene
+ * Tracks entities and all information that is used for a given scene
+ * 
+ * - PlayerEntity
+ * Struct containing information regarding the player's dynamic state
+ * 
+ * - Game Manager
+ * Interface between main() game loop and the game engine
  */
 
 #pragma once
@@ -68,19 +85,21 @@ struct PlayerEntity {
 };
 
 // TODO: Implement rollback :)
-// struct GameScene {
-//   PlayerEntity p1;  
-//   PlayerEntity p2;  
-// };
+struct GameScene {
+  PlayerEntity p1;  
+  PlayerEntity p2;  
+};
 
-// class GameAllocator {
-//  public: 
-//   getCurrentScene();
+class GameAllocator {
+ public: 
+  GameScene* getCurrentScene();
 
-//  private:
-//   GameScene history_buffer[MAX_ROLLBACK_FRAMES];
-//   void getIndex();
-// };
+  GameAllocator();
+
+ private:
+  GameScene history_buffer[MAX_ROLLBACK_FRAMES];
+  void getIndex();
+};
 
 class GameManager {
  public:
