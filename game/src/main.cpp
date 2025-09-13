@@ -16,7 +16,7 @@
 #include "net/net.hpp"
 #include "render/render.hpp"
 
-#define FRAME_RATE_CAP 15
+#define FRAME_RATE_CAP 60
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -80,8 +80,8 @@ int startLocalGame(RenderEngine* renderer) {
       frame_rate = (double) 1 / game_timer.duration();
       game_timer.start();
 
-      if (game.cur_tick > 20 && game.cur_tick % 100 == 0) {
-        game.rollBack(game.cur_tick - 10, &p2_dummy_buttons);
+      if (game.cur_tick > 150 && game.cur_tick % 20 == 0) {
+        game.rollBack(game.cur_tick - 100, &p2_dummy_buttons);
       }
 
       // Move to next frame
