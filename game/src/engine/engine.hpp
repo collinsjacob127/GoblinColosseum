@@ -86,17 +86,19 @@ struct PlayerEntity {
 
 // TODO: Implement rollback :)
 struct GameScene {
-  PlayerEntity p1;  
-  PlayerEntity p2;  
-  ButtonStates in1;
-  ButtonStates in2;
+  PlayerEntity players[2];  
+  ButtonStates inputs[2];
 };
 
 class GameAllocator {
  public: 
   unsigned int cur_tick;
-
+  // If online player is p1 => 0
+  // If online player is p2 => 1
+  // If no online player => 99
+  unsigned int net_pindex;
   GameAllocator();
+  GameAllocator(unsigned int net_p1_or_p2);
 
   GameScene* getCurrentScene();
 
@@ -107,18 +109,30 @@ class GameAllocator {
    */
   GameScene* getNextScene();
 
+  /**
+   * @brief Function to roll back to a given frame.
+   * @param prev_tick The frame to roll back to (sets allocator's cur_tick to this)
+   * @param in The inputs to insert.
+   * @note After calling rollback, engine must simulate back to current frame. 
+   */
+  GameScene* rollBack(unsigned int prev_tick, const ButtonStates* in);
+
  private:
   GameScene history_buffer[MAX_ROLLBACK_FRAMES];
   unsigned int getCurrentIndex();
+  unsigned int getIndexFromFrame(unsigned int frame);
 };
 
 class GameManager {
  public:
   // PlayerBase p1_base;
-  GameAllocator game_allocator;
+  GameAllocator allocator;
   InputSystem local_inputs;
+  unsigned int net_pindex;
+  unsigned int cur_tick;
 
   GameManager();
+  GameManager(unsigned int net_p1_or_p2);
 
   // Sends inputs from SDL_Event to InputSystem
   void updateLocalInputs(SDL_Event* e);

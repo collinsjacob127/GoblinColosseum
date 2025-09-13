@@ -5,19 +5,22 @@
 
 #include "engine.hpp"
 
-/**
- * INPUT SYSTEM
- */
+/*****************************
+ ******** INPUT SYSTEM *******
+ *****************************/
 InputSystem::InputSystem() {}
 
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
 void InputSystem::updateButtonStates(const SDL_Event *e) {
   if (e->type == SDL_EVENT_KEY_DOWN) {
-      if (e->key.scancode == SDL_SCANCODE_W) { buttons.up = true; }
+      if (e->key.scancode == SDL_SCANCODE_W && !e->key.repeat) { buttons.up = true; }
       else if (e->key.scancode == SDL_SCANCODE_S) { buttons.down = true; }
       else if (e->key.scancode == SDL_SCANCODE_A) { buttons.left = true; }
       else if (e->key.scancode == SDL_SCANCODE_D) { buttons.right = true; }
-      else if (e->key.scancode == SDL_SCANCODE_SPACE && !e->key.repeat) {buttons.b1 = true; }
+      else if (e->key.scancode == SDL_SCANCODE_U && !e->key.repeat) {buttons.b1 = true; }
+      else if (e->key.scancode == SDL_SCANCODE_I && !e->key.repeat) {buttons.b2 = true; }
+      else if (e->key.scancode == SDL_SCANCODE_J && !e->key.repeat) {buttons.b3 = true; }
+      else if (e->key.scancode == SDL_SCANCODE_K && !e->key.repeat) {buttons.b4 = true; }
     }
   else if (e->type == SDL_EVENT_KEY_UP)
   {
@@ -25,15 +28,24 @@ void InputSystem::updateButtonStates(const SDL_Event *e) {
     else if (e->key.scancode == SDL_SCANCODE_S) { buttons.down = false; }
     else if (e->key.scancode == SDL_SCANCODE_A) { buttons.left = false; }
     else if (e->key.scancode == SDL_SCANCODE_D) { buttons.right = false; }
-    else if (e->key.scancode == SDL_SCANCODE_SPACE) {buttons.b1 = false; }
+    else if (e->key.scancode == SDL_SCANCODE_U && !e->key.repeat) {buttons.b1 = false; }
+    else if (e->key.scancode == SDL_SCANCODE_I && !e->key.repeat) {buttons.b2 = false; }
+    else if (e->key.scancode == SDL_SCANCODE_J && !e->key.repeat) {buttons.b3 = false; }
+    else if (e->key.scancode == SDL_SCANCODE_K && !e->key.repeat) {buttons.b4 = false; }
   }
 }
 
-/**
- * GAME ALLOCATOR
- */
+/*****************************
+ ******* GAME ALLOCATOR ******
+ *****************************/
 GameAllocator::GameAllocator() {
   cur_tick = 0;
+  net_pindex = 99;
+}
+
+GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
+  cur_tick = 0;
+  net_pindex = net_p1_or_p2;
 }
 
 GameScene* GameAllocator::getCurrentScene() {
@@ -52,23 +64,46 @@ unsigned int GameAllocator::getCurrentIndex() {
   return cur_tick % MAX_ROLLBACK_FRAMES;
 }
 
-/**
- * GAME MANAGER
- */
+GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* in) {
+  if (cur_tick - prev_tick > MAX_ROLLBACK_FRAMES) {
+    std::cerr << "Error: Allocator recieved request for " << cur_tick - prev_tick
+    << "f rollback" << std::endl
+    << "  cur_tick: " << cur_tick << std::endl
+    << "  prev_tick: " << prev_tick << std::endl;
+  }
+  if (net_pindex > 2) {
+    std::cerr << "Error: Rollback requested when allocator initialized with no defined"
+    << " online player" << std::endl;
+  }
+  cur_tick = prev_tick;
+  memcpy(&history_buffer[getCurrentIndex()].inputs[net_pindex], in, sizeof(ButtonStates));
+  return getCurrentScene();  
+}
+
+/*****************************
+ ******** GAME MANAGER *******
+ *****************************/
 GameManager::GameManager() {
   // p1 = PlayerEntity();
   // p1_inputs = InputSystem();
 }
 
+GameManager::GameManager(unsigned int net_p1_or_p2) {
+  // p1 = PlayerEntity();
+  // p1_inputs = InputSystem();
+  net_pindex = net_p1_or_p2;
+  allocator = GameAllocator(net_p1_or_p2);
+}
+
 void GameManager::updateLocalInputs(SDL_Event* e) {
   local_inputs.updateButtonStates(e);
 
-  GameScene* cur_scene = game_allocator.getCurrentScene();
+  GameScene* cur_scene = allocator.getCurrentScene();
   if (!cur_scene) {
     std::cerr << "Game allocator returned null scene to input update request\n";
   }
 
-  memcpy(&cur_scene->in1, &local_inputs.buttons, sizeof(ButtonStates));
+  memcpy(&cur_scene->inputs[0], &local_inputs.buttons, sizeof(ButtonStates));
 }
 
 void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
@@ -161,21 +196,21 @@ void GameManager::updateFrames(PlayerEntity* p, const ButtonStates* in) {
 }
 
 void GameManager::tick() {
-  GameScene* cur_scene = game_allocator.getNextScene();
-  setActions(&cur_scene->p1, &cur_scene->in1);
-  setActions(&cur_scene->p2, &cur_scene->in2);
-  updateFrames(&cur_scene->p1, &cur_scene->in1);
-  updateFrames(&cur_scene->p2, &cur_scene->in2);
-  applyMovement(&cur_scene->p1);
-  applyMovement(&cur_scene->p2);
+  GameScene* cur_scene = allocator.getNextScene();
+  setActions(&cur_scene->players[0], &cur_scene->inputs[0]);
+  setActions(&cur_scene->players[1], &cur_scene->inputs[1]);
+  updateFrames(&cur_scene->players[0], &cur_scene->inputs[0]);
+  updateFrames(&cur_scene->players[1], &cur_scene->inputs[1]);
+  applyMovement(&cur_scene->players[0]);
+  applyMovement(&cur_scene->players[1]);
 }
 
 // Game Manager Getters
 
 PlayerEntity* GameManager::getP1() {
-  return &game_allocator.getCurrentScene()->p1;
+  return &allocator.getCurrentScene()->players[0];
 }
 
 PlayerEntity* GameManager::getP2() {
-  return &game_allocator.getCurrentScene()->p2;
+  return &allocator.getCurrentScene()->players[1];
 }

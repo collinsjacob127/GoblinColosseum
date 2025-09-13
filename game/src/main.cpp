@@ -18,16 +18,29 @@
 
 #define FRAME_RATE_CAP 60
 
-void highPrecisionSleep(double duration);
-
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
 
+int startLocalGame(RenderEngine* renderer);
+
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
-  GameManager game_manager;
 
+  startLocalGame(&renderer);
+
+  SDL_DestroyRenderer(renderer.ren);
+  SDL_DestroyWindow(renderer.win);
+  SDL_Quit();
+
+  return 0;
+}
+
+int startLocalGame(RenderEngine* renderer) {
+  GameManager game;
+
+  // Define duration of each frame
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
+  // Used to display FPS
   double frame_rate = -1.0;
   Timer game_timer;
   game_timer.start();
@@ -45,7 +58,7 @@ int main(int argc, char* argv[]) {
       if (e.type == SDL_EVENT_KEY_DOWN)
         if (e.key.key == SDLK_ESCAPE) { quit = true; }
       // Send keyboard to game inputs
-      game_manager.updateLocalInputs(&e);
+      game.updateLocalInputs(&e);
     }
 
     // Cap frame rate at 60 fps
@@ -56,23 +69,18 @@ int main(int argc, char* argv[]) {
       game_timer.start();
 
       // Move to next frame
-      game_manager.tick();
+      game.tick();
 
       // Clear screen
-      renderer.clearScreen();
+      renderer->clearScreen();
 
       // Render player
-      renderer.renderPlayer(game_manager.getP1());
-      renderer.renderPlayer(game_manager.getP2());
-      std::cout << game_manager.game_allocator.cur_tick << std::endl;
-      renderer.displayFPS(frame_rate);
-      SDL_RenderPresent(renderer.ren);  // Render the screen
+      renderer->renderPlayer(game.getP1());
+      renderer->renderPlayer(game.getP2());
+      std::cout << game.allocator.cur_tick << std::endl;
+      renderer->displayFPS(frame_rate);
+      SDL_RenderPresent(renderer->ren);  // Render the screen
     }
   }
-
-  SDL_DestroyRenderer(renderer.ren);
-  SDL_DestroyWindow(renderer.win);
-  SDL_Quit();
-
-  return 0;
+  return 1;
 }
