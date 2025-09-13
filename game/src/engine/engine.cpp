@@ -61,6 +61,7 @@ GameAllocator::GameAllocator() {
 GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
   cur_tick = 0;
   net_pindex = net_p1_or_p2;
+  // net and loc should always be opposites
   if (net_pindex == 0) { loc_pindex = 1;}
   else if (net_pindex == 1) { loc_pindex = 0;}
   else { 
