@@ -55,7 +55,7 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->height
   };
 
-  SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);            // Set render draw color to green
+  SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            // Set render draw color to green
   SDL_RenderFillRect(ren, &green_square);  // Render the rectangle
 
   if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }

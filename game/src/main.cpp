@@ -16,7 +16,7 @@
 #include "net/net.hpp"
 #include "render/render.hpp"
 
-#define FRAME_RATE_CAP 60
+#define FRAME_RATE_CAP 15
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -37,6 +37,18 @@ int main(int argc, char* argv[]) {
 
 int startLocalGame(RenderEngine* renderer) {
   GameManager game;
+  // Set player colors
+  game.getPlayer(0)->disp_r = 3.0;
+  game.getPlayer(0)->disp_g = 223.0;
+  game.getPlayer(0)->disp_b = 252.0;
+
+  game.getPlayer(1)->disp_r = 250.0;
+  game.getPlayer(1)->disp_g = 161.0;
+  game.getPlayer(1)->disp_b = 3.0;
+
+  // TODO: Delete this, it's for testing rollback
+  ButtonStates p2_dummy_buttons;
+  p2_dummy_buttons.up = true;
 
   // Define duration of each frame
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
@@ -68,6 +80,10 @@ int startLocalGame(RenderEngine* renderer) {
       frame_rate = (double) 1 / game_timer.duration();
       game_timer.start();
 
+      if (game.cur_tick > 20 && game.cur_tick % 100 == 0) {
+        game.rollBack(game.cur_tick - 10, &p2_dummy_buttons);
+      }
+
       // Move to next frame
       game.tick();
 
@@ -75,9 +91,9 @@ int startLocalGame(RenderEngine* renderer) {
       renderer->clearScreen();
 
       // Render player
-      renderer->renderPlayer(game.getP1());
-      renderer->renderPlayer(game.getP2());
-      std::cout << game.allocator.cur_tick << std::endl;
+      renderer->renderPlayer(game.getPlayer(0)); // Player 1
+      renderer->renderPlayer(game.getPlayer(1)); // Player 2
+      std::cout << game.allocator.cur_tick << " " << game.cur_tick << std::endl;
       renderer->displayFPS(frame_rate);
       SDL_RenderPresent(renderer->ren);  // Render the screen
     }

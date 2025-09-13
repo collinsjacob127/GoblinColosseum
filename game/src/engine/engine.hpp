@@ -25,8 +25,11 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 #include <string.h>
 #include <SDL3/SDL.h>
+
+#define ENABLE_HELPER_PRINTOUTS true
 
 #define MAX_ROLLBACK_FRAMES 60
 #define FRAME_ADVANTAGE_LIMIT 5
@@ -38,6 +41,21 @@
 #define ENV_DIM_FLOOR_HEIGHT 880
 #define ENV_DIM_LEFT_WALL_X 0
 #define ENV_DIM_RIGHT_WALL_X 1900
+
+struct Keybinds {
+  SDL_Scancode up = SDL_SCANCODE_W;
+  SDL_Scancode down = SDL_SCANCODE_S;
+  SDL_Scancode left = SDL_SCANCODE_A;
+  SDL_Scancode right = SDL_SCANCODE_D;
+  SDL_Scancode b1 = SDL_SCANCODE_U; // ps square
+  SDL_Scancode b2 = SDL_SCANCODE_I; // ps triangle
+  SDL_Scancode b3 = SDL_SCANCODE_J; // ps X
+  SDL_Scancode b4 = SDL_SCANCODE_K; // ps circle
+  SDL_Scancode l1 = SDL_SCANCODE_O; // left bumper
+  SDL_Scancode r1 = SDL_SCANCODE_L; // right bumper
+  SDL_Scancode l2 = SDL_SCANCODE_P; // left trigger
+  SDL_Scancode r2 = SDL_SCANCODE_SEMICOLON; // right trigger
+};
 
 struct ButtonStates {
   bool up = false;
@@ -54,9 +72,13 @@ struct ButtonStates {
   bool r2 = false;
 };
 
+// Used for debugging
+void showButtonStates(const ButtonStates* btn);
+
 class InputSystem {
  public:
   ButtonStates buttons;
+  Keybinds bindings;
 
   InputSystem();
   void updateButtonStates(const SDL_Event *e);
@@ -82,6 +104,10 @@ struct PlayerEntity {
 
   float gravity = 2.5;
   float friction = 5.0;
+
+  float disp_r = 0.0;
+  float disp_g = 200.0;
+  float disp_b = 20.0;
 };
 
 // TODO: Implement rollback :)
@@ -96,6 +122,7 @@ class GameAllocator {
   // If online player is p1 => 0
   // If online player is p2 => 1
   // If no online player => 99
+  unsigned int loc_pindex;
   unsigned int net_pindex;
   GameAllocator();
   GameAllocator(unsigned int net_p1_or_p2);
@@ -117,33 +144,39 @@ class GameAllocator {
    */
   GameScene* rollBack(unsigned int prev_tick, const ButtonStates* in);
 
+  /**
+   * @brief Roll forward to the next frame, duplicating net player's input,
+   * and without changing local player's previous inputs.
+   */
+  GameScene* rollForward();
+
  private:
   GameScene history_buffer[MAX_ROLLBACK_FRAMES];
   unsigned int getCurrentIndex();
-  unsigned int getIndexFromFrame(unsigned int frame);
 };
 
 class GameManager {
  public:
-  // PlayerBase p1_base;
   GameAllocator allocator;
-  InputSystem local_inputs;
+
+  InputSystem inputs[2];
+
+  unsigned int loc_pindex;
   unsigned int net_pindex;
   unsigned int cur_tick;
 
   GameManager();
   GameManager(unsigned int net_p1_or_p2);
 
-  // Sends inputs from SDL_Event to InputSystem
   void updateLocalInputs(SDL_Event* e);
   void setActions(PlayerEntity* p, const ButtonStates* in);
-  void applyMovement(PlayerEntity* p);
   void tick();
+  void rollBack(unsigned int frame, const ButtonStates* in);
 
-  // getters
-  PlayerEntity* getP1();
-  PlayerEntity* getP2();
+  PlayerEntity* getPlayer(unsigned int pid);
 
  private:
+  void applyMovement(PlayerEntity* p);
   void updateFrames(PlayerEntity* p, const ButtonStates* in);
+  void applyTickUpdates(GameScene* scene);
 };
