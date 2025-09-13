@@ -88,24 +88,35 @@ struct PlayerEntity {
 struct GameScene {
   PlayerEntity p1;  
   PlayerEntity p2;  
+  ButtonStates in1;
+  ButtonStates in2;
 };
 
 class GameAllocator {
  public: 
-  GameScene* getCurrentScene();
+  unsigned int cur_tick;
 
   GameAllocator();
 
+  GameScene* getCurrentScene();
+
+  /**
+   * @brief Function to move on to the next scene.
+   * Copies current scene to next index, increments cur_tick,
+   * and returns the *new* current scene.
+   */
+  GameScene* getNextScene();
+
  private:
   GameScene history_buffer[MAX_ROLLBACK_FRAMES];
-  void getIndex();
+  unsigned int getCurrentIndex();
 };
 
 class GameManager {
  public:
   // PlayerBase p1_base;
-  PlayerEntity p1;
-  InputSystem p1_inputs;
+  GameAllocator game_allocator;
+  InputSystem local_inputs;
 
   GameManager();
 
@@ -114,6 +125,10 @@ class GameManager {
   void setActions(PlayerEntity* p, const ButtonStates* in);
   void applyMovement(PlayerEntity* p);
   void tick();
+
+  // getters
+  PlayerEntity* getP1();
+  PlayerEntity* getP2();
 
  private:
   void updateFrames(PlayerEntity* p, const ButtonStates* in);

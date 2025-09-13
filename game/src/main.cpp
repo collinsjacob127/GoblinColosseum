@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
 
     // Cap frame rate at 60 fps
     if (game_timer.duration() >= min_frame_duration) {
+    // if (game_timer.duration() >= 0) {
       // Reset Timer
       frame_rate = (double) 1 / game_timer.duration();
       game_timer.start();
@@ -61,7 +62,9 @@ int main(int argc, char* argv[]) {
       renderer.clearScreen();
 
       // Render player
-      renderer.renderPlayer(&game_manager.p1);
+      renderer.renderPlayer(game_manager.getP1());
+      renderer.renderPlayer(game_manager.getP2());
+      std::cout << game_manager.game_allocator.cur_tick << std::endl;
       renderer.displayFPS(frame_rate);
       SDL_RenderPresent(renderer.ren);  // Render the screen
     }

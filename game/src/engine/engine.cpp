@@ -33,11 +33,23 @@ void InputSystem::updateButtonStates(const SDL_Event *e) {
  * GAME ALLOCATOR
  */
 GameAllocator::GameAllocator() {
-
+  cur_tick = 0;
 }
 
 GameScene* GameAllocator::getCurrentScene() {
-  return &history_buffer[0];
+  return &history_buffer[getCurrentIndex()];
+}
+
+GameScene* GameAllocator::getNextScene() {
+  const GameScene* prev_scene = getCurrentScene();
+  cur_tick++;
+  GameScene* new_scene = getCurrentScene();
+  memcpy(new_scene, prev_scene, sizeof(GameScene));
+  return new_scene;
+}
+
+unsigned int GameAllocator::getCurrentIndex() {
+  return cur_tick % MAX_ROLLBACK_FRAMES;
 }
 
 /**
@@ -49,7 +61,14 @@ GameManager::GameManager() {
 }
 
 void GameManager::updateLocalInputs(SDL_Event* e) {
-  p1_inputs.updateButtonStates(e);
+  local_inputs.updateButtonStates(e);
+
+  GameScene* cur_scene = game_allocator.getCurrentScene();
+  if (!cur_scene) {
+    std::cerr << "Game allocator returned null scene to input update request\n";
+  }
+
+  memcpy(&cur_scene->in1, &local_inputs.buttons, sizeof(ButtonStates));
 }
 
 void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
@@ -142,7 +161,21 @@ void GameManager::updateFrames(PlayerEntity* p, const ButtonStates* in) {
 }
 
 void GameManager::tick() {
-  setActions(&p1, &p1_inputs.buttons);
-  updateFrames(&p1, &p1_inputs.buttons);
-  applyMovement(&p1);
+  GameScene* cur_scene = game_allocator.getNextScene();
+  setActions(&cur_scene->p1, &cur_scene->in1);
+  setActions(&cur_scene->p2, &cur_scene->in2);
+  updateFrames(&cur_scene->p1, &cur_scene->in1);
+  updateFrames(&cur_scene->p2, &cur_scene->in2);
+  applyMovement(&cur_scene->p1);
+  applyMovement(&cur_scene->p2);
+}
+
+// Game Manager Getters
+
+PlayerEntity* GameManager::getP1() {
+  return &game_allocator.getCurrentScene()->p1;
+}
+
+PlayerEntity* GameManager::getP2() {
+  return &game_allocator.getCurrentScene()->p2;
 }
