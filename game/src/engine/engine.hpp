@@ -31,7 +31,9 @@
 
 #define ENABLE_HELPER_PRINTOUTS true
 
-#define MAX_ROLLBACK_FRAMES 600
+// For rollback functionality demo:
+// #define MAX_ROLLBACK_FRAMES 600
+#define MAX_ROLLBACK_FRAMES 60
 #define FRAME_ADVANTAGE_LIMIT 5
 #define INITIAL_FRAME 0
 

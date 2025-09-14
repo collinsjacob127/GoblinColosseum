@@ -103,8 +103,8 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
   }
   // Update current tick label (marking that we've rolled back)
   cur_tick = prev_tick;
-  // Copy recieved inputs where they should go
-  memcpy(&history_buffer[getCurrentIndex()].inputs[net_pindex], in, sizeof(ButtonStates));
+  // Copy net inputs from param to scene's net pindex input
+  memcpy(&getCurrentScene()->inputs[net_pindex], in, sizeof(ButtonStates));
   // Returns the scene at that point in time
   return getCurrentScene();  
 }
@@ -135,7 +135,7 @@ GameManager::GameManager() {
   cur_tick = 0;
   loc_pindex = 0;
   net_pindex = 1;
-  allocator = GameAllocator(net_pindex+1);
+  allocator = GameAllocator(net_pindex);
 }
 
 GameManager::GameManager(unsigned int net_p1_or_p2) {
@@ -145,7 +145,8 @@ GameManager::GameManager(unsigned int net_p1_or_p2) {
   else if (net_pindex == 1) { loc_pindex = 0; }
   else { std::cerr << "Invalid net pindex\n"; }
 
-  allocator = GameAllocator(net_p1_or_p2);
+  allocator.loc_pindex = loc_pindex;
+  allocator.net_pindex = net_pindex;
 }
 
 /**
@@ -282,11 +283,13 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
   // Move the current game scene back to when this input was sent
   // Send the input to the allocator
   allocator.rollBack(frame, in);
-  GameScene* scene;
+  // Ensure that roll *back* is *back*
+  if (frame >= cur_tick) {return;}
+  GameScene* scene = allocator.rollForward();
   // Iterate through previous frames until the present
-  for (unsigned int i = frame; i < cur_tick; ++i) {
-    scene = allocator.rollForward();
+  for (unsigned int i = frame; i < cur_tick-1; ++i) {
     applyTickUpdates(scene);
+    scene = allocator.rollForward();
   }
 }
 

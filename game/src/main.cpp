@@ -80,9 +80,16 @@ int startLocalGame(RenderEngine* renderer) {
       frame_rate = (double) 1 / game_timer.duration();
       game_timer.start();
 
-      if (game.cur_tick > 150 && game.cur_tick % 20 == 0) {
-        game.rollBack(game.cur_tick - 100, &p2_dummy_buttons);
-      }
+      // ROLLBACK FUNCTIONALITY DEMO
+      // if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
+      //   std::cout << "pre-rollback" << std::endl;
+      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
+      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      //   game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
+      //   std::cout << "post-rollback" << std::endl;
+      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
+      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      // }
 
       // Move to next frame
       game.tick();
