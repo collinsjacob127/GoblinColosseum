@@ -8,3 +8,4 @@
 # Ignore standard and windows builds
 *build/
 *win-build/
+*.psd
