@@ -21,18 +21,33 @@
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
 
+/**
+ *  Display the start screen
+ * Contains menu options:
+ * - Local 1P
+ * - Local 2P
+ * - Online
+ * - Settings
+ * - Quit
+ */ 
+int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
 
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
 
-  startLocalGame(&renderer);
+  start(&renderer);
+  // startLocalGame(&renderer);
 
   SDL_DestroyRenderer(renderer.ren);
   SDL_DestroyWindow(renderer.win);
   SDL_Quit();
 
   return 0;
+}
+
+int start(RenderEngine* renderer) {
+
 }
 
 int startLocalGame(RenderEngine* renderer) {

@@ -42,7 +42,9 @@ void InputSystem::updateButtonStates(const SDL_Event *e) {
 }
 
 void showButtonStates(const ButtonStates* btn) {
-  // TODO: Display state of each button here.
+  // Display state of each button here.
+  //    <O>.<O>
+  // naw dawg fug dat
 }
 
 /*****************************
