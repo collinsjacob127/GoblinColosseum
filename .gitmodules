@@ -7,3 +7,6 @@
 [submodule "game/libs/SDL_ttf"]
 	path = game/libs/SDL_ttf
   url = https://github.com/libsdl-org/SDL_ttf.git
+[submodule "game/libs/SDL_image"]
+	path = game/libs/SDL_image
+  url = https://github.com/libsdl-org/SDL_image.git
