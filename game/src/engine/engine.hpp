@@ -40,6 +40,11 @@
 
 #define MAX_INPUT_FRAMES 60
 
+#define GAME_BORDER_X0 30
+#define GAME_BORDER_X1 1882
+#define GAME_BORDER_Y0 0
+#define GAME_BORDER_Y1 1045
+
 struct Keybinds {
   SDL_Scancode up = SDL_SCANCODE_W;
   SDL_Scancode down = SDL_SCANCODE_S;
@@ -130,11 +135,16 @@ class PlayerController {
  public:
   PlayerController();
   
+  void setActions(PlayerEntity* p, const ButtonStates* in);
+  bool isActionable(PlayerEntity* p);
+  bool isGrounded(PlayerEntity* p);
+  void updateFrames(PlayerEntity* p, const ButtonStates* in);
+  bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
+  bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
  private:
   
 };
 
-// TODO: Implement rollback :)
 struct GameScene {
   PlayerEntity players[2];  
   ButtonStates inputs[2];
@@ -183,8 +193,7 @@ class GameManager {
  public:
   GameAllocator allocator;
   InputSystem inputs[2];
-
-  BoxEntity border;
+  PlayerController* players[2];
 
   unsigned int loc_pindex;
   unsigned int net_pindex;
@@ -194,20 +203,14 @@ class GameManager {
   GameManager(unsigned int net_p1_or_p2);
 
   void updateLocalInputs(SDL_Event* e);
-  void setActions(PlayerEntity* p, const ButtonStates* in);
   void tick();
   void rollBack(unsigned int frame, const ButtonStates* in);
 
   PlayerEntity* getPlayer(unsigned int pid);
 
  private:
-  void applyMovement(PlayerEntity* p);
-  void updateFrames(PlayerEntity* p, const ButtonStates* in);
   void applyTickUpdates(GameScene* scene);
-  bool isActionable(PlayerEntity* p);
-  bool isGrounded(PlayerEntity* p);
-  void setBorder();
+  void applyMovement(PlayerEntity* p);
   void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
-  bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
-  bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
+  bool isGrounded(PlayerEntity* p);
 };

@@ -147,65 +147,24 @@ GameScene* GameAllocator::rollForward() {
   return next_scene;
 }
 
-/*****************************
- ******** GAME MANAGER *******
- *****************************/
-GameManager::GameManager() {
-  cur_tick = 0;
-  loc_pindex = 0;
-  net_pindex = 1;
-  allocator = GameAllocator(net_pindex);
-  setBorder();
-}
+/***************************
+ **** PLAYER CONTROLLER ****
+ ***************************/
 
-GameManager::GameManager(unsigned int net_p1_or_p2) {
-  cur_tick = 0;
-  net_pindex = net_p1_or_p2;
-  if (net_pindex == 0) { loc_pindex = 1; }
-  else if (net_pindex == 1) { loc_pindex = 0; }
-  else { std::cerr << "Invalid net pindex\n"; }
+PlayerController::PlayerController() { }
 
-  allocator.loc_pindex = loc_pindex;
-  allocator.net_pindex = net_pindex;
-  setBorder();
-}
-
-void GameManager::setBorder() {
-  border.x = 30;
-  border.y = 0;
-  border.width = 1852;
-  border.height = 1045;
-}
-
-/**
- * @brief Sends inputs from SDL_Event to InputSystem
- */
-void GameManager::updateLocalInputs(SDL_Event* e) {
-  inputs[loc_pindex].updateButtonStates(e);
-
-  GameScene* cur_scene = allocator.getCurrentScene();
-  if (!cur_scene) {
-    std::cerr << "Game allocator returned null scene to input update request\n";
-  }
-
-  // Send inputs from 
-  memcpy(&cur_scene->inputs[loc_pindex], 
-         &inputs[loc_pindex].buttons, 
-         sizeof(ButtonStates));
-}
-
-bool GameManager::isActionable(PlayerEntity* p) {
+bool PlayerController::isActionable(PlayerEntity* p) {
   return (p->f_startup + p->f_active + p->f_recovery == 0);
 }
 
-bool GameManager::isGrounded(PlayerEntity* p) {
-  return p->y_pos + p->height >= border.height;
+bool PlayerController::isGrounded(PlayerEntity* p) {
+  return p->y_pos + p->height >= GAME_BORDER_Y1;
 }
 
 /**
  * @brief Set a player's actions given their button inputs
  */
-void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
+void PlayerController::setActions(PlayerEntity* p, const ButtonStates* in) {
   if (!isActionable(p)) { return; }
 
   // Grounded movement
@@ -282,54 +241,12 @@ void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
 
 }
 
-bool GameManager::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
+bool PlayerController::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
   return (p->facing_right && in->right) || (!p->facing_right && in->left);
 }
 
-bool GameManager::holdingBack(const PlayerEntity* p, const ButtonStates* in) {
+bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in) {
   return (p->facing_right && in->left) || (!p->facing_right && in->right);
-}
-
-/**
- * @brief Apply movement to a player using their velocities
- * @param p Pointer to the player's entity in the game scene
- * @note Handles collision
- */
-void GameManager::applyMovement(PlayerEntity* p) {
-  // Don't collide left wall
-  if (p->x_pos + p->x_vel < border.x) {
-    p->x_vel = 0;
-    p->x_pos = border.x;
-  }
-
-  // Don't collide right wall
-  if (p->x_pos + p->x_vel + p->width > border.x+border.width) {
-    p->x_vel = 0;
-    p->x_pos = border.x + border.width - p->width;
-  }
-
-  // Don't collide floor
-  if (p->y_pos + p->y_vel + p->height > border.height) {
-    p->y_vel = border.height - (p->y_pos + p->height);
-  }
-
-  // Apply velocities
-  p->x_pos += p->x_vel;
-  p->y_pos += p->y_vel;
-
-  // Gravity
-  if (!isGrounded(p)) {
-    p->y_vel += p->gravity;
-  }
-
-  // Friction
-  // if(!isGrounded(p)) { return; }
-  if (p->x_vel < 0) {
-    if (isGrounded(p)) {p->x_vel += p->friction;}
-  } else if (p->x_vel > 0) {
-    if (isGrounded(p)) {p->x_vel -= p->friction;}
-  }
-
 }
 
 
@@ -337,7 +254,7 @@ void GameManager::applyMovement(PlayerEntity* p) {
  * @brief Handles incrementation and state changes for actions
  * involving frame data (attacks, hitstun, etc.)
  */
-void GameManager::updateFrames(PlayerEntity* p, const ButtonStates* in) {
+void PlayerController::updateFrames(PlayerEntity* p, const ButtonStates* in) {
   int startup_frames = 10;
   int active_frames = 20;
   int recovery_frames = 10;
@@ -371,6 +288,48 @@ void GameManager::updateFrames(PlayerEntity* p, const ButtonStates* in) {
   }
 }
 
+
+/*****************************
+ ******** GAME MANAGER *******
+ *****************************/
+GameManager::GameManager() {
+  cur_tick = 0;
+  loc_pindex = 0;
+  net_pindex = 1;
+  allocator = GameAllocator(net_pindex);
+  // TEMP - for testing player controller
+  players[0] = new PlayerController();
+  players[1] = new PlayerController();
+}
+
+GameManager::GameManager(unsigned int net_p1_or_p2) {
+  cur_tick = 0;
+  net_pindex = net_p1_or_p2;
+  if (net_pindex == 0) { loc_pindex = 1; }
+  else if (net_pindex == 1) { loc_pindex = 0; }
+  else { std::cerr << "Invalid net pindex\n"; }
+
+  allocator.loc_pindex = loc_pindex;
+  allocator.net_pindex = net_pindex;
+}
+
+/**
+ * @brief Sends inputs from SDL_Event to InputSystem
+ */
+void GameManager::updateLocalInputs(SDL_Event* e) {
+  inputs[loc_pindex].updateButtonStates(e);
+
+  GameScene* cur_scene = allocator.getCurrentScene();
+  if (!cur_scene) {
+    std::cerr << "Game allocator returned null scene to input update request\n";
+  }
+
+  // Send inputs from 
+  memcpy(&cur_scene->inputs[loc_pindex], 
+         &inputs[loc_pindex].buttons, 
+         sizeof(ButtonStates));
+}
+
 void GameManager::tick() {
   cur_tick++;
   GameScene* cur_scene = allocator.getNextScene();
@@ -400,10 +359,10 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
  * based on the previous scene's state.
  */
 void GameManager::applyTickUpdates(GameScene* scene) {
-  setActions(&scene->players[0], &scene->inputs[0]);
-  setActions(&scene->players[1], &scene->inputs[1]);
-  updateFrames(&scene->players[0], &scene->inputs[0]);
-  updateFrames(&scene->players[1], &scene->inputs[1]);
+  players[0]->setActions(&scene->players[0], &scene->inputs[0]);
+  players[1]->setActions(&scene->players[1], &scene->inputs[1]);
+  players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
+  players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
   applyMovement(&scene->players[0]);
   applyMovement(&scene->players[1]);
   setFacingDir(&scene->players[0], &scene->players[1]);
@@ -425,4 +384,50 @@ void GameManager::setFacingDir(PlayerEntity* p1, PlayerEntity* p2) {
     p1->facing_right = false;
     p2->facing_right = true;
   }
+}
+
+
+/**
+ * @brief Apply movement to a player using their velocities
+ * @param p Pointer to the player's entity in the game scene
+ * @note Handles collision
+ */
+void GameManager::applyMovement(PlayerEntity* p) {
+  // Don't collide left wall
+  if (p->x_pos + p->x_vel < GAME_BORDER_X0) {
+    p->x_vel = 0;
+    p->x_pos = GAME_BORDER_X0;
+  }
+
+  // Don't collide right wall
+  if (p->x_pos + p->x_vel + p->width > GAME_BORDER_X1) {
+    p->x_vel = 0;
+    p->x_pos = GAME_BORDER_X1 - p->width;
+  }
+
+  // Don't collide floor
+  if (p->y_pos + p->y_vel + p->height > GAME_BORDER_Y1) {
+    p->y_vel = GAME_BORDER_Y1 - (p->y_pos + p->height);
+  }
+
+  // Apply velocities
+  p->x_pos += p->x_vel;
+  p->y_pos += p->y_vel;
+
+  // Gravity
+  if (!isGrounded(p)) {
+    p->y_vel += p->gravity;
+  }
+
+  // Friction
+  // if(!isGrounded(p)) { return; }
+  if (p->x_vel < 0) {
+    if (isGrounded(p)) {p->x_vel += p->friction;}
+  } else if (p->x_vel > 0) {
+    if (isGrounded(p)) {p->x_vel -= p->friction;}
+  }
+}
+
+bool GameManager::isGrounded(PlayerEntity* p) {
+  return p->y_pos + p->height >= GAME_BORDER_Y1;
 }
