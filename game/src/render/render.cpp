@@ -12,6 +12,15 @@ RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
 
+  game_border.x = 50;
+  game_border.y = 0;
+  game_border.w = 2780;
+  game_border.h = 2100;
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.w = 1920;
+  viewport.h = 1080;
+
   // Create Window
   win = SDL_CreateWindow("Goblin Colosseum", 1920, 1080, SDL_WINDOW_OPENGL);
   if (win == nullptr) {
@@ -83,6 +92,10 @@ RenderEngine::RenderEngine() {
   convertBoxEntityToFRect(&start_menu.online_box, &start_menu.online_frect);
   convertBoxEntityToFRect(&start_menu.settings_box, &start_menu.settings_frect);
   convertBoxEntityToFRect(&start_menu.quit_box, &start_menu.quit_frect);
+
+  SDL_Surface* game_bg_png = IMG_Load("assets/backgrounds/game/background.png");
+  game_background = SDL_CreateTextureFromSurface(ren, game_bg_png);
+  SDL_DestroySurface(game_bg_png);
 
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
@@ -181,35 +194,6 @@ void RenderEngine::displayFPS(double FPS) {
 void RenderEngine::clearScreen() {
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
-
-  SDL_SetRenderDrawColor(ren, 150, 123, 68, 255); 
-  SDL_FRect floor{
-    0,
-    ENV_DIM_FLOOR_HEIGHT,
-    1920,
-    200
-  };
-  SDL_RenderFillRect(ren, &floor);  // Render the rectangle
-
-  SDL_SetRenderDrawColor(ren, 100, 100, 100, 255); 
-  SDL_FRect left_wall{
-    ENV_DIM_LEFT_WALL_X,
-    0,
-    ENV_DIM_WALL_THICKNESS,
-    1080
-  };
-
-  SDL_FRect right_wall{
-    ENV_DIM_RIGHT_WALL_X,
-    0,
-    ENV_DIM_WALL_THICKNESS,
-    1080
-  };
-
-  SDL_RenderFillRect(ren, &left_wall);  // Render the rectangle
-  SDL_RenderFillRect(ren, &right_wall);  // Render the rectangle
-
-  // SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
 }
 
 
@@ -239,4 +223,17 @@ void RenderEngine::renderStartMenu(int selection) {
   } else {
     SDL_RenderTexture(ren, start_menu.quit_u_tex, NULL, &start_menu.quit_frect);
   }
+}
+
+void RenderEngine::renderGameScene(const GameScene* scene) {
+  const PlayerEntity* p1 = &scene->players[0];
+  const PlayerEntity* p2 = &scene->players[1];
+
+  viewport.x = (p1->x_pos + p2->x_pos) / 2;
+  viewport.y = 1080;
+
+  SDL_RenderTexture(ren, game_background, NULL, NULL);
+  renderPlayer(p1);
+  renderPlayer(p2);
+
 }

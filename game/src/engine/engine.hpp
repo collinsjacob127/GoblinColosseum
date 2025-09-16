@@ -28,21 +28,17 @@
 #include <iomanip>
 #include <string.h>
 #include <SDL3/SDL.h>
+#include "util.hpp"
 
 #define ENABLE_HELPER_PRINTOUTS true
 
 // For rollback functionality demo:
-// #define MAX_ROLLBACK_FRAMES 600
-#define MAX_ROLLBACK_FRAMES 60
+#define MAX_ROLLBACK_FRAMES 600
+// #define MAX_ROLLBACK_FRAMES 60
 #define FRAME_ADVANTAGE_LIMIT 5
 #define INITIAL_FRAME 0
 
 #define MAX_INPUT_FRAMES 60
-
-#define ENV_DIM_WALL_THICKNESS 20
-#define ENV_DIM_FLOOR_HEIGHT 880
-#define ENV_DIM_LEFT_WALL_X 0
-#define ENV_DIM_RIGHT_WALL_X 1900
 
 struct Keybinds {
   SDL_Scancode up = SDL_SCANCODE_W;
@@ -165,8 +161,9 @@ class GameAllocator {
 class GameManager {
  public:
   GameAllocator allocator;
-
   InputSystem inputs[2];
+
+  BoxEntity border;
 
   unsigned int loc_pindex;
   unsigned int net_pindex;
@@ -186,4 +183,7 @@ class GameManager {
   void applyMovement(PlayerEntity* p);
   void updateFrames(PlayerEntity* p, const ButtonStates* in);
   void applyTickUpdates(GameScene* scene);
+  bool isActionable(PlayerEntity* p);
+  bool isGrounded(PlayerEntity* p);
+  void setBorder();
 };

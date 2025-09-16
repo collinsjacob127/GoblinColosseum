@@ -142,6 +142,7 @@ GameManager::GameManager() {
   loc_pindex = 0;
   net_pindex = 1;
   allocator = GameAllocator(net_pindex);
+  setBorder();
 }
 
 GameManager::GameManager(unsigned int net_p1_or_p2) {
@@ -153,6 +154,14 @@ GameManager::GameManager(unsigned int net_p1_or_p2) {
 
   allocator.loc_pindex = loc_pindex;
   allocator.net_pindex = net_pindex;
+  setBorder();
+}
+
+void GameManager::setBorder() {
+  border.x = 30;
+  border.y = 0;
+  border.width = 1852;
+  border.height = 1045;
 }
 
 /**
@@ -172,17 +181,26 @@ void GameManager::updateLocalInputs(SDL_Event* e) {
          sizeof(ButtonStates));
 }
 
+bool GameManager::isActionable(PlayerEntity* p) {
+  return (p->f_startup + p->f_active + p->f_recovery == 0);
+}
+
+bool GameManager::isGrounded(PlayerEntity* p) {
+  return p->y_pos + p->height >= border.height;
+}
+
 /**
  * @brief Set a player's actions given their button inputs
  */
 void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
+  if (!isActionable(p)) { return; }
   // Jump if on ground
-  if (in->up && p->y_pos + p->height >= ENV_DIM_FLOOR_HEIGHT) {
+  if (in->up && isGrounded(p)) {
     p->y_vel = p->jumping_v;
   }
 
   // Fast fall if in the air
-  if (in->down && p->y_pos + p->height < ENV_DIM_FLOOR_HEIGHT) {
+  if (in->down && !isGrounded(p)) {
     p->y_vel += p->fastfall_v;
   }
 
@@ -205,18 +223,18 @@ void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
  */
 void GameManager::applyMovement(PlayerEntity* p) {
   // Don't collide left wall
-  if (p->x_pos + p->x_vel < ENV_DIM_WALL_THICKNESS) {
-    p->x_vel = ENV_DIM_WALL_THICKNESS - p->x_pos;
+  if (p->x_pos + p->x_vel < border.x) {
+    p->x_vel = border.x - p->x_pos;
   }
 
   // Don't collide right wall
-  if (p->x_pos + p->x_vel + p->width > ENV_DIM_RIGHT_WALL_X) {
-    p->x_vel = ENV_DIM_RIGHT_WALL_X - (p->x_pos + p->width);
+  if (p->x_pos + p->x_vel + p->width > border.x+border.width) {
+    p->x_vel = (border.x+border.width) - (p->x_pos + p->width);
   }
 
   // Don't collide floor
-  if (p->y_pos + p->y_vel + p->height > ENV_DIM_FLOOR_HEIGHT) {
-    p->y_vel = ENV_DIM_FLOOR_HEIGHT - (p->y_pos + p->height);
+  if (p->y_pos + p->y_vel + p->height > border.height) {
+    p->y_vel = border.height - (p->y_pos + p->height);
   }
 
   // Apply velocities
@@ -224,11 +242,12 @@ void GameManager::applyMovement(PlayerEntity* p) {
   p->y_pos += p->y_vel;
 
   // Gravity
-  if (p->y_pos + p->height < ENV_DIM_FLOOR_HEIGHT) {
+  if (!isGrounded(p)) {
     p->y_vel += p->gravity;
   }
 
   // Friction
+  if(!isGrounded(p)) { return; }
   if (p->x_vel < 0) {
     p->x_vel += p->friction;
   } else if (p->x_vel > 0) {
@@ -243,7 +262,7 @@ void GameManager::applyMovement(PlayerEntity* p) {
  */
 void GameManager::updateFrames(PlayerEntity* p, const ButtonStates* in) {
   int startup_frames = 10;
-  int active_frames = 10;
+  int active_frames = 20;
   int recovery_frames = 10;
   // Attack
   // TODO: Add dictionary of attacks

@@ -40,11 +40,17 @@ struct StartMenu {
   SDL_Texture* quit_u_tex;
 };
 
+
 class RenderEngine {
  public:
   SDL_Window* win;
   SDL_Renderer* ren;
+
   TTF_Font* font;
+  SDL_Texture* game_background;
+
+  SDL_FRect game_border;
+  SDL_FRect viewport;
 
   StartMenu start_menu;
 
@@ -55,9 +61,9 @@ class RenderEngine {
   ~RenderEngine();
 
   void checkRenderDrivers();
+  void renderGameScene(const GameScene* scene);
   void renderPlayer(const PlayerEntity *player);
   void displayFPS(double FPS);
   void clearScreen();
   void renderStartMenu(int selection);
-
 };

@@ -173,15 +173,15 @@ int startLocalGame(RenderEngine* renderer) {
       game_timer.start();
 
       // ROLLBACK FUNCTIONALITY DEMO
-      // if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
-      //   std::cout << "pre-rollback" << std::endl;
-      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
-      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
-      //   game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
-      //   std::cout << "post-rollback" << std::endl;
-      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
-      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
-      // }
+      if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
+        std::cout << "pre-rollback" << std::endl;
+        std::cout << "  game cur tick: " << game.cur_tick << "\n"
+                  << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+        game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
+        std::cout << "post-rollback" << std::endl;
+        std::cout << "  game cur tick: " << game.cur_tick << "\n"
+                  << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      }
 
       // Move to next frame
       game.tick();
@@ -190,9 +190,10 @@ int startLocalGame(RenderEngine* renderer) {
       renderer->clearScreen();
 
       // Render player
-      renderer->renderPlayer(game.getPlayer(0)); // Player 1
-      renderer->renderPlayer(game.getPlayer(1)); // Player 2
-      std::cout << game.allocator.cur_tick << " " << game.cur_tick << std::endl;
+      renderer->renderGameScene(game.allocator.getCurrentScene());
+      // renderer->renderPlayer(game.getPlayer(0)); // Player 1
+      // renderer->renderPlayer(game.getPlayer(1)); // Player 2
+      std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
       renderer->displayFPS(frame_rate);
       SDL_RenderPresent(renderer->ren);  // Render the screen
     }

@@ -18,4 +18,5 @@ target_include_directories(engine
 target_link_libraries(engine 
 PRIVATE
     libs
+    util
 )
