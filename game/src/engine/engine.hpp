@@ -51,7 +51,8 @@ struct Keybinds {
   SDL_Scancode b4 = SDL_SCANCODE_K; // ps circle
   SDL_Scancode l1 = SDL_SCANCODE_O; // left bumper
   SDL_Scancode r1 = SDL_SCANCODE_L; // right bumper
-  SDL_Scancode l2 = SDL_SCANCODE_P; // left trigger
+  // SDL_Scancode l2 = SDL_SCANCODE_P; // left trigger
+  SDL_Scancode l2 = SDL_SCANCODE_LSHIFT; // left trigger
   SDL_Scancode r2 = SDL_SCANCODE_SEMICOLON; // right trigger
 };
 
@@ -88,8 +89,11 @@ class InputSystem {
 };
 
 struct PlayerEntity {
+  std::string state_tag = "STANDING";
   float x_pos = 1920.0/2.0;
   float y_pos = 1080.0/2.0;
+
+  bool facing_right = true;
 
   float x_vel = 0.0;
   float y_vel = 0.0;
@@ -97,9 +101,18 @@ struct PlayerEntity {
   float width = 100.0;
   float height = 300.0;
 
-  float walking_v = 15.0;
+  float walking_v = 10.0;
+  float running_v = 25.0;
+  float airdash_v = 20.0;
+  int f_airdash_recovery = 5;
   float jumping_v = -35.0;
+  int f_jumping_recovery = 5;
   float fastfall_v = 3.0;
+  float backdash_v = -20.0;
+  int f_backdash_recovery = 20.0;
+
+  int air_action_cnt = 0;
+  int air_action_max = 2;
 
   int f_startup = 0;
   int f_active = 0;
@@ -111,6 +124,14 @@ struct PlayerEntity {
   float disp_r = 0.0;
   float disp_g = 200.0;
   float disp_b = 20.0;
+};
+
+class PlayerController {
+ public:
+  PlayerController();
+  
+ private:
+  
 };
 
 // TODO: Implement rollback :)
@@ -186,4 +207,7 @@ class GameManager {
   bool isActionable(PlayerEntity* p);
   bool isGrounded(PlayerEntity* p);
   void setBorder();
+  void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
+  bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
+  bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
 };

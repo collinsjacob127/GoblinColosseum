@@ -13,38 +13,51 @@ InputSystem::InputSystem() {}
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
 void InputSystem::updateButtonStates(const SDL_Event *e) {
   if (e->type == SDL_EVENT_KEY_DOWN) {
-    if (e->key.scancode == bindings.up) { buttons.up = true; }
-    else if (e->key.scancode == bindings.down) { buttons.down = true; }
-    else if (e->key.scancode == bindings.left) { buttons.left = true; }
-    else if (e->key.scancode == bindings.right) { buttons.right = true; }
-    else if (e->key.scancode == bindings.b1 && !e->key.repeat) {buttons.b1 = true; }
-    else if (e->key.scancode == bindings.b2 && !e->key.repeat) {buttons.b2 = true; }
-    else if (e->key.scancode == bindings.b3 && !e->key.repeat) {buttons.b3 = true; }
-    else if (e->key.scancode == bindings.b4 && !e->key.repeat) {buttons.b4 = true; }
-    else if (e->key.scancode == bindings.l1 && !e->key.repeat) {buttons.l1 = true; }
-    else if (e->key.scancode == bindings.r1 && !e->key.repeat) {buttons.r1 = true; }
-    else if (e->key.scancode == bindings.l2 && !e->key.repeat) {buttons.l2 = true; }
-    else if (e->key.scancode == bindings.r2 && !e->key.repeat) {buttons.r2 = true; }
+    if (!e->key.repeat) {
+      if (e->key.scancode == bindings.up) { buttons.up = true; }
+      else if (e->key.scancode == bindings.down) { buttons.down = true; }
+      else if (e->key.scancode == bindings.left) { buttons.left = true; }
+      else if (e->key.scancode == bindings.right) { buttons.right = true; }
+      else if (e->key.scancode == bindings.b1 ) {buttons.b1 = true; }
+      else if (e->key.scancode == bindings.b2 ) {buttons.b2 = true; }
+      else if (e->key.scancode == bindings.b3) {buttons.b3 = true; }
+      else if (e->key.scancode == bindings.b4) {buttons.b4 = true; }
+      else if (e->key.scancode == bindings.l1) {buttons.l1 = true; }
+      else if (e->key.scancode == bindings.r1) {buttons.r1 = true; }
+      else if (e->key.scancode == bindings.l2) {buttons.l2 = true; }
+      else if (e->key.scancode == bindings.r2) {buttons.r2 = true; }
+    }
   } else if (e->type == SDL_EVENT_KEY_UP) {
     if (e->key.scancode == bindings.up) { buttons.up = false; }
     else if (e->key.scancode == bindings.down) { buttons.down = false; }
     else if (e->key.scancode == bindings.left) { buttons.left = false; }
     else if (e->key.scancode == bindings.right) { buttons.right = false; }
-    else if (e->key.scancode == bindings.b1 && !e->key.repeat) {buttons.b1 = false; }
-    else if (e->key.scancode == bindings.b2 && !e->key.repeat) {buttons.b2 = false; }
-    else if (e->key.scancode == bindings.b3 && !e->key.repeat) {buttons.b3 = false; }
-    else if (e->key.scancode == bindings.b4 && !e->key.repeat) {buttons.b4 = false; }
-    else if (e->key.scancode == bindings.l1 && !e->key.repeat) {buttons.l1 = false; }
-    else if (e->key.scancode == bindings.r1 && !e->key.repeat) {buttons.r1 = false; }
-    else if (e->key.scancode == bindings.l2 && !e->key.repeat) {buttons.l2 = false; }
-    else if (e->key.scancode == bindings.r2 && !e->key.repeat) {buttons.r2 = false; }
+    else if (e->key.scancode == bindings.b1) {buttons.b1 = false; }
+    else if (e->key.scancode == bindings.b2) {buttons.b2 = false; }
+    else if (e->key.scancode == bindings.b3) {buttons.b3 = false; }
+    else if (e->key.scancode == bindings.b4) {buttons.b4 = false; }
+    else if (e->key.scancode == bindings.l1) {buttons.l1 = false; }
+    else if (e->key.scancode == bindings.r1) {buttons.r1 = false; }
+    else if (e->key.scancode == bindings.l2) {buttons.l2 = false; }
+    else if (e->key.scancode == bindings.r2) {buttons.r2 = false; }
   }
 }
 
 void showButtonStates(const ButtonStates* btn) {
-  // Display state of each button here.
-  //    <O>.<O>
-  // naw dawg fug dat
+  std::cout << "Buttons: ";
+  if (btn->up) {std::cout << "up ";}
+  if (btn->down) {std::cout << "down ";}
+  if (btn->left) {std::cout << "left ";}
+  if (btn->right) {std::cout << "right ";}
+  if (btn->b1) {std::cout << "b1 ";}
+  if (btn->b2) {std::cout << "b2 ";}
+  if (btn->b3) {std::cout << "b3 ";}
+  if (btn->b4) {std::cout << "b4 ";}
+  if (btn->l1) {std::cout << "l1 ";}
+  if (btn->l2) {std::cout << "l2 ";}
+  if (btn->r1) {std::cout << "r1 ";}
+  if (btn->r2) {std::cout << "r2 ";}
+  std::cout << std::endl;
 }
 
 void InputSystem::resetButtonStates() {
@@ -194,27 +207,88 @@ bool GameManager::isGrounded(PlayerEntity* p) {
  */
 void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
   if (!isActionable(p)) { return; }
-  // Jump if on ground
-  if (in->up && isGrounded(p)) {
-    p->y_vel = p->jumping_v;
-  }
 
-  // Fast fall if in the air
-  if (in->down && !isGrounded(p)) {
-    p->y_vel += p->fastfall_v;
-  }
+  // Grounded movement
+  if (isGrounded(p)) {
+    // Reset # air actions once grounded
+    p->air_action_cnt = 0;
+    // Jump
+    if (in->up) {
+      p->y_vel = p->jumping_v;
+      p->f_recovery = p->f_jumping_recovery;
+    }
+    // Walk left
+    if (in->left && p->x_vel <= 0) {
+      p->x_vel = -p->walking_v;
+    }
+    // Walk right if stopped
+    if (in->right && p->x_vel >= 0) {
+      p->x_vel = p->walking_v;
+    }
+    // Facing forward, sprint
+    if (p->facing_right && in->right && in->l2) {
+      p->x_vel = p->running_v;
+    } else if (!p->facing_right && in->left && in->l2) {
+      p->x_vel = -p->running_v;
+    }
+    // Holding back, backdash
+    if (p->facing_right && in->left && in->l2) {
+      p->x_vel = p->backdash_v;
+      p->f_recovery = p->f_backdash_recovery;
+    } else if (!p->facing_right && in->right && in->l2) {
+      p->x_vel = -p->backdash_v;
+      p->f_recovery = p->f_backdash_recovery;
+    }
+ // Aerial Movement
+ } else {
+    // Fast fall if in the air
+    if (in->down) {
+      p->y_vel += p->fastfall_v;
+    }
 
-  // Walk left if stopped
-  if (in->left && p->x_vel <= 0) {
-    p->x_vel = -p->walking_v;
-  }
+    // ALL BELOW USE / REQUIRE AN AIR ACTION
+    if (p->air_action_cnt < p->air_action_max) {
 
-  // Walk right if stopped
-  if (in->right && p->x_vel >= 0) {
-    p->x_vel = p->walking_v;
-  }
+    if (in->up) {
+      p->y_vel = p->jumping_v;
+      p->air_action_cnt++;
+      p->f_recovery = p->f_jumping_recovery;
+    }
+
+    // Holding forward, airdash
+    if (holdingForward(p, in) && in->l2) {
+      if (p->facing_right) {
+        p->x_vel = p->airdash_v;
+      } else {
+        p->x_vel = -p->airdash_v;
+      }
+      p->f_recovery = p->f_airdash_recovery;
+      p->air_action_cnt++;
+    }
+
+    // Holding back, backdash
+    if (holdingBack(p, in) && in->l2) {
+      if (p->facing_right) {
+        p->x_vel = p->backdash_v;
+      } else {
+        p->x_vel = -p->backdash_v;
+      }
+      p->f_recovery = p->f_backdash_recovery;
+      p->air_action_cnt++;
+    }
+    }
+ }
+
+
 }
 
+bool GameManager::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
+  return (p->facing_right && in->right) || (!p->facing_right && in->left);
+}
+
+bool GameManager::holdingBack(const PlayerEntity* p, const ButtonStates* in) {
+  return (p->facing_right && in->left) || (!p->facing_right && in->right);
+}
 
 /**
  * @brief Apply movement to a player using their velocities
@@ -224,12 +298,14 @@ void GameManager::setActions(PlayerEntity* p, const ButtonStates* in) {
 void GameManager::applyMovement(PlayerEntity* p) {
   // Don't collide left wall
   if (p->x_pos + p->x_vel < border.x) {
-    p->x_vel = border.x - p->x_pos;
+    p->x_vel = 0;
+    p->x_pos = border.x;
   }
 
   // Don't collide right wall
   if (p->x_pos + p->x_vel + p->width > border.x+border.width) {
-    p->x_vel = (border.x+border.width) - (p->x_pos + p->width);
+    p->x_vel = 0;
+    p->x_pos = border.x + border.width - p->width;
   }
 
   // Don't collide floor
@@ -247,12 +323,13 @@ void GameManager::applyMovement(PlayerEntity* p) {
   }
 
   // Friction
-  if(!isGrounded(p)) { return; }
+  // if(!isGrounded(p)) { return; }
   if (p->x_vel < 0) {
-    p->x_vel += p->friction;
+    if (isGrounded(p)) {p->x_vel += p->friction;}
   } else if (p->x_vel > 0) {
-    p->x_vel -= p->friction;
+    if (isGrounded(p)) {p->x_vel -= p->friction;}
   }
+
 }
 
 
@@ -329,6 +406,7 @@ void GameManager::applyTickUpdates(GameScene* scene) {
   updateFrames(&scene->players[1], &scene->inputs[1]);
   applyMovement(&scene->players[0]);
   applyMovement(&scene->players[1]);
+  setFacingDir(&scene->players[0], &scene->players[1]);
 }
 
 /**
@@ -337,4 +415,14 @@ void GameManager::applyTickUpdates(GameScene* scene) {
  */
 PlayerEntity* GameManager::getPlayer(unsigned int pid) {
   return &allocator.getCurrentScene()->players[pid];
+}
+
+void GameManager::setFacingDir(PlayerEntity* p1, PlayerEntity* p2) {
+  if (p1->x_pos + p1->width/2 < p2->x_pos + p2->width/2) {
+    p1->facing_right = true;
+    p2->facing_right = false;
+  } else {
+    p1->facing_right = false;
+    p2->facing_right = true;
+  }
 }

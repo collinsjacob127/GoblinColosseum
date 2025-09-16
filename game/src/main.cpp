@@ -32,6 +32,7 @@
  */ 
 int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
+void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate);
 
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
@@ -46,8 +47,11 @@ int start(RenderEngine* renderer) {
   // Used to display FPS
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
   double frame_rate = -1.0;
-  Timer timer;
+  Timer timer, fps_timer;
   timer.start();
+  fps_timer.start();
+  unsigned long long n_ticks = 1;
+
   InputSystem inputs;
   /**
    * nothing: -1
@@ -85,9 +89,10 @@ int start(RenderEngine* renderer) {
     }
 
     // Once per frame, display everything
-    if (timer.duration() >= min_frame_duration) {
-      frame_rate = (double) 1 / timer.duration();
-      timer.start();
+    if (timer.duration() >= (double) min_frame_duration*n_ticks) {
+      frame_rate = (double) 1 / fps_timer.duration();
+      fps_timer.start();
+      n_ticks++;
 
       // Navigate with keyboard
       if (selection == -1 && (inputs.buttons.up || inputs.buttons.down)) {
@@ -146,8 +151,9 @@ int startLocalGame(RenderEngine* renderer) {
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
   // Used to display FPS
   double frame_rate = -1.0;
-  Timer game_timer;
+  Timer game_timer, fps_timer;
   game_timer.start();
+  fps_timer.start();
 
   // MAIN GAME LOOP
   bool quit = false;
@@ -166,37 +172,46 @@ int startLocalGame(RenderEngine* renderer) {
     }
 
     // Cap frame rate at 60 fps
-    if (game_timer.duration() >= min_frame_duration) {
+    if (game_timer.duration() >= (double) min_frame_duration*game.cur_tick) {
     // if (game_timer.duration() >= 0) {
       // Reset Timer
-      frame_rate = (double) 1 / game_timer.duration();
-      game_timer.start();
+      frame_rate = (double) 1 / fps_timer.duration();
+      fps_timer.start();
 
       // ROLLBACK FUNCTIONALITY DEMO
-      if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
-        std::cout << "pre-rollback" << std::endl;
-        std::cout << "  game cur tick: " << game.cur_tick << "\n"
-                  << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
-        game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
-        std::cout << "post-rollback" << std::endl;
-        std::cout << "  game cur tick: " << game.cur_tick << "\n"
-                  << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
-      }
+      // if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
+      //   std::cout << "pre-rollback" << std::endl;
+      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
+      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      //   game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
+      //   std::cout << "post-rollback" << std::endl;
+      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
+      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      // }
+
+      // Debug inputs
+      std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
+      showButtonStates(&(game.inputs[0].buttons));
+      std::cout << std::endl;
 
       // Move to next frame
       game.tick();
-
-      // Clear screen
-      renderer->clearScreen();
-
-      // Render player
-      renderer->renderGameScene(game.allocator.getCurrentScene());
-      // renderer->renderPlayer(game.getPlayer(0)); // Player 1
-      // renderer->renderPlayer(game.getPlayer(1)); // Player 2
-      std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
-      renderer->displayFPS(frame_rate);
-      SDL_RenderPresent(renderer->ren);  // Render the screen
+      // Only render if game is caught up to expected time of current frame
+      if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
+        renderGame(&game, renderer, frame_rate);
+      }
     }
   }
   return 1;
+}
+
+void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate) {
+  // Clear screen
+  renderer->clearScreen();
+  // Render player
+  renderer->renderGameScene(game->allocator.getCurrentScene());
+  // renderer->renderPlayer(game.getPlayer(0)); // Player 1
+  // renderer->renderPlayer(game.getPlayer(1)); // Player 2
+  renderer->displayFPS(frame_rate);
+  SDL_RenderPresent(renderer->ren);  // Render the screen
 }
