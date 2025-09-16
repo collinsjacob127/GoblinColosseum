@@ -48,6 +48,7 @@ class RenderEngine {
 
   TTF_Font* font;
   SDL_Texture* game_background;
+  SDL_Texture* player_tex;
 
   SDL_FRect game_border;
   SDL_FRect viewport;

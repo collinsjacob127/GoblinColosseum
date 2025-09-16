@@ -97,6 +97,10 @@ RenderEngine::RenderEngine() {
   game_background = SDL_CreateTextureFromSurface(ren, game_bg_png);
   SDL_DestroySurface(game_bg_png);
 
+  SDL_Surface* gob0_png = IMG_Load("assets/characters/gob0/GOB0.png");
+  player_tex = SDL_CreateTextureFromSurface(ren, gob0_png);
+  SDL_DestroySurface(gob0_png);
+
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
 }
@@ -132,10 +136,11 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->width,
     p->height
   };
-  // Set render draw color to green
-  SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            
-  // Render the rectangle
-  SDL_RenderFillRect(ren, &green_square);  
+  // // Set render draw color to green
+  // SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            
+  // // Render the rectangle
+  // SDL_RenderFillRect(ren, &green_square);  
+  SDL_RenderTexture(ren, player_tex, NULL, &green_square);
 
   if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
 
