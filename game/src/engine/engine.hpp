@@ -64,10 +64,14 @@ struct ButtonStates {
   bool down = false;
   bool left = false;
   bool right = false;
-  bool b1 = false; // ps square
-  bool b2 = false; // ps triangle
-  bool b3 = false; // ps X
-  bool b4 = false; // ps circle
+  // PS square
+  bool b1 = false; 
+  // ps triangle
+  bool b2 = false; 
+  // ps X
+  bool b3 = false; 
+  // ps circle
+  bool b4 = false; 
   bool l1 = false;
   bool r1 = false;
   bool l2 = false;
@@ -84,6 +88,7 @@ class InputSystem {
 
   InputSystem();
   void updateButtonStates(const SDL_Event *e);
+  void resetButtonStates();
 };
 
 struct PlayerEntity {

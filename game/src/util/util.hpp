@@ -40,3 +40,18 @@ class Timer {
   // Flag to indicate whether the timer has been started.
   bool has_started;
 };
+
+struct Coordinate {
+  float x = 0.0;
+  float y = 0.0;
+};
+
+struct BoxEntity {
+  float x = 0.0;
+  float y = 0.0;
+  float width = 10.0;
+  float height = 10.0;
+};
+
+bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box);
+void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect);

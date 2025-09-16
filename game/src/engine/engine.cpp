@@ -13,7 +13,7 @@ InputSystem::InputSystem() {}
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
 void InputSystem::updateButtonStates(const SDL_Event *e) {
   if (e->type == SDL_EVENT_KEY_DOWN) {
-    if (e->key.scancode == bindings.up && !e->key.repeat) { buttons.up = true; }
+    if (e->key.scancode == bindings.up) { buttons.up = true; }
     else if (e->key.scancode == bindings.down) { buttons.down = true; }
     else if (e->key.scancode == bindings.left) { buttons.left = true; }
     else if (e->key.scancode == bindings.right) { buttons.right = true; }
@@ -45,6 +45,10 @@ void showButtonStates(const ButtonStates* btn) {
   // Display state of each button here.
   //    <O>.<O>
   // naw dawg fug dat
+}
+
+void InputSystem::resetButtonStates() {
+  buttons = ButtonStates();
 }
 
 /*****************************

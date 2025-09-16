@@ -39,15 +39,92 @@ int main(int argc, char* argv[]) {
   start(&renderer);
   // startLocalGame(&renderer);
 
-  SDL_DestroyRenderer(renderer.ren);
-  SDL_DestroyWindow(renderer.win);
-  SDL_Quit();
-
   return 0;
 }
 
 int start(RenderEngine* renderer) {
+  // Used to display FPS
+  double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
+  double frame_rate = -1.0;
+  Timer timer;
+  timer.start();
+  InputSystem inputs;
+  /**
+   * nothing: -1
+   * local: 0
+   * online: 1
+   * settings: 2
+   * quit: 3
+   */
+  int selection = -1;
+  int n_selections = 4;
+  bool clicked = false;
+  Coordinate mouse_pos;
 
+  while (!clicked) {
+    // Handle mouse events
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+      switch (e.type) {
+        case SDL_EVENT_QUIT: { selection = 3; clicked = true; }
+        case SDL_EVENT_KEY_DOWN: {
+          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true; }
+        }
+        case SDL_EVENT_MOUSE_MOTION: {
+          mouse_pos.x = e.motion.x;
+          mouse_pos.y = e.motion.y;
+          // Check if mouse is on a button
+          if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.local_box)) {selection = 0;}
+          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.online_box)) {selection = 1;}
+          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.settings_box)) {selection = 2;}
+          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.quit_box)) {selection = 3;}
+        }
+      }
+      // Send keyboard to game inputs
+      inputs.updateButtonStates(&e);
+    }
+
+    // Once per frame, display everything
+    if (timer.duration() >= min_frame_duration) {
+      frame_rate = (double) 1 / timer.duration();
+      timer.start();
+
+      // Navigate with keyboard
+      if (selection == -1 && (inputs.buttons.up || inputs.buttons.down)) {
+        selection = 0;
+      } else if (inputs.buttons.up) {
+        selection = (n_selections + selection - 1) % n_selections;
+      } else if (inputs.buttons.down) {
+        selection = (selection + 1) % n_selections;
+      }
+      if (inputs.buttons.b3) {
+        clicked = true;
+      }
+      inputs.resetButtonStates();
+
+      renderer->clearScreen();
+      
+      renderer->renderStartMenu(selection);
+      renderer->displayFPS(frame_rate);
+      SDL_RenderPresent(renderer->ren);  // Render the screen
+    }
+  }
+  // Selection has been chosen
+  switch (selection) {
+    case 0: {
+      startLocalGame(renderer);
+      break;
+    }
+    case 1: {
+      std::cout << "Online not yet implemented" << std::endl;
+      break;
+    }
+    case 2: {
+      std::cout << "Settings not yet implemented" << std::endl;
+      break;
+    }
+  }
+  return 0;
 }
 
 int startLocalGame(RenderEngine* renderer) {

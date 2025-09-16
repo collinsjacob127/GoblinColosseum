@@ -30,14 +30,79 @@ RenderEngine::RenderEngine() {
   }
 
   // Load a font
-  font = TTF_OpenFont("assets/fonts/OpenSans-Regular.ttf", 24);
+  font = TTF_OpenFont("assets/fonts/pixel-mono/editundo.ttf", 24);
   if (!font) {
     std::cerr << "Font load error: " << SDL_GetError() << std::endl;
     exit(EXIT_FAILURE);
   }
 
+  /**
+   * INITIALIZING ASSETS FOR START MENU
+   */
+  // Background
+  SDL_Surface* start_bg_png = IMG_Load("assets/backgrounds/start/title-background.png");
+  // Selected buttons
+  SDL_Surface* local_s_png = IMG_Load("assets/backgrounds/start/local-selected.png");
+  SDL_Surface* online_s_png = IMG_Load("assets/backgrounds/start/online-selected.png");
+  SDL_Surface* settings_s_png = IMG_Load("assets/backgrounds/start/settings-selected.png");
+  SDL_Surface* quit_s_png = IMG_Load("assets/backgrounds/start/quit-selected.png");
+  // Unselected buttons
+  SDL_Surface* local_u_png = IMG_Load("assets/backgrounds/start/local-unselected.png");
+  SDL_Surface* online_u_png = IMG_Load("assets/backgrounds/start/online-unselected.png");
+  SDL_Surface* settings_u_png = IMG_Load("assets/backgrounds/start/settings-unselected.png");
+  SDL_Surface* quit_u_png = IMG_Load("assets/backgrounds/start/quit-unselected.png");
+  // Verify read correctly
+  if (start_bg_png == nullptr || local_s_png == nullptr || online_s_png == nullptr
+      || settings_s_png == nullptr || quit_s_png == nullptr || local_u_png == nullptr ||
+      settings_u_png == nullptr || online_u_png == nullptr || quit_u_png == nullptr) {
+    std::cerr << "failed to load png\n";
+  }
+  // background
+  start_menu.bg_tex = SDL_CreateTextureFromSurface(ren, start_bg_png);
+  // selected buttons
+  start_menu.local_s_tex = SDL_CreateTextureFromSurface(ren, local_s_png);
+  start_menu.online_s_tex = SDL_CreateTextureFromSurface(ren, online_s_png);
+  start_menu.settings_s_tex = SDL_CreateTextureFromSurface(ren, settings_s_png);
+  start_menu.quit_s_tex = SDL_CreateTextureFromSurface(ren, quit_s_png);
+  // unselected buttons
+  start_menu.local_u_tex = SDL_CreateTextureFromSurface(ren, local_u_png);
+  start_menu.online_u_tex = SDL_CreateTextureFromSurface(ren, online_u_png);
+  start_menu.settings_u_tex = SDL_CreateTextureFromSurface(ren, settings_u_png);
+  start_menu.quit_u_tex = SDL_CreateTextureFromSurface(ren, quit_u_png);
+
+  SDL_DestroySurface(start_bg_png);
+  SDL_DestroySurface(local_s_png);
+  SDL_DestroySurface(local_u_png);
+  SDL_DestroySurface(online_s_png);
+  SDL_DestroySurface(online_u_png);
+  SDL_DestroySurface(settings_s_png);
+  SDL_DestroySurface(settings_u_png);
+  SDL_DestroySurface(quit_s_png);
+  SDL_DestroySurface(quit_u_png);
+  convertBoxEntityToFRect(&start_menu.local_box, &start_menu.local_frect);
+  convertBoxEntityToFRect(&start_menu.online_box, &start_menu.online_frect);
+  convertBoxEntityToFRect(&start_menu.settings_box, &start_menu.settings_frect);
+  convertBoxEntityToFRect(&start_menu.quit_box, &start_menu.quit_frect);
+
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
+}
+
+RenderEngine::~RenderEngine() {
+  // Cleanup menu textures
+  SDL_DestroyTexture(start_menu.bg_tex);
+  SDL_DestroyTexture(start_menu.local_s_tex);
+  SDL_DestroyTexture(start_menu.local_u_tex);
+  SDL_DestroyTexture(start_menu.online_s_tex);
+  SDL_DestroyTexture(start_menu.online_u_tex);
+  SDL_DestroyTexture(start_menu.settings_s_tex);
+  SDL_DestroyTexture(start_menu.settings_u_tex);
+  SDL_DestroyTexture(start_menu.quit_s_tex);
+  SDL_DestroyTexture(start_menu.quit_u_tex);
+
+  SDL_DestroyRenderer(ren);
+  SDL_DestroyWindow(win);
+  SDL_Quit();
 }
 
 void RenderEngine::checkRenderDrivers() {
@@ -54,9 +119,10 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->width,
     p->height
   };
-
-  SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            // Set render draw color to green
-  SDL_RenderFillRect(ren, &green_square);  // Render the rectangle
+  // Set render draw color to green
+  SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            
+  // Render the rectangle
+  SDL_RenderFillRect(ren, &green_square);  
 
   if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
 
@@ -147,3 +213,30 @@ void RenderEngine::clearScreen() {
 }
 
 
+void RenderEngine::renderStartMenu(int selection) {
+  SDL_RenderTexture(ren, start_menu.bg_tex, NULL, NULL);
+  // Local is hovered
+  if (selection == 0) {
+    SDL_RenderTexture(ren, start_menu.local_s_tex, NULL, &start_menu.local_frect);
+  } else {
+    SDL_RenderTexture(ren, start_menu.local_u_tex, NULL, &start_menu.local_frect);
+  }
+  // Online is hovered
+  if (selection == 1) {
+    SDL_RenderTexture(ren, start_menu.online_s_tex, NULL, &start_menu.online_frect);
+  } else {
+    SDL_RenderTexture(ren, start_menu.online_u_tex, NULL, &start_menu.online_frect);
+  }
+  // Settings is hovered
+  if (selection == 2) {
+    SDL_RenderTexture(ren, start_menu.settings_s_tex, NULL, &start_menu.settings_frect);
+  } else {
+    SDL_RenderTexture(ren, start_menu.settings_u_tex, NULL, &start_menu.settings_frect);
+  }
+  // Quit is hovered
+  if (selection == 3) {
+    SDL_RenderTexture(ren, start_menu.quit_s_tex, NULL, &start_menu.quit_frect);
+  } else {
+    SDL_RenderTexture(ren, start_menu.quit_u_tex, NULL, &start_menu.quit_frect);
+  }
+}

@@ -29,3 +29,15 @@ double Timer::duration() {
     // Convert nanoseconds to seconds as a long double.
     return static_cast<double>(ns) / 1e9;
 }
+
+bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box) {
+  return (coord->x <= box->x + box->width && coord->x >= box->x) && \
+         (coord->y <= box->y + box->height && coord->y >= box->y);
+}
+
+void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect) {
+  frect->x = box->x;
+  frect->y = box->y;
+  frect->h = box->height;
+  frect->w = box->width;
+}
