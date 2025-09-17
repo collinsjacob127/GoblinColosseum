@@ -4,11 +4,14 @@
 
 #include "render.hpp"
 
+void test_render_include_works() {
+    std::cout << "Include works!\n";
+}
+
 RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
 
-  // Initialize values
   game_border.x = GAME_BORDER_X0;
   game_border.y = GAME_BORDER_Y0;
   game_border.w = GAME_BORDER_X1 - GAME_BORDER_X0;
@@ -30,13 +33,24 @@ RenderEngine::RenderEngine() {
     exit(EXIT_FAILURE);
   }
 
+  // Create Renderer
+  ren = SDL_CreateRenderer(win, "gpu");
+  if (ren == nullptr) {
+    std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
+    SDL_DestroyWindow(win);
+    SDL_Quit();
+    exit(EXIT_FAILURE);
+  }
+  
   // Bind GPU
-  device = SDL_CreateGPUDevice( SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, true, NULL);
-  if (!device) { std::cerr << "\nSDL Failed to capture GPU Device" << std::endl; }
-  SDL_ClaimWindowForGPUDevice(device, win);
-}
+  // device = SDL_CreateGPUDevice( SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, true, NULL);
+  // if (!device) {
+  //   std::cerr << "\nSDL Failed to capture GPU Device" << std::endl;
+  // }
+  // SDL_ClaimWindowForGPUDevice(device, win);
+  
+  // ren_tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB32);
 
-void RenderEngine::loadMenuResources() {
   // Load a font
   font = TTF_OpenFont("assets/fonts/pixel-mono/editundo.ttf", 24);
   if (!font) {
@@ -99,9 +113,12 @@ void RenderEngine::loadMenuResources() {
   SDL_Surface* gob0_png = IMG_Load("assets/characters/gob0/GOB0.png");
   player_tex = SDL_CreateTextureFromSurface(ren, gob0_png);
   SDL_DestroySurface(gob0_png);
+
+  SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
+  SDL_RenderClear(ren);         // Clear the renderer
 }
 
-void RenderEngine::cleanMenuResources() {
+RenderEngine::~RenderEngine() {
   // Cleanup menu textures
   SDL_DestroyTexture(start_menu.bg_tex);
   SDL_DestroyTexture(start_menu.local_s_tex);
@@ -112,14 +129,9 @@ void RenderEngine::cleanMenuResources() {
   SDL_DestroyTexture(start_menu.settings_u_tex);
   SDL_DestroyTexture(start_menu.quit_s_tex);
   SDL_DestroyTexture(start_menu.quit_u_tex);
-  SDL_DestroyTexture(game_background);
-  SDL_DestroyTexture(player_tex);
-}
 
-RenderEngine::~RenderEngine() {
-  // cleanMenuResources();
-  SDL_DestroyGPUDevice(device);
-  // SDL_DestroyRenderer(ren);
+  // SDL_DestroyGPUDevice(device);
+  SDL_DestroyRenderer(ren);
   SDL_DestroyWindow(win);
   SDL_Quit();
 }
@@ -256,39 +268,4 @@ void RenderEngine::renderGameScene(const GameScene* scene) {
   renderPlayer(p1);
   renderPlayer(p2);
 
-}
-
-void RenderEngine::render(const GameManager* game) {
-  SDL_GPUCommandBuffer* command_buffer = SDL_AcquireGPUCommandBuffer(device);
-
-  SDL_GPUTexture* swp_texture;
-  Uint32 width, height;
-  SDL_WaitAndAcquireGPUSwapchainTexture(command_buffer, win, &swp_texture, &width, &height);
-  // End early on bad swp texture
-  if (!swp_texture) {
-    // ALWAYS NEED TO SUBMIT COMMAND BUFFER
-    SDL_SubmitGPUCommandBuffer(command_buffer);
-    return;
-  }
-
-  // Create a color target
-  SDL_GPUColorTargetInfo col_tgt_info{};
-  // Clear color
-  col_tgt_info.clear_color = {255/255.0f, 219/255.0f, 255/255.0f};
-  // SDL_GPU_LOADOP_LOAD to keep previous content instead
-  col_tgt_info.load_op = SDL_GPU_LOADOP_CLEAR; 
-  // Store content to a texture
-  col_tgt_info.store_op = SDL_GPU_STOREOP_STORE;
-  col_tgt_info.texture = swp_texture;
-
-  // Begin a render pass
-  SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(command_buffer, &col_tgt_info, 1, NULL);
-
-  // Draw Something
-  // ...
-
-  // End the render pass
-  SDL_EndGPURenderPass(render_pass);
-
-  SDL_SubmitGPUCommandBuffer(command_buffer);
 }

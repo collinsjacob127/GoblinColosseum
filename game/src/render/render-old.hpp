@@ -16,6 +16,8 @@
 #include "util.hpp"
 
 
+void test_render_include_works();
+
 struct StartMenu {
   BoxEntity local_box = {595.0, 425.0, 735.0, 126.0};
   BoxEntity online_box = {592.0, 581.0, 735.0, 126.0};
@@ -66,10 +68,8 @@ class RenderEngine {
   ~RenderEngine();
 
   void checkRenderDrivers();
-  void render(const GameManager* game);
   
-  void loadMenuResources();
-  void cleanMenuResources();
+
   void renderGameScene(const GameScene* scene);
   void renderPlayer(const PlayerEntity *player);
   void displayFPS(double FPS);

@@ -37,6 +37,7 @@ void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate);
 
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
+  renderer.checkRenderDrivers();
 
   // start(&renderer);
   startLocalGame(&renderer);
@@ -215,11 +216,10 @@ int startLocalGame(RenderEngine* renderer) {
 
 void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate) {
   // Clear screen
-  renderer->clearScreen();
+  // renderer->clearScreen();
   // Render player
-  renderer->renderGameScene(game->allocator.getCurrentScene());
-  // renderer->renderPlayer(game.getPlayer(0)); // Player 1
-  // renderer->renderPlayer(game.getPlayer(1)); // Player 2
-  renderer->displayFPS(frame_rate);
-  SDL_RenderPresent(renderer->ren);  // Render the screen
+  // renderer->renderGameScene(game->allocator.getCurrentScene());
+  // renderer->displayFPS(frame_rate);
+  // SDL_RenderPresent(renderer->ren);  // Render the screen
+  renderer->render(game);
 }
