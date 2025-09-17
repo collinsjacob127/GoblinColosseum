@@ -12,17 +12,21 @@ RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
 
-  game_border.x = 50;
-  game_border.y = 0;
-  game_border.w = 2780;
-  game_border.h = 2100;
+  game_border.x = GAME_BORDER_X0;
+  game_border.y = GAME_BORDER_Y0;
+  game_border.w = GAME_BORDER_X1 - GAME_BORDER_X0;
+  game_border.h = GAME_BORDER_Y1 - GAME_BORDER_Y0;
   viewport.x = 0;
   viewport.y = 0;
   viewport.w = 1920;
   viewport.h = 1080;
 
   // Create Window
-  win = SDL_CreateWindow("Goblin Colosseum", 1920, 1080, SDL_WINDOW_OPENGL);
+  SDL_WindowFlags flags = {};
+  flags |= SDL_WINDOW_OPENGL;
+  flags |= SDL_WINDOW_BORDERLESS;
+  flags |= SDL_WINDOW_FULLSCREEN;
+  win = SDL_CreateWindow("Goblin Colosseum", 1920, 1080, flags);
   if (win == nullptr) {
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
     SDL_Quit();
@@ -37,6 +41,14 @@ RenderEngine::RenderEngine() {
     SDL_Quit();
     exit(EXIT_FAILURE);
   }
+  
+  // Bind GPU
+  device = SDL_CreateGPUDevice( SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, true, NULL);
+  if (!device) {
+    std::cerr << "\nSDL Failed to capture GPU Device" << std::endl;
+  }
+  SDL_ClaimWindowForGPUDevice(device, win);
+  // ren_tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB32);
 
   // Load a font
   font = TTF_OpenFont("assets/fonts/pixel-mono/editundo.ttf", 24);
@@ -117,9 +129,21 @@ RenderEngine::~RenderEngine() {
   SDL_DestroyTexture(start_menu.quit_s_tex);
   SDL_DestroyTexture(start_menu.quit_u_tex);
 
+  SDL_DestroyGPUDevice(device);
   SDL_DestroyRenderer(ren);
   SDL_DestroyWindow(win);
   SDL_Quit();
+}
+
+void RenderEngine::calculateScale(int win_width, int win_height) {
+  float scale_x = (float) win_width / viewport.w;
+  float scale_y = (float) win_height / viewport.h;
+  scale = SDL_min(scale_x, scale_y);
+  output_rect.w = viewport.w * scale;
+  output_rect.h = viewport.h * scale;
+  // Unsure about this part
+  output_rect.x = (win_width - output_rect.w) / 2.0f;
+  output_rect.y = (win_height - output_rect.h) / 2.0f;
 }
 
 void RenderEngine::checkRenderDrivers() {
@@ -157,6 +181,7 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
   }
 
+
   // Active frames > 0
   SDL_FRect atk_square{
     p->x_pos + p->width,
@@ -188,7 +213,7 @@ void RenderEngine::displayFPS(double FPS) {
   float texW = 0, texH = 0;
   SDL_GetTextureSize(texture, &texW, &texH);
 
-  SDL_FRect dst = {1870 - texW, 20, texW, texH};
+  SDL_FRect dst = {output_rect.x+output_rect.w - (texW*scale*(float)1.5), 20*scale, texW*scale, texH*scale};
 
   SDL_RenderTexture(ren, texture, NULL, &dst);
 
@@ -210,6 +235,7 @@ void RenderEngine::renderStartMenu(int selection) {
   } else {
     SDL_RenderTexture(ren, start_menu.local_u_tex, NULL, &start_menu.local_frect);
   }
+  
   // Online is hovered
   if (selection == 1) {
     SDL_RenderTexture(ren, start_menu.online_s_tex, NULL, &start_menu.online_frect);

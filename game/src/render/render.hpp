@@ -23,10 +23,12 @@ struct StartMenu {
   BoxEntity online_box = {592.0, 581.0, 735.0, 126.0};
   BoxEntity settings_box = {592.0, 737.0, 735.0, 126.0};
   BoxEntity quit_box = {592.0, 893.0, 735.0, 126.0};
+
   SDL_FRect local_frect;
   SDL_FRect online_frect;
   SDL_FRect settings_frect;
   SDL_FRect quit_frect;
+
   SDL_Texture* bg_tex;
   // Selected buttons
   SDL_Texture* local_s_tex;
@@ -45,26 +47,32 @@ class RenderEngine {
  public:
   SDL_Window* win;
   SDL_Renderer* ren;
+  SDL_Texture* ren_tex;
+  SDL_GPUDevice* device;
 
   TTF_Font* font;
   SDL_Texture* game_background;
   SDL_Texture* player_tex;
 
   SDL_FRect game_border;
+  // Logical view dims & location in-game
   SDL_FRect viewport;
+  // Rendered view dims
+  SDL_FRect output_rect;
 
   StartMenu start_menu;
 
-  int ren_px_w;
-  int ren_px_h;
+  float scale;
 
   RenderEngine();
   ~RenderEngine();
 
+  void render(const GameManager* game);
   void checkRenderDrivers();
   void renderGameScene(const GameScene* scene);
   void renderPlayer(const PlayerEntity *player);
   void displayFPS(double FPS);
   void clearScreen();
   void renderStartMenu(int selection);
+  void calculateScale(int win_width, int win_height);
 };

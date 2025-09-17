@@ -153,6 +153,10 @@ GameScene* GameAllocator::rollForward() {
 
 PlayerController::PlayerController() { }
 
+void PlayerController::testCharacterInclude() {
+  std::cout << "Just the base player controller, nothing to see here..." << std::endl;
+}
+
 bool PlayerController::isActionable(PlayerEntity* p) {
   return (p->f_startup + p->f_active + p->f_recovery == 0);
 }
@@ -237,8 +241,6 @@ void PlayerController::setActions(PlayerEntity* p, const ButtonStates* in) {
     }
     }
  }
-
-
 }
 
 bool PlayerController::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
@@ -288,6 +290,46 @@ void PlayerController::updateFrames(PlayerEntity* p, const ButtonStates* in) {
   }
 }
 
+/**
+ * @brief Apply movement to a player using their velocities
+ * @param p Pointer to the player's entity in the game scene
+ * @note Handles collision
+ */
+void PlayerController::applyMovement(PlayerEntity* p) {
+  // Don't collide left wall
+  if (p->x_pos + p->x_vel < GAME_BORDER_X0) {
+    p->x_vel = 0;
+    p->x_pos = GAME_BORDER_X0;
+  }
+
+  // Don't collide right wall
+  if (p->x_pos + p->x_vel + p->width > GAME_BORDER_X1) {
+    p->x_vel = 0;
+    p->x_pos = GAME_BORDER_X1 - p->width;
+  }
+
+  // Don't collide floor
+  if (p->y_pos + p->y_vel + p->height > GAME_BORDER_Y1) {
+    p->y_vel = GAME_BORDER_Y1 - (p->y_pos + p->height);
+  }
+
+  // Apply velocities
+  p->x_pos += p->x_vel;
+  p->y_pos += p->y_vel;
+
+  // Gravity
+  if (!isGrounded(p)) {
+    p->y_vel += p->gravity;
+  }
+
+  // Friction
+  // if(!isGrounded(p)) { return; }
+  if (p->x_vel < 0) {
+    if (isGrounded(p)) {p->x_vel += p->friction;}
+  } else if (p->x_vel > 0) {
+    if (isGrounded(p)) {p->x_vel -= p->friction;}
+  }
+}
 
 /*****************************
  ******** GAME MANAGER *******
@@ -363,8 +405,8 @@ void GameManager::applyTickUpdates(GameScene* scene) {
   players[1]->setActions(&scene->players[1], &scene->inputs[1]);
   players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
   players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
-  applyMovement(&scene->players[0]);
-  applyMovement(&scene->players[1]);
+  players[0]->applyMovement(&scene->players[0]);
+  players[1]->applyMovement(&scene->players[1]);
   setFacingDir(&scene->players[0], &scene->players[1]);
 }
 
@@ -387,47 +429,3 @@ void GameManager::setFacingDir(PlayerEntity* p1, PlayerEntity* p2) {
 }
 
 
-/**
- * @brief Apply movement to a player using their velocities
- * @param p Pointer to the player's entity in the game scene
- * @note Handles collision
- */
-void GameManager::applyMovement(PlayerEntity* p) {
-  // Don't collide left wall
-  if (p->x_pos + p->x_vel < GAME_BORDER_X0) {
-    p->x_vel = 0;
-    p->x_pos = GAME_BORDER_X0;
-  }
-
-  // Don't collide right wall
-  if (p->x_pos + p->x_vel + p->width > GAME_BORDER_X1) {
-    p->x_vel = 0;
-    p->x_pos = GAME_BORDER_X1 - p->width;
-  }
-
-  // Don't collide floor
-  if (p->y_pos + p->y_vel + p->height > GAME_BORDER_Y1) {
-    p->y_vel = GAME_BORDER_Y1 - (p->y_pos + p->height);
-  }
-
-  // Apply velocities
-  p->x_pos += p->x_vel;
-  p->y_pos += p->y_vel;
-
-  // Gravity
-  if (!isGrounded(p)) {
-    p->y_vel += p->gravity;
-  }
-
-  // Friction
-  // if(!isGrounded(p)) { return; }
-  if (p->x_vel < 0) {
-    if (isGrounded(p)) {p->x_vel += p->friction;}
-  } else if (p->x_vel > 0) {
-    if (isGrounded(p)) {p->x_vel -= p->friction;}
-  }
-}
-
-bool GameManager::isGrounded(PlayerEntity* p) {
-  return p->y_pos + p->height >= GAME_BORDER_Y1;
-}

@@ -15,6 +15,7 @@
 #include "engine/engine.hpp"
 #include "net/net.hpp"
 #include "render/render.hpp"
+#include "characters/characters.hpp"
 
 #define FRAME_RATE_CAP 60
 
@@ -37,8 +38,8 @@ void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate);
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
 
-  start(&renderer);
-  // startLocalGame(&renderer);
+  // start(&renderer);
+  startLocalGame(&renderer);
 
   return 0;
 }
@@ -60,7 +61,7 @@ int start(RenderEngine* renderer) {
    * settings: 2
    * quit: 3
    */
-  int selection = -1;
+  int selection = 0;
   int n_selections = 4;
   bool clicked = false;
   Coordinate mouse_pos;
@@ -70,9 +71,9 @@ int start(RenderEngine* renderer) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       switch (e.type) {
-        case SDL_EVENT_QUIT: { selection = 3; clicked = true; }
+        case SDL_EVENT_QUIT: { selection = 3; clicked = true; break; }
         case SDL_EVENT_KEY_DOWN: {
-          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true; }
+          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true; break;}
         }
         case SDL_EVENT_MOUSE_MOTION: {
           mouse_pos.x = e.motion.x;
@@ -82,7 +83,9 @@ int start(RenderEngine* renderer) {
           else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.online_box)) {selection = 1;}
           else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.settings_box)) {selection = 2;}
           else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.quit_box)) {selection = 3;}
+          break;
         }
+        case SDL_EVENT_WINDOW_RESIZED: { renderer->calculateScale(e.window.data1, e.window.data2); break;}
       }
       // Send keyboard to game inputs
       inputs.updateButtonStates(&e);
@@ -95,9 +98,7 @@ int start(RenderEngine* renderer) {
       n_ticks++;
 
       // Navigate with keyboard
-      if (selection == -1 && (inputs.buttons.up || inputs.buttons.down)) {
-        selection = 0;
-      } else if (inputs.buttons.up) {
+      if (inputs.buttons.up) {
         selection = (n_selections + selection - 1) % n_selections;
       } else if (inputs.buttons.down) {
         selection = (selection + 1) % n_selections;
@@ -108,7 +109,6 @@ int start(RenderEngine* renderer) {
       inputs.resetButtonStates();
 
       renderer->clearScreen();
-      
       renderer->renderStartMenu(selection);
       renderer->displayFPS(frame_rate);
       SDL_RenderPresent(renderer->ren);  // Render the screen
@@ -134,6 +134,13 @@ int start(RenderEngine* renderer) {
 
 int startLocalGame(RenderEngine* renderer) {
   GameManager game;
+
+  game.players[0] = new Hunko();
+  game.players[1] = new Hunko();
+
+  game.players[0]->testCharacterInclude();
+  game.players[1]->testCharacterInclude();
+
   // Set player colors
   game.getPlayer(0)->disp_r = 3.0;
   game.getPlayer(0)->disp_g = 223.0;
@@ -167,6 +174,7 @@ int startLocalGame(RenderEngine* renderer) {
       // Escape will quit also
       if (e.type == SDL_EVENT_KEY_DOWN)
         if (e.key.key == SDLK_ESCAPE) { quit = true; }
+      if (e.type == SDL_EVENT_WINDOW_RESIZED) { renderer->calculateScale(e.window.data1, e.window.data2); }
       // Send keyboard to game inputs
       game.updateLocalInputs(&e);
     }
@@ -190,9 +198,9 @@ int startLocalGame(RenderEngine* renderer) {
       // }
 
       // Debug inputs
-      std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
-      showButtonStates(&(game.inputs[0].buttons));
-      std::cout << std::endl;
+      // std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
+      // showButtonStates(&(game.inputs[0].buttons));
+      // std::cout << std::endl;
 
       // Move to next frame
       game.tick();

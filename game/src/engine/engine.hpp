@@ -33,7 +33,7 @@
 #define ENABLE_HELPER_PRINTOUTS true
 
 // For rollback functionality demo:
-#define MAX_ROLLBACK_FRAMES 600
+#define MAX_ROLLBACK_FRAMES 60
 // #define MAX_ROLLBACK_FRAMES 60
 #define FRAME_ADVANTAGE_LIMIT 5
 #define INITIAL_FRAME 0
@@ -94,7 +94,7 @@ class InputSystem {
 };
 
 struct PlayerEntity {
-  std::string state_tag = "STANDING";
+  std::string state = "STANDING";
   float x_pos = 1920.0/2.0;
   float y_pos = 1080.0/2.0;
 
@@ -108,11 +108,15 @@ struct PlayerEntity {
 
   float walking_v = 10.0;
   float running_v = 25.0;
+  float fastfall_v = 3.0;
+
   float airdash_v = 20.0;
   int f_airdash_recovery = 5;
+
   float jumping_v = -35.0;
   int f_jumping_recovery = 5;
-  float fastfall_v = 3.0;
+
+
   float backdash_v = -20.0;
   int f_backdash_recovery = 20.0;
 
@@ -129,18 +133,23 @@ struct PlayerEntity {
   float disp_r = 0.0;
   float disp_g = 200.0;
   float disp_b = 20.0;
+
+  // const BoxEntity* hitbox;
+  // const BoxEntity* hurtbox;
 };
 
 class PlayerController {
  public:
   PlayerController();
   
+  virtual void testCharacterInclude();
   void setActions(PlayerEntity* p, const ButtonStates* in);
   bool isActionable(PlayerEntity* p);
   bool isGrounded(PlayerEntity* p);
   void updateFrames(PlayerEntity* p, const ButtonStates* in);
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
+  void applyMovement(PlayerEntity* p);
  private:
   
 };
@@ -210,7 +219,5 @@ class GameManager {
 
  private:
   void applyTickUpdates(GameScene* scene);
-  void applyMovement(PlayerEntity* p);
   void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
-  bool isGrounded(PlayerEntity* p);
 };

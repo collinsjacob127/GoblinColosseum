@@ -2,6 +2,7 @@ add_executable(GOBLIN main.cpp)
 
 add_subdirectory("util")
 add_subdirectory("engine")
+add_subdirectory("characters")
 add_subdirectory("net")
 add_subdirectory("render")
 
@@ -13,6 +14,7 @@ target_link_libraries(GOBLIN PRIVATE
     libs
     util
     engine
+    characters
     render
     net
 )
