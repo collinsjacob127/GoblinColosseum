@@ -94,13 +94,30 @@ class InputSystem {
   InputSystem();
   void updateButtonStates(const SDL_Event *e);
   void resetButtonStates();
+  void setP2DefaultBindings();
+};
+
+// Enum for states shared by all characters
+enum State {
+  // Movement
+  STAND,
+  WALK,
+  RUN,
+  BACKDASH,
+  JUMP,
+  AIR_DASH,
+  AIR_BACKDASH,
+  CROUCH,
+  BLOCK,
+  CROUCH_BLOCK,
+  ATTACK
 };
 
 /**
  * Struct for dynamic character info
  */
 struct PlayerEntity {
-  std::string state = "STANDING";
+  State state;
   float x_pos = 1920.0/2.0;
   float y_pos = 1080.0/2.0;
 
@@ -143,13 +160,14 @@ class PlayerController {
   int f_backdash_recovery = 20.0;
 
   virtual void testCharacterInclude();
-  void setActions(PlayerEntity* p, const ButtonStates* in);
+  virtual void updateState(PlayerEntity* p, const ButtonStates* in);
+  void updateFrames(PlayerEntity* p, const ButtonStates* in);
+  void applyMovement(PlayerEntity* p);
+
   bool isActionable(PlayerEntity* p);
   bool isGrounded(PlayerEntity* p);
-  void updateFrames(PlayerEntity* p, const ButtonStates* in);
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
-  void applyMovement(PlayerEntity* p);
  private:
   
 };

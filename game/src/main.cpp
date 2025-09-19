@@ -25,8 +25,7 @@
 /**
  *  Display the start screen
  * Contains menu options:
- * - Local 1P
- * - Local 2P
+ * - Local
  * - Online
  * - Settings
  * - Quit
@@ -49,7 +48,6 @@ int start(RenderEngine* renderer) {
   double frame_rate = -1.0;
   Timer timer, fps_timer;
   timer.start();
-  fps_timer.start();
   unsigned long long n_ticks = 1;
 
   InputSystem inputs;
@@ -71,10 +69,7 @@ int start(RenderEngine* renderer) {
     while (SDL_PollEvent(&e)) {
       switch (e.type) {
         case SDL_EVENT_QUIT: { selection = 3; clicked = true; break; }
-        case SDL_EVENT_KEY_DOWN: {
-          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true;}
-          break;
-        }
+        case SDL_EVENT_KEY_DOWN: { if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true;} break; }
         case SDL_EVENT_WINDOW_RESIZED: { renderer->calculateScale(e.window.data1, e.window.data2); break;}
       }
       // Send keyboard to game inputs
@@ -83,54 +78,37 @@ int start(RenderEngine* renderer) {
 
     // Once per frame, display everything
     if (timer.duration() >= (double) min_frame_duration*n_ticks) {
-      frame_rate = (double) 1 / fps_timer.duration();
-      fps_timer.start();
       n_ticks++;
-
       // Navigate with keyboard
       if (inputs.buttons.up) {
         selection = (n_selections + selection - 1) % n_selections;
       } else if (inputs.buttons.down) {
         selection = (selection + 1) % n_selections;
       }
-      if (inputs.buttons.b3) {
-        clicked = true;
-      }
+      if (inputs.buttons.b3) { clicked = true; }
       inputs.resetButtonStates();
-
       renderer->renderStartMenu(selection);
     }
   }
+
   // Selection has been chosen
   switch (selection) {
-    case 0: {
-      startLocalGame(renderer);
-      break;
-    }
-    case 1: {
-      std::cout << "Online not yet implemented" << std::endl;
-      break;
-    }
-    case 2: {
-      std::cout << "Settings not yet implemented" << std::endl;
-      break;
-    }
+    case 0: { startLocalGame(renderer); break; }
+    case 1: { std::cout << "Online not yet implemented" << std::endl; break; }
+    case 2: { std::cout << "Settings not yet implemented" << std::endl; break; }
   }
+
   return 0;
 }
 
 int startLocalGame(RenderEngine* renderer) {
   GameManager game;
-
   game.players[0] = new Hunko();
   game.players[1] = new Hunko();
 
-  game.players[0]->testCharacterInclude();
-  game.players[1]->testCharacterInclude();
-
-  // TODO: Delete this, it's for testing rollback
-  ButtonStates p2_dummy_buttons;
-  p2_dummy_buttons.up = true;
+  // Testing local 2-player
+  InputSystem p2_inputs;
+  p2_inputs.setP2DefaultBindings();
 
   // Define duration of each frame
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
@@ -155,6 +133,9 @@ int startLocalGame(RenderEngine* renderer) {
       if (e.type == SDL_EVENT_WINDOW_RESIZED) { renderer->calculateScale(e.window.data1, e.window.data2); }
       // Send keyboard to game inputs
       game.updateLocalInputs(&e);
+
+      p2_inputs.updateButtonStates(&e);
+      game.rollBack(game.cur_tick, &p2_inputs.buttons);
     }
 
     // Cap frame rate at 60 fps

@@ -239,9 +239,9 @@ void RenderEngine::renderGameScene(GameManager* game) {
   const PlayerEntity* p1 = &scene->players[0];
   const PlayerEntity* p2 = &scene->players[1];
 
-  std::cout << "p1xy: (" << p1->x_pos << ", " << p1->y_pos << ")\n";
-  std::cout << "p2xy: (" << p2->x_pos << ", " << p2->y_pos << ")\n";
-  std::cout << std::endl;
+  // std::cout << "p1xy: (" << p1->x_pos << ", " << p1->y_pos << ")\n";
+  // std::cout << "p2xy: (" << p2->x_pos << ", " << p2->y_pos << ")\n";
+  // std::cout << std::endl;
 
   // Currently: Centers between two players, fixed size
   viewport.x = (p1->x_pos + p2->x_pos) / 2;

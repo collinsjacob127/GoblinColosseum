@@ -64,6 +64,21 @@ void InputSystem::resetButtonStates() {
   buttons = ButtonStates();
 }
 
+void InputSystem::setP2DefaultBindings() {
+  bindings.up = SDL_SCANCODE_UP;
+  bindings.down = SDL_SCANCODE_DOWN;
+  bindings.left = SDL_SCANCODE_LEFT;
+  bindings.right = SDL_SCANCODE_RIGHT;
+  bindings.b1 = SDL_SCANCODE_KP_7; // ps square
+  bindings.b2 = SDL_SCANCODE_KP_8; // ps triangle
+  bindings.b3 = SDL_SCANCODE_KP_9; // ps X
+  bindings.b4 = SDL_SCANCODE_KP_PLUS; // ps circle
+  bindings.l1 = SDL_SCANCODE_KP_4; // left bumper
+  bindings.r1 = SDL_SCANCODE_KP_5; // right bumper
+  bindings.l2 = SDL_SCANCODE_KP_1; // left trigger
+  bindings.r2 = SDL_SCANCODE_KP_2; // right trigger
+}
+
 /*****************************
  ******* GAME ALLOCATOR ******
  *****************************/
@@ -168,7 +183,7 @@ bool PlayerController::isGrounded(PlayerEntity* p) {
 /**
  * @brief Set a player's actions given their button inputs
  */
-void PlayerController::setActions(PlayerEntity* p, const ButtonStates* in) {
+void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
   if (!isActionable(p)) { return; }
 
   // Grounded movement
@@ -407,8 +422,8 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
  * based on the previous scene's state.
  */
 void GameManager::applyTickUpdates(GameScene* scene) {
-  players[0]->setActions(&scene->players[0], &scene->inputs[0]);
-  players[1]->setActions(&scene->players[1], &scene->inputs[1]);
+  players[0]->updateState(&scene->players[0], &scene->inputs[0]);
+  players[1]->updateState(&scene->players[1], &scene->inputs[1]);
   players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
   players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
   players[0]->applyMovement(&scene->players[0]);
