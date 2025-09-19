@@ -101,15 +101,15 @@ class InputSystem {
 enum State {
   // Movement
   STAND,
-  WALK,
-  RUN,
+  CROUCH,
+  FALL,
+  WALKF,
+  WALKB,
+  DASH,
   BACKDASH,
   JUMP,
   AIR_DASH,
   AIR_BACKDASH,
-  CROUCH,
-  BLOCK,
-  CROUCH_BLOCK,
   ATTACK
 };
 
@@ -118,6 +118,9 @@ enum State {
  */
 struct PlayerEntity {
   State state;
+
+  bool block = false;
+
   float x_pos = 1920.0/2.0;
   float y_pos = 1080.0/2.0;
 
@@ -128,6 +131,7 @@ struct PlayerEntity {
 
   float width = 100.0;
   float height = 300.0;
+
   int air_action_cnt = 0;
   int air_action_max = 2;
 
@@ -144,7 +148,8 @@ class PlayerController {
   PlayerController();
   
   float walking_v = 10.0;
-  float running_v = 25.0;
+  float dash_v = 11.0;
+  float dash_acc = 0.4;
   float fastfall_v = 3.0;
 
   float airdash_v = 20.0;
@@ -154,7 +159,9 @@ class PlayerController {
   int f_jumping_recovery = 5;
 
   float gravity = 2.5;
-  float friction = 2.5;
+  // "Inverse rate of acceleration reduction" - https://www.dustloop.com/w/GGST/Frame_Data#Walk_and_Dash_Values
+  // next_speed -= cur_speed / friction
+  float friction = 80;
 
   float backdash_v = -25.0;
   int f_backdash_recovery = 20.0;
@@ -168,8 +175,31 @@ class PlayerController {
   bool isGrounded(PlayerEntity* p);
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
+
  private:
-  
+  virtual void handleStand(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleWalkForwards(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleWalkBackwards(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleFall(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleDash(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleBackdash(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleJump(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleAirDash(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleAirBackDash(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleCrouch(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleAttack(PlayerEntity* p, const ButtonStates* in);
+
+  virtual void stand(PlayerEntity* p, const ButtonStates* in);
+  virtual void walkForwards(PlayerEntity* p, const ButtonStates* in);
+  virtual void walkBackwards(PlayerEntity* p, const ButtonStates* in);
+  virtual void fall(PlayerEntity* p, const ButtonStates* in);
+  virtual void dash(PlayerEntity* p, const ButtonStates* in);
+  virtual void backdash(PlayerEntity* p, const ButtonStates* in);
+  virtual void jump(PlayerEntity* p, const ButtonStates* in);
+  virtual void airDash(PlayerEntity* p, const ButtonStates* in);
+  virtual void airBackDash(PlayerEntity* p, const ButtonStates* in);
+  virtual void crouch(PlayerEntity* p, const ButtonStates* in);
+  virtual void attack(PlayerEntity* p, const ButtonStates* in);
 };
 
 struct GameScene {
