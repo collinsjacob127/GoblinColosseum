@@ -55,3 +55,4 @@ struct BoxEntity {
 
 bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box);
 void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect);
+void rescaleBox(float pos_scale, float size_scale, BoxEntity* box);

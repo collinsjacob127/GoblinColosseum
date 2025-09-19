@@ -40,10 +40,13 @@
 
 #define MAX_INPUT_FRAMES 60
 
-#define GAME_BORDER_X0 30
-#define GAME_BORDER_X1 1882
+#define DEFAULT_XDIM 3200
+#define DEFAULT_YDIM 1800
+
+#define GAME_BORDER_X0 180
+#define GAME_BORDER_X1 3020
 #define GAME_BORDER_Y0 0
-#define GAME_BORDER_Y1 1045
+#define GAME_BORDER_Y1 1678
 
 struct Keybinds {
   SDL_Scancode up = SDL_SCANCODE_W;
@@ -93,6 +96,9 @@ class InputSystem {
   void resetButtonStates();
 };
 
+/**
+ * Struct for dynamic character info
+ */
 struct PlayerEntity {
   std::string state = "STANDING";
   float x_pos = 1920.0/2.0;
@@ -105,7 +111,21 @@ struct PlayerEntity {
 
   float width = 100.0;
   float height = 300.0;
+  int air_action_cnt = 0;
+  int air_action_max = 2;
 
+  int f_startup = 0;
+  int f_active = 0;
+  int f_recovery = 0;
+};
+
+/**
+ * Base class for static character info
+ */
+class PlayerController {
+ public:
+  PlayerController();
+  
   float walking_v = 10.0;
   float running_v = 25.0;
   float fastfall_v = 3.0;
@@ -116,32 +136,12 @@ struct PlayerEntity {
   float jumping_v = -35.0;
   int f_jumping_recovery = 5;
 
+  float gravity = 2.5;
+  float friction = 2.5;
 
-  float backdash_v = -20.0;
+  float backdash_v = -25.0;
   int f_backdash_recovery = 20.0;
 
-  int air_action_cnt = 0;
-  int air_action_max = 2;
-
-  int f_startup = 0;
-  int f_active = 0;
-  int f_recovery = 0;
-
-  float gravity = 2.5;
-  float friction = 5.0;
-
-  float disp_r = 0.0;
-  float disp_g = 200.0;
-  float disp_b = 20.0;
-
-  // const BoxEntity* hitbox;
-  // const BoxEntity* hurtbox;
-};
-
-class PlayerController {
- public:
-  PlayerController();
-  
   virtual void testCharacterInclude();
   void setActions(PlayerEntity* p, const ButtonStates* in);
   bool isActionable(PlayerEntity* p);

@@ -16,28 +16,14 @@
 #include "util.hpp"
 
 
+void test_render_include_works();
+
 struct StartMenu {
-  BoxEntity local_box = {595.0, 425.0, 735.0, 126.0};
-  BoxEntity online_box = {592.0, 581.0, 735.0, 126.0};
-  BoxEntity settings_box = {592.0, 737.0, 735.0, 126.0};
-  BoxEntity quit_box = {592.0, 893.0, 735.0, 126.0};
-
-  SDL_FRect local_frect;
-  SDL_FRect online_frect;
-  SDL_FRect settings_frect;
-  SDL_FRect quit_frect;
-
   SDL_Texture* bg_tex;
-  // Selected buttons
-  SDL_Texture* local_s_tex;
-  SDL_Texture* online_s_tex;
-  SDL_Texture* settings_s_tex;
-  SDL_Texture* quit_s_tex;
-  // Unselected buttons
-  SDL_Texture* local_u_tex;
-  SDL_Texture* online_u_tex;
-  SDL_Texture* settings_u_tex;
-  SDL_Texture* quit_u_tex;
+  SDL_Texture* local_tex;
+  SDL_Texture* online_tex;
+  SDL_Texture* settings_tex;
+  SDL_Texture* quit_tex;
 };
 
 
@@ -51,7 +37,10 @@ class RenderEngine {
   TTF_Font* font;
   SDL_Texture* game_background;
   SDL_Texture* player_tex;
+  Timer fps_timer;
 
+  SDL_Texture* buffer_tex;
+  
   SDL_FRect game_border;
   // Logical view dims & location in-game
   SDL_FRect viewport;
@@ -66,14 +55,14 @@ class RenderEngine {
   ~RenderEngine();
 
   void checkRenderDrivers();
-  void render(const GameManager* game);
   
-  void loadMenuResources();
-  void cleanMenuResources();
-  void renderGameScene(const GameScene* scene);
-  void renderPlayer(const PlayerEntity *player);
-  void displayFPS(double FPS);
-  void clearScreen();
+
+  void renderGameScene(GameManager* game);
   void renderStartMenu(int selection);
   void calculateScale(int win_width, int win_height);
+
+ private:
+  void renderPlayer(const PlayerEntity *player);
+  void displayFPS();
+  void clearScreen();
 };

@@ -33,14 +33,12 @@
  */ 
 int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
-void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate);
 
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
-  renderer.checkRenderDrivers();
 
-  // start(&renderer);
-  startLocalGame(&renderer);
+  start(&renderer);
+  // startLocalGame(&renderer);
 
   return 0;
 }
@@ -74,16 +72,7 @@ int start(RenderEngine* renderer) {
       switch (e.type) {
         case SDL_EVENT_QUIT: { selection = 3; clicked = true; break; }
         case SDL_EVENT_KEY_DOWN: {
-          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true; break;}
-        }
-        case SDL_EVENT_MOUSE_MOTION: {
-          mouse_pos.x = e.motion.x;
-          mouse_pos.y = e.motion.y;
-          // Check if mouse is on a button
-          if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.local_box)) {selection = 0;}
-          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.online_box)) {selection = 1;}
-          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.settings_box)) {selection = 2;}
-          else if (checkBoxPointCollision(&mouse_pos, &renderer->start_menu.quit_box)) {selection = 3;}
+          if (e.key.key == SDLK_ESCAPE) { selection = 3; clicked = true;}
           break;
         }
         case SDL_EVENT_WINDOW_RESIZED: { renderer->calculateScale(e.window.data1, e.window.data2); break;}
@@ -109,10 +98,7 @@ int start(RenderEngine* renderer) {
       }
       inputs.resetButtonStates();
 
-      renderer->clearScreen();
       renderer->renderStartMenu(selection);
-      renderer->displayFPS(frame_rate);
-      SDL_RenderPresent(renderer->ren);  // Render the screen
     }
   }
   // Selection has been chosen
@@ -141,15 +127,6 @@ int startLocalGame(RenderEngine* renderer) {
 
   game.players[0]->testCharacterInclude();
   game.players[1]->testCharacterInclude();
-
-  // Set player colors
-  game.getPlayer(0)->disp_r = 3.0;
-  game.getPlayer(0)->disp_g = 223.0;
-  game.getPlayer(0)->disp_b = 252.0;
-
-  game.getPlayer(1)->disp_r = 250.0;
-  game.getPlayer(1)->disp_g = 161.0;
-  game.getPlayer(1)->disp_b = 3.0;
 
   // TODO: Delete this, it's for testing rollback
   ButtonStates p2_dummy_buttons;
@@ -207,19 +184,9 @@ int startLocalGame(RenderEngine* renderer) {
       game.tick();
       // Only render if game is caught up to expected time of current frame
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
-        renderGame(&game, renderer, frame_rate);
+        renderer->renderGameScene(&game);
       }
     }
   }
   return 1;
-}
-
-void renderGame(GameManager* game, RenderEngine* renderer, double frame_rate) {
-  // Clear screen
-  // renderer->clearScreen();
-  // Render player
-  // renderer->renderGameScene(game->allocator.getCurrentScene());
-  // renderer->displayFPS(frame_rate);
-  // SDL_RenderPresent(renderer->ren);  // Render the screen
-  renderer->render(game);
 }

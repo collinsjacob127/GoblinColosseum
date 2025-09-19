@@ -177,66 +177,66 @@ void PlayerController::setActions(PlayerEntity* p, const ButtonStates* in) {
     p->air_action_cnt = 0;
     // Jump
     if (in->up) {
-      p->y_vel = p->jumping_v;
-      p->f_recovery = p->f_jumping_recovery;
+      p->y_vel = jumping_v;
+      p->f_recovery = f_jumping_recovery;
     }
     // Walk left
     if (in->left && p->x_vel <= 0) {
-      p->x_vel = -p->walking_v;
+      p->x_vel = -walking_v;
     }
     // Walk right if stopped
     if (in->right && p->x_vel >= 0) {
-      p->x_vel = p->walking_v;
+      p->x_vel = walking_v;
     }
     // Facing forward, sprint
     if (p->facing_right && in->right && in->l2) {
-      p->x_vel = p->running_v;
+      p->x_vel = running_v;
     } else if (!p->facing_right && in->left && in->l2) {
-      p->x_vel = -p->running_v;
+      p->x_vel = -running_v;
     }
     // Holding back, backdash
     if (p->facing_right && in->left && in->l2) {
-      p->x_vel = p->backdash_v;
-      p->f_recovery = p->f_backdash_recovery;
+      p->x_vel = backdash_v;
+      p->f_recovery = f_backdash_recovery;
     } else if (!p->facing_right && in->right && in->l2) {
-      p->x_vel = -p->backdash_v;
-      p->f_recovery = p->f_backdash_recovery;
+      p->x_vel = -backdash_v;
+      p->f_recovery = f_backdash_recovery;
     }
  // Aerial Movement
  } else {
     // Fast fall if in the air
     if (in->down) {
-      p->y_vel += p->fastfall_v;
+      p->y_vel += fastfall_v;
     }
 
     // ALL BELOW USE / REQUIRE AN AIR ACTION
     if (p->air_action_cnt < p->air_action_max) {
 
     if (in->up) {
-      p->y_vel = p->jumping_v;
+      p->y_vel = jumping_v;
       p->air_action_cnt++;
-      p->f_recovery = p->f_jumping_recovery;
+      p->f_recovery = f_jumping_recovery;
     }
 
     // Holding forward, airdash
     if (holdingForward(p, in) && in->l2) {
       if (p->facing_right) {
-        p->x_vel = p->airdash_v;
+        p->x_vel = airdash_v;
       } else {
-        p->x_vel = -p->airdash_v;
+        p->x_vel = -airdash_v;
       }
-      p->f_recovery = p->f_airdash_recovery;
+      p->f_recovery = f_airdash_recovery;
       p->air_action_cnt++;
     }
 
     // Holding back, backdash
     if (holdingBack(p, in) && in->l2) {
       if (p->facing_right) {
-        p->x_vel = p->backdash_v;
+        p->x_vel = backdash_v;
       } else {
-        p->x_vel = -p->backdash_v;
+        p->x_vel = -backdash_v;
       }
-      p->f_recovery = p->f_backdash_recovery;
+      p->f_recovery = f_backdash_recovery;
       p->air_action_cnt++;
     }
     }
@@ -319,15 +319,15 @@ void PlayerController::applyMovement(PlayerEntity* p) {
 
   // Gravity
   if (!isGrounded(p)) {
-    p->y_vel += p->gravity;
+    p->y_vel += gravity;
   }
 
   // Friction
   // if(!isGrounded(p)) { return; }
   if (p->x_vel < 0) {
-    if (isGrounded(p)) {p->x_vel += p->friction;}
+    if (isGrounded(p)) {p->x_vel += friction;}
   } else if (p->x_vel > 0) {
-    if (isGrounded(p)) {p->x_vel -= p->friction;}
+    if (isGrounded(p)) {p->x_vel -= friction;}
   }
 }
 
@@ -342,6 +342,12 @@ GameManager::GameManager() {
   // TEMP - for testing player controller
   players[0] = new PlayerController();
   players[1] = new PlayerController();
+  // Set starting positions
+  GameScene* scene = allocator.getCurrentScene();
+  PlayerEntity* p1 = &scene->players[0];
+  PlayerEntity* p2 = &scene->players[1];
+  p1->x_pos = 1400 - p1->width;
+  p2->x_pos = 1800;
 }
 
 GameManager::GameManager(unsigned int net_p1_or_p2) {

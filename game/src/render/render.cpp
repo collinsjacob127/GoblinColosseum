@@ -4,19 +4,23 @@
 
 #include "render.hpp"
 
+void test_render_include_works() {
+    std::cout << "Include works!\n";
+}
+
 RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
+  fps_timer.start();
 
-  // Initialize values
   game_border.x = GAME_BORDER_X0;
   game_border.y = GAME_BORDER_Y0;
   game_border.w = GAME_BORDER_X1 - GAME_BORDER_X0;
   game_border.h = GAME_BORDER_Y1 - GAME_BORDER_Y0;
   viewport.x = 0;
   viewport.y = 0;
-  viewport.w = 1920;
-  viewport.h = 1080;
+  viewport.w = 1600;
+  viewport.h = 900;
 
   // Create Window
   SDL_WindowFlags flags = {};
@@ -30,13 +34,21 @@ RenderEngine::RenderEngine() {
     exit(EXIT_FAILURE);
   }
 
-  // Bind GPU
-  device = SDL_CreateGPUDevice( SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, true, NULL);
-  if (!device) { std::cerr << "\nSDL Failed to capture GPU Device" << std::endl; }
-  SDL_ClaimWindowForGPUDevice(device, win);
-}
+  // Create Renderer
+  ren = SDL_CreateRenderer(win, "gpu");
+  if (ren == nullptr) {
+    std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
+    SDL_DestroyWindow(win);
+    SDL_Quit();
+    exit(EXIT_FAILURE);
+  }
+  
+  buffer_tex = SDL_CreateTexture(
+    ren, 
+    SDL_PIXELFORMAT_ARGB32,
+    SDL_TEXTUREACCESS_TARGET,
+    DEFAULT_XDIM, DEFAULT_YDIM);
 
-void RenderEngine::loadMenuResources() {
   // Load a font
   font = TTF_OpenFont("assets/fonts/pixel-mono/editundo.ttf", 24);
   if (!font) {
@@ -48,49 +60,30 @@ void RenderEngine::loadMenuResources() {
    * INITIALIZING ASSETS FOR START MENU
    */
   // Background
-  SDL_Surface* start_bg_png = IMG_Load("assets/backgrounds/start/title-background.png");
+  SDL_Surface* start_bg_png = IMG_Load("assets/backgrounds/start/none-selected.png");
   // Selected buttons
   SDL_Surface* local_s_png = IMG_Load("assets/backgrounds/start/local-selected.png");
   SDL_Surface* online_s_png = IMG_Load("assets/backgrounds/start/online-selected.png");
   SDL_Surface* settings_s_png = IMG_Load("assets/backgrounds/start/settings-selected.png");
   SDL_Surface* quit_s_png = IMG_Load("assets/backgrounds/start/quit-selected.png");
-  // Unselected buttons
-  SDL_Surface* local_u_png = IMG_Load("assets/backgrounds/start/local-unselected.png");
-  SDL_Surface* online_u_png = IMG_Load("assets/backgrounds/start/online-unselected.png");
-  SDL_Surface* settings_u_png = IMG_Load("assets/backgrounds/start/settings-unselected.png");
-  SDL_Surface* quit_u_png = IMG_Load("assets/backgrounds/start/quit-unselected.png");
   // Verify read correctly
   if (start_bg_png == nullptr || local_s_png == nullptr || online_s_png == nullptr
-      || settings_s_png == nullptr || quit_s_png == nullptr || local_u_png == nullptr ||
-      settings_u_png == nullptr || online_u_png == nullptr || quit_u_png == nullptr) {
+      || settings_s_png == nullptr || quit_s_png == nullptr) {
     std::cerr << "failed to load png\n";
   }
   // background
   start_menu.bg_tex = SDL_CreateTextureFromSurface(ren, start_bg_png);
   // selected buttons
-  start_menu.local_s_tex = SDL_CreateTextureFromSurface(ren, local_s_png);
-  start_menu.online_s_tex = SDL_CreateTextureFromSurface(ren, online_s_png);
-  start_menu.settings_s_tex = SDL_CreateTextureFromSurface(ren, settings_s_png);
-  start_menu.quit_s_tex = SDL_CreateTextureFromSurface(ren, quit_s_png);
-  // unselected buttons
-  start_menu.local_u_tex = SDL_CreateTextureFromSurface(ren, local_u_png);
-  start_menu.online_u_tex = SDL_CreateTextureFromSurface(ren, online_u_png);
-  start_menu.settings_u_tex = SDL_CreateTextureFromSurface(ren, settings_u_png);
-  start_menu.quit_u_tex = SDL_CreateTextureFromSurface(ren, quit_u_png);
+  start_menu.local_tex = SDL_CreateTextureFromSurface(ren, local_s_png);
+  start_menu.online_tex = SDL_CreateTextureFromSurface(ren, online_s_png);
+  start_menu.settings_tex = SDL_CreateTextureFromSurface(ren, settings_s_png);
+  start_menu.quit_tex = SDL_CreateTextureFromSurface(ren, quit_s_png);
 
   SDL_DestroySurface(start_bg_png);
   SDL_DestroySurface(local_s_png);
-  SDL_DestroySurface(local_u_png);
   SDL_DestroySurface(online_s_png);
-  SDL_DestroySurface(online_u_png);
   SDL_DestroySurface(settings_s_png);
-  SDL_DestroySurface(settings_u_png);
   SDL_DestroySurface(quit_s_png);
-  SDL_DestroySurface(quit_u_png);
-  convertBoxEntityToFRect(&start_menu.local_box, &start_menu.local_frect);
-  convertBoxEntityToFRect(&start_menu.online_box, &start_menu.online_frect);
-  convertBoxEntityToFRect(&start_menu.settings_box, &start_menu.settings_frect);
-  convertBoxEntityToFRect(&start_menu.quit_box, &start_menu.quit_frect);
 
   SDL_Surface* game_bg_png = IMG_Load("assets/backgrounds/game/background.png");
   game_background = SDL_CreateTextureFromSurface(ren, game_bg_png);
@@ -99,27 +92,24 @@ void RenderEngine::loadMenuResources() {
   SDL_Surface* gob0_png = IMG_Load("assets/characters/gob0/GOB0.png");
   player_tex = SDL_CreateTextureFromSurface(ren, gob0_png);
   SDL_DestroySurface(gob0_png);
-}
 
-void RenderEngine::cleanMenuResources() {
-  // Cleanup menu textures
-  SDL_DestroyTexture(start_menu.bg_tex);
-  SDL_DestroyTexture(start_menu.local_s_tex);
-  SDL_DestroyTexture(start_menu.local_u_tex);
-  SDL_DestroyTexture(start_menu.online_s_tex);
-  SDL_DestroyTexture(start_menu.online_u_tex);
-  SDL_DestroyTexture(start_menu.settings_s_tex);
-  SDL_DestroyTexture(start_menu.settings_u_tex);
-  SDL_DestroyTexture(start_menu.quit_s_tex);
-  SDL_DestroyTexture(start_menu.quit_u_tex);
-  SDL_DestroyTexture(game_background);
-  SDL_DestroyTexture(player_tex);
+  SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
+  SDL_RenderClear(ren);         // Clear the renderer
 }
 
 RenderEngine::~RenderEngine() {
-  // cleanMenuResources();
-  SDL_DestroyGPUDevice(device);
-  // SDL_DestroyRenderer(ren);
+  // Cleanup menu textures
+  SDL_DestroyTexture(start_menu.bg_tex);
+  SDL_DestroyTexture(start_menu.local_tex);
+  SDL_DestroyTexture(start_menu.online_tex);
+  SDL_DestroyTexture(start_menu.settings_tex);
+  SDL_DestroyTexture(start_menu.quit_tex);
+  SDL_DestroyTexture(game_background);
+  SDL_DestroyTexture(player_tex);
+  SDL_DestroyTexture(buffer_tex);
+
+  // SDL_DestroyGPUDevice(device);
+  SDL_DestroyRenderer(ren);
   SDL_DestroyWindow(win);
   SDL_Quit();
 }
@@ -149,10 +139,7 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->width,
     p->height
   };
-  // // Set render draw color to green
-  // SDL_SetRenderDrawColor(ren, p->disp_r, p->disp_g, p->disp_b, 255);            
-  // // Render the rectangle
-  // SDL_RenderFillRect(ren, &green_square);  
+
   SDL_RenderTexture(ren, player_tex, NULL, &green_square);
 
   if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
@@ -182,22 +169,22 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
   SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle
 }
 
-void RenderEngine::displayFPS(double FPS) {
-  SDL_Color color = { 120, 0, 150, 255 };
+void RenderEngine::displayFPS() {
+  double FPS = 1 / fps_timer.duration();
+  fps_timer.start();
+
+  SDL_Color color = { 255, 255, 255, 255 };
+  // SDL_Color color = { 120, 0, 150, 255 };
 
   std::stringstream ss;
-  ss << std::fixed << std::setprecision(1) << FPS << std::endl;
+  ss << std::fixed << std::setprecision(0) << FPS << std::endl;
   std::string fps_string = ss.str();
   
-  // std::cout << "FPS: " << fps_string << std::endl;
-  
   SDL_Surface *surface = TTF_RenderText_Solid(font, fps_string.c_str(), fps_string.size()-1, color);
-  // SDL_Surface *surface = TTF_RenderText_Solid(font, "Hello Test", 10, color);
-  // if (!font) { std::cerr << "Bad font\n"; }
-  // if (!surface) { std::cerr << "Bad surface\n"; }
+  if (!surface) { std::cerr << "Bad surface\n"; }
 
   SDL_Texture *texture = SDL_CreateTextureFromSurface(ren, surface);
-  // if (!texture) { std::cerr << "Bad texture\n"; }
+  if (!texture) { std::cerr << "Bad texture\n"; }
 
   float texW = 0, texH = 0;
   SDL_GetTextureSize(texture, &texW, &texH);
@@ -217,78 +204,63 @@ void RenderEngine::clearScreen() {
 
 
 void RenderEngine::renderStartMenu(int selection) {
-  SDL_RenderTexture(ren, start_menu.bg_tex, NULL, NULL);
-  // Local is hovered
-  if (selection == 0) {
-    SDL_RenderTexture(ren, start_menu.local_s_tex, NULL, &start_menu.local_frect);
-  } else {
-    SDL_RenderTexture(ren, start_menu.local_u_tex, NULL, &start_menu.local_frect);
+  clearScreen(); // Clears window
+  // Render to a temporary texture first
+  SDL_SetRenderTarget(ren, buffer_tex);
+  clearScreen(); // Clears texture
+  switch (selection) {
+    case 0:
+      SDL_RenderTexture(ren, start_menu.local_tex, NULL, NULL);
+      break;
+    case 1:
+      SDL_RenderTexture(ren, start_menu.online_tex, NULL, NULL);
+      break;
+    case 2:
+      SDL_RenderTexture(ren, start_menu.settings_tex, NULL, NULL);
+      break;
+    case 3:
+      SDL_RenderTexture(ren, start_menu.quit_tex, NULL, NULL);
+      break;
+    default:
+      SDL_RenderTexture(ren, start_menu.bg_tex, NULL, NULL);
+      break;
   }
-  
-  // Online is hovered
-  if (selection == 1) {
-    SDL_RenderTexture(ren, start_menu.online_s_tex, NULL, &start_menu.online_frect);
-  } else {
-    SDL_RenderTexture(ren, start_menu.online_u_tex, NULL, &start_menu.online_frect);
-  }
-  // Settings is hovered
-  if (selection == 2) {
-    SDL_RenderTexture(ren, start_menu.settings_s_tex, NULL, &start_menu.settings_frect);
-  } else {
-    SDL_RenderTexture(ren, start_menu.settings_u_tex, NULL, &start_menu.settings_frect);
-  }
-  // Quit is hovered
-  if (selection == 3) {
-    SDL_RenderTexture(ren, start_menu.quit_s_tex, NULL, &start_menu.quit_frect);
-  } else {
-    SDL_RenderTexture(ren, start_menu.quit_u_tex, NULL, &start_menu.quit_frect);
-  }
+
+  // Set target back to window and render the buffer
+  SDL_SetRenderTarget(ren, NULL);
+  SDL_RenderTexture(ren, buffer_tex, NULL, NULL);
+  displayFPS();
+  SDL_RenderPresent(ren);
 }
 
-void RenderEngine::renderGameScene(const GameScene* scene) {
+
+void RenderEngine::renderGameScene(GameManager* game) {
+  const GameScene* scene = game->allocator.getCurrentScene();
   const PlayerEntity* p1 = &scene->players[0];
   const PlayerEntity* p2 = &scene->players[1];
 
-  viewport.x = (p1->x_pos + p2->x_pos) / 2;
-  viewport.y = 1080;
+  std::cout << "p1xy: (" << p1->x_pos << ", " << p1->y_pos << ")\n";
+  std::cout << "p2xy: (" << p2->x_pos << ", " << p2->y_pos << ")\n";
+  std::cout << std::endl;
 
+  // Currently: Centers between two players, fixed size
+  viewport.x = (p1->x_pos + p2->x_pos) / 2;
+  viewport.x = viewport.x > 3200 ? 3200 : viewport.x;
+  viewport.x -= viewport.w / 2;
+  viewport.x = viewport.x < 0 ? 0 : viewport.x;
+  viewport.y = 900;
+
+  // Render full scene to temp buffer
+  SDL_SetRenderTarget(ren, buffer_tex);
+  clearScreen();
   SDL_RenderTexture(ren, game_background, NULL, NULL);
   renderPlayer(p1);
   renderPlayer(p2);
 
-}
-
-void RenderEngine::render(const GameManager* game) {
-  SDL_GPUCommandBuffer* command_buffer = SDL_AcquireGPUCommandBuffer(device);
-
-  SDL_GPUTexture* swp_texture;
-  Uint32 width, height;
-  SDL_WaitAndAcquireGPUSwapchainTexture(command_buffer, win, &swp_texture, &width, &height);
-  // End early on bad swp texture
-  if (!swp_texture) {
-    // ALWAYS NEED TO SUBMIT COMMAND BUFFER
-    SDL_SubmitGPUCommandBuffer(command_buffer);
-    return;
-  }
-
-  // Create a color target
-  SDL_GPUColorTargetInfo col_tgt_info{};
-  // Clear color
-  col_tgt_info.clear_color = {255/255.0f, 219/255.0f, 255/255.0f};
-  // SDL_GPU_LOADOP_LOAD to keep previous content instead
-  col_tgt_info.load_op = SDL_GPU_LOADOP_CLEAR; 
-  // Store content to a texture
-  col_tgt_info.store_op = SDL_GPU_STOREOP_STORE;
-  col_tgt_info.texture = swp_texture;
-
-  // Begin a render pass
-  SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(command_buffer, &col_tgt_info, 1, NULL);
-
-  // Draw Something
-  // ...
-
-  // End the render pass
-  SDL_EndGPURenderPass(render_pass);
-
-  SDL_SubmitGPUCommandBuffer(command_buffer);
+  // Render viewport selection to window
+  SDL_SetRenderTarget(ren, NULL);
+  clearScreen();
+  SDL_RenderTexture(ren, buffer_tex, &viewport, NULL);
+  displayFPS();
+  SDL_RenderPresent(ren);
 }

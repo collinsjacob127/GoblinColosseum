@@ -41,3 +41,10 @@ void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect) {
   frect->h = box->height;
   frect->w = box->width;
 }
+
+void rescaleBox(float pos_scale, float size_scale, BoxEntity* box) {
+  box->x *= pos_scale;
+  box->y *= pos_scale;
+  box->width *= size_scale;
+  box->height *= size_scale;
+}
