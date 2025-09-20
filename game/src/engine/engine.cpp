@@ -8,7 +8,11 @@
 /*****************************
  ******** INPUT SYSTEM *******
  *****************************/
-InputSystem::InputSystem() {}
+InputSystem::InputSystem() {
+  for (unsigned int i = 0; i < MAX_INPUT_FRAMES; ++i) {
+    buttons.dir_buffer[i] = CENTER;
+  }
+}
 
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
 void InputSystem::updateButtonStates(const SDL_Event *e) {
@@ -172,6 +176,23 @@ void PlayerController::testCharacterInclude() {
   std::cout << "Just the base player controller, nothing to see here..." << std::endl;
 }
 
+std::string PlayerController::getStateString(const PlayerEntity* p) {
+  switch (p->state) {
+    case (STAND): {return "STANDING";}
+    case (CROUCH): {return "CROUCHING";}
+    case (JUMP): {return "JUMPING";}
+    case (FALL): {return "FALLING";}
+    case (WALKF): {return "WALKING FORWARDS";}
+    case (WALKB): {return "WALKING BACKWARDS";}
+    case (DASH): {return "DASHING";}
+    case (BACKDASH): {return "BACKDASHING";}
+    case (AIR_DASH): {return "AIR DASHING";}
+    case (AIR_BACKDASH): {return "AIR BACKDASHING";}
+    case (ATTACK): {return "ATTACKING";}
+  }
+  return "NULL";
+}
+
 bool PlayerController::isActionable(PlayerEntity* p) {
   return (p->f_startup + p->f_active + p->f_recovery == 0);
 }
@@ -180,161 +201,199 @@ bool PlayerController::isGrounded(PlayerEntity* p) {
   return p->y_pos + p->height >= GAME_BORDER_Y1;
 }
 
-/**
- * @brief Set a player's state given their current state and inputs
- */
-void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
-  if (!isActionable(p)) { return; }
-
-  // Grounded movement
-  if (isGrounded(p)) {
-    // Reset # air actions once grounded
-    p->air_action_cnt = 0;
-    // Jump
-    if (in->up) {
-      p->y_vel = jumping_v;
-      p->f_recovery = f_jumping_recovery;
-    }
-    // Walk left
-    if (in->left && p->x_vel <= 0) {
-      p->x_vel = -walking_v;
-    }
-    // Walk right if stopped
-    if (in->right && p->x_vel >= 0) {
-      p->x_vel = walking_v;
-    }
-    // Facing forward, sprint
-    if (p->facing_right && in->right && in->l2) {
-      p->x_vel = dash_v;
-    } else if (!p->facing_right && in->left && in->l2) {
-      p->x_vel = -dash_v;
-    }
-    // Holding back, backdash
-    if (p->facing_right && in->left && in->l2) {
-      p->x_vel = backdash_v;
-      p->f_recovery = f_backdash_recovery;
-    } else if (!p->facing_right && in->right && in->l2) {
-      p->x_vel = -backdash_v;
-      p->f_recovery = f_backdash_recovery;
-    }
- // Aerial Movement
- } else {
-    // Fast fall if in the air
-    if (in->down) {
-      p->y_vel += fastfall_v;
-    }
-
-    // ALL BELOW USE / REQUIRE AN AIR ACTION
-    if (p->air_action_cnt < p->air_action_max) {
-
-    if (in->up) {
-      p->y_vel = jumping_v;
-      p->air_action_cnt++;
-      p->f_recovery = f_jumping_recovery;
-    }
-
-    // Holding forward, airdash
-    if (holdingForward(p, in) && in->l2) {
-      if (p->facing_right) {
-        p->x_vel = airdash_v;
-      } else {
-        p->x_vel = -airdash_v;
-      }
-      p->f_recovery = f_airdash_recovery;
-      p->air_action_cnt++;
-    }
-
-    // Holding back, backdash
-    if (holdingBack(p, in) && in->l2) {
-      if (p->facing_right) {
-        p->x_vel = backdash_v;
-      } else {
-        p->x_vel = -backdash_v;
-      }
-      p->f_recovery = f_backdash_recovery;
-      p->air_action_cnt++;
-    }
-    }
- }
- switch (p->state) {
-  case (STAND): { handleStand(p, in); break; }
-  case (CROUCH): { handleCrouch(p, in); break; }
-  case (FALL): { handleFall(p, in); break; }
-  case (WALKF): { handleWalkForwards(p, in); break; }
-  case (WALKB): { handleWalkBackwards(p, in); break; }
-  case (DASH): { handleDash(p, in); break; }
-  case (BACKDASH): { handleBackdash(p, in); break; }
-  case (JUMP): { handleJump(p, in); break; }
-  case (AIR_DASH): { handleAirDash(p, in); break; }
-  case (AIR_BACKDASH): { handleAirBackDash(p, in); break; }
-  case (ATTACK): { handleAttack(p, in); break; }
- }
-}
-
-// Most grounded actions start here
-void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
-  if (in->l2) {
-    if (holdingBack(p, in)) {
-      backdash(p, in);
-    } else {
-      dash(p, in);
-    }
-  } else if (in->up) { 
-    jump(p, in); 
-  } else if (in->down) {
-    crouch(p, in);
-  } else if (holdingForward(p, in)) { 
-    walkForwards(p, in); 
-  } else if (holdingBack(p, in)) {
-    walkBackwards(p, in);
-  }
-}
-void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
-void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
-void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
-
-// Most aerial actions start here
-void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
-
-}
-
-void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
-
-}
-void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::handleAirDash(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::handleAirBackDash(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::handleCrouch(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) { }
-
-void PlayerController::stand(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::walkForwards(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::walkBackwards(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::fall(PlayerEntity* p, const ButtonStates* in) { }
-
-void PlayerController::dash(PlayerEntity* p, const ButtonStates* in) {
-  float v_mod = p->facing_right ? 1.0 : -1.0;
-  // Check if first frame of dash
-  if (abs(p->x_vel) < abs(dash_v)) {
-    p->x_vel = dash_v * v_mod;
-  } else {
-    p->x_vel += dash_acc * v_mod;
-  }
-}
-void PlayerController::backdash(PlayerEntity* p, const ButtonStates* in) { }
-
-void PlayerController::jump(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::airDash(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::airBackDash(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) { }
-void PlayerController::attack(PlayerEntity* p, const ButtonStates* in) { }
-
 bool PlayerController::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
   return (p->facing_right && in->right) || (!p->facing_right && in->left);
 }
 
 bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in) {
   return (p->facing_right && in->left) || (!p->facing_right && in->right);
+}
+
+
+/**
+ * @brief Set a player's state given their current state and inputs
+ */
+void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
+  p->v_mod = p->facing_right ? 1.0 : -1.0;
+  switch (p->state) {
+    case (STAND): { handleStand(p, in); break; }
+    case (CROUCH): { handleCrouch(p, in); break; }
+    case (JUMP): { handleJump(p, in); break; }
+    case (FALL): { handleFall(p, in); break; }
+    case (WALKF): { handleWalkForwards(p, in); break; }
+    case (WALKB): { handleWalkBackwards(p, in); break; }
+    case (DASH): { handleDash(p, in); break; }
+    case (BACKDASH): { handleBackdash(p, in); break; }
+    case (AIR_DASH): { handleAirDash(p, in); break; }
+    case (AIR_BACKDASH): { handleAirBackDash(p, in); break; }
+    case (ATTACK): { handleAttack(p, in); break; }
+  }
+}
+
+/*
+Functions that handle what to do in the state you're already in
+*/
+// Most grounded actions start here
+void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
+  if (in->up) { 
+    jump(p, in); 
+  } else if (in->l2) {
+    if (holdingBack(p, in)) {
+      backdash(p, in);
+    } else {
+      dash(p, in);
+    }
+  } else if (in->down) {
+    crouch(p, in);
+  } else if (holdingForward(p, in)) { 
+    walkForwards(p, in); 
+  } else if (holdingBack(p, in)) {
+    walkBackwards(p, in);
+  } else {
+    stand(p, in);
+  }
+}
+void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
+void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
+void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
+void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
+  if (p->f_invuln > 0) { p->f_invuln--; }
+  if (p->f_recovery < p->f_recovery / 2) {
+    p->x_vel /= 2;
+  }
+  // Last frame of backdash?
+  if (p->f_recovery <= 0) {
+    stand(p, in);
+    return;
+  } else {
+    p->f_recovery--;
+  }
+}
+
+// Most aerial actions start here
+void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
+  // Land or apply gravity
+  if (isGrounded(p)) { stand(p, in); }
+  else { p->y_vel += gravity; }
+
+  // Basic Air Movement
+  if (in->down) { p->y_vel += fastfall_v; }
+  if (in->left) { p->x_vel = -airstrafe_v; }
+  if (in->right) { p->x_vel = airstrafe_v; }
+}
+void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
+  // Things that can be done in recovery
+  // Fall when falling
+  if (p->y_vel >= 0) { fall(p, in); }
+
+  // Gravity
+  if (!isGrounded(p)) { p->y_vel += gravity; }
+
+  // Basic Air Movement
+  if (in->left) { p->x_vel = -airstrafe_v; }
+  if (in->right) { p->x_vel = airstrafe_v; }
+
+  // Things that cannot be done in recovery
+  if (p->f_recovery > 0) { 
+    p->f_recovery--;
+    return; 
+  }
+
+  // Things requiring an air action
+  if (p->air_action_cnt >= p->air_action_max) { return; }
+
+  if (in->l2 && holdingBack(p, in)) { airBackDash(p, in); return; }
+  if (in->l2) { airDash(p, in); return; }
+  if (in->up) { jump(p, in); return; }
+}
+void PlayerController::handleAirDash(PlayerEntity* p, const ButtonStates* in) {
+  // Decrement recovery
+  p->f_recovery--;
+
+  // Fall after airdash
+  if (p->f_recovery <= 0) {
+    fall(p, in);
+  }
+}
+void PlayerController::handleAirBackDash(PlayerEntity* p, const ButtonStates* in) {
+  if (p->f_invuln > 0) { p->f_invuln--; }
+  // Slow down after f0 of air backdash
+  float acc = air_backdash_v / 4; // Target velocity at airdash end
+  acc /= f_air_backdash_recovery;
+  p->x_vel -= acc;
+  // Decrement recovery
+  p->f_recovery--;
+  if (p->f_recovery <= 0) {
+    fall(p, in);
+  }
+}
+void PlayerController::handleCrouch(PlayerEntity* p, const ButtonStates* in) {
+  p->x_vel = 0;
+  handleStand(p, in);
+}
+void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) { 
+
+}
+
+/*
+Functions to put you into a given state
+*/
+void PlayerController::stand(PlayerEntity* p, const ButtonStates* in) {
+  p->state = STAND;
+  p->air_action_cnt = 0;
+}
+void PlayerController::walkForwards(PlayerEntity* p, const ButtonStates* in) {
+  p->state = WALKF;
+  p->x_vel = walking_v * p->v_mod;
+}
+void PlayerController::walkBackwards(PlayerEntity* p, const ButtonStates* in) {
+  p->state = WALKB;
+  p->x_vel = backwalking_v * p->v_mod;
+}
+void PlayerController::jump(PlayerEntity* p, const ButtonStates* in) {
+  p->state = JUMP;
+  p->y_vel = jumping_v;
+  p->f_recovery = f_jumping_recovery;
+  p->air_action_cnt++;
+}
+void PlayerController::fall(PlayerEntity* p, const ButtonStates* in) {
+  p->state = FALL;
+}
+void PlayerController::dash(PlayerEntity* p, const ButtonStates* in) {
+  p->state = DASH;
+  if (abs(p->x_vel) < abs(dash_v)) {
+    p->x_vel = dash_v * p->v_mod;
+  } else {
+    p->x_vel += dash_acc * p->v_mod;
+  }
+}
+void PlayerController::backdash(PlayerEntity* p, const ButtonStates* in) {
+  p->state = BACKDASH;
+  p->f_recovery = f_backdash_recovery;
+  p->f_invuln = f_backdash_invuln;
+  p->x_vel = backdash_v * p->v_mod;
+}
+void PlayerController::airDash(PlayerEntity* p, const ButtonStates* in) {
+  p->state = AIR_DASH;
+  p->x_vel = airdash_v * p->v_mod;
+  p->y_vel = 0;
+  p->f_recovery = f_airdash_recovery;
+}
+void PlayerController::airBackDash(PlayerEntity* p, const ButtonStates* in) {
+  p->state = AIR_BACKDASH;
+  p->x_vel = air_backdash_v * p->v_mod;
+  p->y_vel = 0;
+  p->f_recovery = f_air_backdash_recovery;
+}
+void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
+  p->state = CROUCH;
+  if (holdingBack(p, in)) {
+    p->block = true;
+  }
+  p->x_vel = 0;
+}
+void PlayerController::attack(PlayerEntity* p, const ButtonStates* in) {
+  p->state = ATTACK;
 }
 
 
@@ -365,18 +424,19 @@ void PlayerController::applyMovement(PlayerEntity* p) {
   p->x_pos += p->x_vel;
   p->y_pos += p->y_vel;
 
-  // Gravity
-  if (!isGrounded(p)) {
-    p->y_vel += gravity;
-  }
-
   // Friction
-  float v_mod = p->facing_right ? 1.0 : -1.0;
-  if (isGrounded(p)) { p->x_vel -= (p->x_vel / friction) * v_mod; }
-  if (abs(p->x_vel) < abs(friction)) {
-    p->x_vel = 0;
+  if (isGrounded(p)) {
+    float fric_acc = p->x_vel / friction;
+    // Check min speed
+    if (abs(p->x_vel) < 2.5) {
+      p->x_vel = 0;
+    }
+    // Apply friction
+    p->x_vel -= fric_acc; 
   }
 }
+
+
 
 /*****************************
  ******** GAME MANAGER *******
@@ -390,11 +450,7 @@ GameManager::GameManager() {
   players[0] = new PlayerController();
   players[1] = new PlayerController();
   // Set starting positions
-  GameScene* scene = allocator.getCurrentScene();
-  PlayerEntity* p1 = &scene->players[0];
-  PlayerEntity* p2 = &scene->players[1];
-  p1->x_pos = 1400 - p1->width;
-  p2->x_pos = 1800;
+  setInitialPlayerPositions();
 }
 
 GameManager::GameManager(unsigned int net_p1_or_p2) {
@@ -408,11 +464,21 @@ GameManager::GameManager(unsigned int net_p1_or_p2) {
   allocator.net_pindex = net_pindex;
 }
 
+void GameManager::setInitialPlayerPositions() {
+  GameScene* scene = allocator.getCurrentScene();
+  PlayerEntity* p1 = &scene->players[0];
+  PlayerEntity* p2 = &scene->players[1];
+  p1->x_pos = 1400 - p1->width;
+  p2->x_pos = 1800;
+  p1->y_pos = GAME_BORDER_Y1 - p1->height;
+  p2->y_pos = GAME_BORDER_Y1 - p2->height;
+}
+
 /**
  * @brief Sends inputs from SDL_Event to InputSystem
  */
 void GameManager::updateLocalInputs(SDL_Event* e) {
-  inputs[loc_pindex].updateButtonStates(e);
+  players[loc_pindex]->inputs.updateButtonStates(e);
 
   GameScene* cur_scene = allocator.getCurrentScene();
   if (!cur_scene) {
@@ -421,7 +487,7 @@ void GameManager::updateLocalInputs(SDL_Event* e) {
 
   // Send inputs from 
   memcpy(&cur_scene->inputs[loc_pindex], 
-         &inputs[loc_pindex].buttons, 
+         &players[loc_pindex]->inputs.buttons, 
          sizeof(ButtonStates));
 }
 
@@ -456,8 +522,8 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
 void GameManager::applyTickUpdates(GameScene* scene) {
   players[0]->updateState(&scene->players[0], &scene->inputs[0]);
   players[1]->updateState(&scene->players[1], &scene->inputs[1]);
-  players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
-  players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
+  // players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
+  // players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
   players[0]->applyMovement(&scene->players[0]);
   players[1]->applyMovement(&scene->players[1]);
   setFacingDir(&scene->players[0], &scene->players[1]);

@@ -163,7 +163,13 @@ int startLocalGame(RenderEngine* renderer) {
 
       // Move to next frame
       game.tick();
-      // Only render if game is caught up to expected time of current frame
+
+      PlayerEntity* p1 = game.getPlayer(0);
+      std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
+      << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
+      << " x_vel: " << p1->x_vel << std::endl;
+
+      // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
         renderer->renderGameScene(&game);
       }

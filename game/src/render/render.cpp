@@ -140,7 +140,11 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->height
   };
 
-  SDL_RenderTexture(ren, player_tex, NULL, &green_square);
+  if (p->facing_right) {
+    SDL_RenderTexture(ren, player_tex, NULL, &green_square);
+  } else {
+    SDL_RenderTextureRotated(ren, player_tex, NULL, &green_square, 0, NULL, SDL_FLIP_HORIZONTAL);
+  }
 
   if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
 

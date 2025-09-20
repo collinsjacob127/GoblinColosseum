@@ -64,6 +64,18 @@ struct Keybinds {
   SDL_Scancode r2 = SDL_SCANCODE_SEMICOLON; // right trigger
 };
 
+enum NumPadDir {
+  DOWN_LEFT = 1,
+  DOWN = 2,
+  DOWN_RIGHT = 3,
+  LEFT = 4,
+  CENTER = 5,
+  RIGHT = 6,
+  UP_LEFT = 7,
+  UP = 8,
+  UP_RIGHT = 9
+};
+
 struct ButtonStates {
   bool up = false;
   bool down = false;
@@ -81,6 +93,7 @@ struct ButtonStates {
   bool r1 = false;
   bool l2 = false;
   bool r2 = false;
+  NumPadDir dir_buffer[MAX_INPUT_FRAMES];
 };
 
 // Used for debugging
@@ -119,6 +132,8 @@ enum State {
 struct PlayerEntity {
   State state;
 
+  float v_mod = 1.0;
+
   bool block = false;
 
   float x_pos = 1920.0/2.0;
@@ -138,6 +153,9 @@ struct PlayerEntity {
   int f_startup = 0;
   int f_active = 0;
   int f_recovery = 0;
+
+  int f_invuln = 0;
+  int f_hitstun = 0;
 };
 
 /**
@@ -146,14 +164,27 @@ struct PlayerEntity {
 class PlayerController {
  public:
   PlayerController();
-  
-  float walking_v = 10.0;
-  float dash_v = 11.0;
+
+  InputSystem inputs;
+
+  float walking_v = 6.0;
+  float backwalking_v = -4.5;
+  float dash_v = 12.0;
   float dash_acc = 0.4;
+
+  float backdash_v = -35.0;
+  int f_backdash_recovery = 15;
+  int f_backdash_invuln = 6;
+
   float fastfall_v = 3.0;
+  float airstrafe_v = 4.5;
 
   float airdash_v = 20.0;
-  int f_airdash_recovery = 5;
+  int f_airdash_recovery = 15;
+
+  float air_backdash_v = -15.0;
+  int f_air_backdash_recovery = 6;
+  int f_air_backdash_invuln = 4;
 
   float jumping_v = -35.0;
   int f_jumping_recovery = 5;
@@ -161,12 +192,12 @@ class PlayerController {
   float gravity = 2.5;
   // "Inverse rate of acceleration reduction" - https://www.dustloop.com/w/GGST/Frame_Data#Walk_and_Dash_Values
   // next_speed -= cur_speed / friction
-  float friction = 80;
+  float friction = 15.0;
 
-  float backdash_v = -25.0;
-  int f_backdash_recovery = 20.0;
 
   virtual void testCharacterInclude();
+  virtual std::string getStateString(const PlayerEntity* p);
+
   virtual void updateState(PlayerEntity* p, const ButtonStates* in);
   void updateFrames(PlayerEntity* p, const ButtonStates* in);
   void applyMovement(PlayerEntity* p);
@@ -177,6 +208,7 @@ class PlayerController {
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
 
  private:
+  // What to do while IN THIS STATE
   virtual void handleStand(PlayerEntity* p, const ButtonStates* in);
   virtual void handleWalkForwards(PlayerEntity* p, const ButtonStates* in);
   virtual void handleWalkBackwards(PlayerEntity* p, const ButtonStates* in);
@@ -189,6 +221,7 @@ class PlayerController {
   virtual void handleCrouch(PlayerEntity* p, const ButtonStates* in);
   virtual void handleAttack(PlayerEntity* p, const ButtonStates* in);
 
+  // Entering the state (frame 0)
   virtual void stand(PlayerEntity* p, const ButtonStates* in);
   virtual void walkForwards(PlayerEntity* p, const ButtonStates* in);
   virtual void walkBackwards(PlayerEntity* p, const ButtonStates* in);
@@ -200,6 +233,9 @@ class PlayerController {
   virtual void airBackDash(PlayerEntity* p, const ButtonStates* in);
   virtual void crouch(PlayerEntity* p, const ButtonStates* in);
   virtual void attack(PlayerEntity* p, const ButtonStates* in);
+
+  // Reading input buffer
+  // virtual bool isNewJump(const ButtonStates* in);
 };
 
 struct GameScene {
@@ -249,7 +285,6 @@ class GameAllocator {
 class GameManager {
  public:
   GameAllocator allocator;
-  InputSystem inputs[2];
   PlayerController* players[2];
 
   unsigned int loc_pindex;
@@ -267,5 +302,7 @@ class GameManager {
 
  private:
   void applyTickUpdates(GameScene* scene);
+  void decrementFrames(PlayerEntity* p1);
   void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
+  void setInitialPlayerPositions();
 };
