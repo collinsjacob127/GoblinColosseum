@@ -14,54 +14,112 @@ InputSystem::InputSystem() {
   }
 }
 
+void applyButtonUpdate(const Button* prev_btn, Button* cur_btn) {
+  if (*cur_btn == 0) { return; }
+  if (*prev_btn > 0) { *cur_btn = HELD; }
+  return;
+}
+
+void handleButtonStateTick(const ButtonStates* prev_buttons, ButtonStates* cur_buttons) {
+  applyButtonUpdate(&prev_buttons->up, &cur_buttons->up); 
+  applyButtonUpdate(&prev_buttons->down, &cur_buttons->down); 
+  applyButtonUpdate(&prev_buttons->left, &cur_buttons->left); 
+  applyButtonUpdate(&prev_buttons->right, &cur_buttons->right); 
+  applyButtonUpdate(&prev_buttons->b1, &cur_buttons->b1); 
+  applyButtonUpdate(&prev_buttons->b2, &cur_buttons->b2); 
+  applyButtonUpdate(&prev_buttons->b3, &cur_buttons->b3); 
+  applyButtonUpdate(&prev_buttons->b4, &cur_buttons->b4); 
+  applyButtonUpdate(&prev_buttons->l1, &cur_buttons->l1); 
+  applyButtonUpdate(&prev_buttons->l2, &cur_buttons->l2); 
+  applyButtonUpdate(&prev_buttons->r1, &cur_buttons->r1); 
+  applyButtonUpdate(&prev_buttons->r2, &cur_buttons->r2); 
+}
+
 // References [SDL docs](https://wiki.libsdl.org/SDL3/BestKeyboardPractices)
 void InputSystem::updateButtonStates(const SDL_Event *e) {
   if (e->type == SDL_EVENT_KEY_DOWN) {
-    if (!e->key.repeat) {
-      if (e->key.scancode == bindings.up) { buttons.up = true; }
-      else if (e->key.scancode == bindings.down) { buttons.down = true; }
-      else if (e->key.scancode == bindings.left) { buttons.left = true; }
-      else if (e->key.scancode == bindings.right) { buttons.right = true; }
-      else if (e->key.scancode == bindings.b1 ) {buttons.b1 = true; }
-      else if (e->key.scancode == bindings.b2 ) {buttons.b2 = true; }
-      else if (e->key.scancode == bindings.b3) {buttons.b3 = true; }
-      else if (e->key.scancode == bindings.b4) {buttons.b4 = true; }
-      else if (e->key.scancode == bindings.l1) {buttons.l1 = true; }
-      else if (e->key.scancode == bindings.r1) {buttons.r1 = true; }
-      else if (e->key.scancode == bindings.l2) {buttons.l2 = true; }
-      else if (e->key.scancode == bindings.r2) {buttons.r2 = true; }
-    }
+    if (e->key.scancode == bindings.up) { buttons.up = PRESSED; }
+    else if (e->key.scancode == bindings.down) { buttons.down = PRESSED; }
+    else if (e->key.scancode == bindings.left) { buttons.left = PRESSED; }
+    else if (e->key.scancode == bindings.right) { buttons.right = PRESSED; }
+    else if (e->key.scancode == bindings.b1 ) {buttons.b1 = PRESSED; }
+    else if (e->key.scancode == bindings.b2 ) {buttons.b2 = PRESSED; }
+    else if (e->key.scancode == bindings.b3) {buttons.b3 = PRESSED; }
+    else if (e->key.scancode == bindings.b4) {buttons.b4 = PRESSED; }
+    else if (e->key.scancode == bindings.l1) {buttons.l1 = PRESSED; }
+    else if (e->key.scancode == bindings.r1) {buttons.r1 = PRESSED; }
+    else if (e->key.scancode == bindings.l2) {buttons.l2 = PRESSED; }
+    else if (e->key.scancode == bindings.r2) {buttons.r2 = PRESSED; }
   } else if (e->type == SDL_EVENT_KEY_UP) {
-    if (e->key.scancode == bindings.up) { buttons.up = false; }
-    else if (e->key.scancode == bindings.down) { buttons.down = false; }
-    else if (e->key.scancode == bindings.left) { buttons.left = false; }
-    else if (e->key.scancode == bindings.right) { buttons.right = false; }
-    else if (e->key.scancode == bindings.b1) {buttons.b1 = false; }
-    else if (e->key.scancode == bindings.b2) {buttons.b2 = false; }
-    else if (e->key.scancode == bindings.b3) {buttons.b3 = false; }
-    else if (e->key.scancode == bindings.b4) {buttons.b4 = false; }
-    else if (e->key.scancode == bindings.l1) {buttons.l1 = false; }
-    else if (e->key.scancode == bindings.r1) {buttons.r1 = false; }
-    else if (e->key.scancode == bindings.l2) {buttons.l2 = false; }
-    else if (e->key.scancode == bindings.r2) {buttons.r2 = false; }
+    if (e->key.scancode == bindings.up) { buttons.up = RELEASED; }
+    else if (e->key.scancode == bindings.down) { buttons.down = RELEASED; }
+    else if (e->key.scancode == bindings.left) { buttons.left = RELEASED; }
+    else if (e->key.scancode == bindings.right) { buttons.right = RELEASED; }
+    else if (e->key.scancode == bindings.b1) {buttons.b1 = RELEASED; }
+    else if (e->key.scancode == bindings.b2) {buttons.b2 = RELEASED; }
+    else if (e->key.scancode == bindings.b3) {buttons.b3 = RELEASED; }
+    else if (e->key.scancode == bindings.b4) {buttons.b4 = RELEASED; }
+    else if (e->key.scancode == bindings.l1) {buttons.l1 = RELEASED; }
+    else if (e->key.scancode == bindings.r1) {buttons.r1 = RELEASED; }
+    else if (e->key.scancode == bindings.l2) {buttons.l2 = RELEASED; }
+    else if (e->key.scancode == bindings.r2) {buttons.r2 = RELEASED; }
   }
 }
 
-void showButtonStates(const ButtonStates* btn) {
+std::string printButtonState(const Button* btn) {
+  switch (*btn) {
+    case (PRESSED): { return "PRESSED"; }
+    case (HELD): { return "HELD"; }
+    case (RELEASED): { return "RELEASED"; }
+    default: {return "NULL";}
+  }
+}
+
+void showButtonStates(const ButtonStates* btn_state) {
   std::cout << "Buttons: ";
-  if (btn->up) {std::cout << "up ";}
-  if (btn->down) {std::cout << "down ";}
-  if (btn->left) {std::cout << "left ";}
-  if (btn->right) {std::cout << "right ";}
-  if (btn->b1) {std::cout << "b1 ";}
-  if (btn->b2) {std::cout << "b2 ";}
-  if (btn->b3) {std::cout << "b3 ";}
-  if (btn->b4) {std::cout << "b4 ";}
-  if (btn->l1) {std::cout << "l1 ";}
-  if (btn->l2) {std::cout << "l2 ";}
-  if (btn->r1) {std::cout << "r1 ";}
-  if (btn->r2) {std::cout << "r2 ";}
+  if (btn_state->up) {std::cout << "up_" << printButtonState(&btn_state->up);}
+  if (btn_state->down) {std::cout << "down_" << printButtonState(&btn_state->down);}
+  if (btn_state->left) {std::cout << "left_" << printButtonState(&btn_state->left);}
+  if (btn_state->right) {std::cout << "right_" << printButtonState(&btn_state->right);}
+  if (btn_state->b1) {std::cout << "b1_" << printButtonState(&btn_state->b1);}
+  if (btn_state->b2) {std::cout << "b2_" << printButtonState(&btn_state->b2);}
+  if (btn_state->b3) {std::cout << "b3_" << printButtonState(&btn_state->b3);}
+  if (btn_state->b4) {std::cout << "b4_" << printButtonState(&btn_state->b4);}
+  if (btn_state->l1) {std::cout << "l1_" << printButtonState(&btn_state->l1);}
+  if (btn_state->l2) {std::cout << "l2_" << printButtonState(&btn_state->l2);}
+  if (btn_state->r1) {std::cout << "r1_" << printButtonState(&btn_state->r1);}
+  if (btn_state->r2) {std::cout << "r2_" << printButtonState(&btn_state->r2);}
   std::cout << std::endl;
+}
+
+void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir) {
+  // clean-slate button for switching left & right
+  ButtonStates btn;
+  // Copy values from btn_state to our clean button
+  btn.up = btn_state->up;
+  btn.down = btn_state->down;
+  btn.left = btn_state->left;
+  btn.right = btn_state->right;
+  // If facing left, switch left & right
+  if (!p->facing_right) {
+    Button tmp = btn.left;
+    btn.left = btn.right;
+    btn.right = tmp;
+  }
+  // Convert button states to numpad direction
+  if (btn.up) {
+    if (btn.left) { *dir = UP_LEFT; } 
+    else if (btn.right) { *dir = UP_RIGHT; } 
+    else { *dir = UP; }
+  } else if (btn.down) {
+    if (btn.left) { *dir = DOWN_LEFT; } 
+    else if (btn.right) { *dir = DOWN_RIGHT; } 
+    else { *dir = DOWN; }
+  } else {
+    if (btn.left) { *dir = LEFT; } 
+    else if (btn.right) { *dir = RIGHT; } 
+    else { *dir = CENTER; }
+  }
 }
 
 void InputSystem::resetButtonStates() {
@@ -87,7 +145,7 @@ void InputSystem::setP2DefaultBindings() {
  ******* GAME ALLOCATOR ******
  *****************************/
 GameAllocator::GameAllocator() {
-  cur_tick = 0;
+  cur_tick = INITIAL_FRAME;
   net_pindex = 99;
   loc_pindex = 0;
   if (ENABLE_HELPER_PRINTOUTS) {
@@ -97,7 +155,7 @@ GameAllocator::GameAllocator() {
 }
 
 GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
-  cur_tick = 0;
+  cur_tick = INITIAL_FRAME;
   net_pindex = net_p1_or_p2;
   // net and loc should always be opposites
   if (net_pindex == 0) { loc_pindex = 1;}
@@ -118,6 +176,10 @@ GameScene* GameAllocator::getNextScene() {
   cur_tick++;
   GameScene* new_scene = getCurrentScene();
   memcpy(new_scene, prev_scene, sizeof(GameScene));
+
+  // handleButtonStateTick(&prev_scene->inputs[loc_pindex], &new_scene->inputs[loc_pindex]);
+  // handleButtonStateTick(&prev_scene->inputs[net_pindex], &new_scene->inputs[net_pindex]);
+
   return new_scene;
 }
 
@@ -125,11 +187,11 @@ GameScene* GameAllocator::getNextScene() {
  * @return The index at which the current frame's scene lies in `history_buffer`
  */
 unsigned int GameAllocator::getCurrentIndex() {
-  return cur_tick % MAX_ROLLBACK_FRAMES;
+  return cur_tick % HISTORY_BUFFER_SIZE;
 }
 
 GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* in) {
-  if (cur_tick - prev_tick > MAX_ROLLBACK_FRAMES) {
+  if (cur_tick - prev_tick > HISTORY_BUFFER_SIZE) {
     std::cerr << "Error: Allocator recieved request for " << cur_tick - prev_tick
     << "f rollback" << std::endl
     << "  cur_tick: " << cur_tick << std::endl
@@ -163,7 +225,40 @@ GameScene* GameAllocator::rollForward() {
   memcpy(next_scene, cur_scene, sizeof(GameScene));
   // Copy saved inputs to next frame
   memcpy(&next_scene->inputs[loc_pindex], &tmp, sizeof(ButtonStates));
+
+  // handleButtonStateTick(&cur_scene->inputs[net_pindex], &next_scene->inputs[net_pindex]);
+
   return next_scene;
+}
+
+const ButtonStates* GameAllocator::getPrevInputs(int pindex) {
+  if (pindex != 0 && pindex != 1) { std::cerr << "Allocator recieved bad index in getPrevInputs\n"; }
+
+  cur_tick--;
+  GameScene* prev_scene = getCurrentScene();
+  cur_tick++;
+
+  return &prev_scene->inputs[pindex];
+}
+
+void GameAllocator::populateDirBuffer(unsigned int tick, int pindex) {
+  // Get pointer to the dir buffer at this tick
+
+  //...
+
+  // Loop through dir buffer 
+  unsigned int idx = cur_tick;
+  for (unsigned int i = 0; i < MAX_INPUT_FRAMES; ++i) {
+    // Calculate the correct index
+    idx = cur_tick - i;
+    // Get a pointer to the scene at this tick
+
+    // Populate this index with the correct DIR
+    // getDirFromButtonState()
+  }
+
+
+  // return getDirFromButtonState(history_buffer[tick % HISTORY_BUFFER_SIZE].inputs);
 }
 
 /***************************
@@ -214,7 +309,9 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
  * @brief Set a player's state given their current state and inputs
  */
 void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
-  p->v_mod = p->facing_right ? 1.0 : -1.0;
+  if (isActionable(p)) {
+    p->v_mod = p->facing_right ? 1.0 : -1.0;
+  }
   switch (p->state) {
     case (STAND): { handleStand(p, in); break; }
     case (CROUCH): { handleCrouch(p, in); break; }
@@ -235,9 +332,9 @@ Functions that handle what to do in the state you're already in
 */
 // Most grounded actions start here
 void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
-  if (in->up) { 
+  if (in->up == PRESSED) { 
     jump(p, in); 
-  } else if (in->l2) {
+  } else if (in->l2 == PRESSED ) {
     if (holdingBack(p, in)) {
       backdash(p, in);
     } else {
@@ -253,9 +350,22 @@ void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
     stand(p, in);
   }
 }
-void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
-void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
-void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) { handleStand(p, in); }
+void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { 
+  p->x_vel = 0;
+  handleStand(p, in); 
+}
+void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { 
+  p->x_vel = 0;
+  handleStand(p, in); 
+}
+void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) {
+  if (holdingBack(p, in)) { handleStand(p, in); return;}
+  if (in->l2) {
+    p->x_vel = dash_v;
+  } else {
+    handleStand(p, in);
+  }
+}
 void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
   if (p->f_invuln > 0) { p->f_invuln--; }
   if (p->f_recovery < p->f_recovery / 2) {
@@ -278,8 +388,14 @@ void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
 
   // Basic Air Movement
   if (in->down) { p->y_vel += fastfall_v; }
-  if (in->left) { p->x_vel = -airstrafe_v; }
-  if (in->right) { p->x_vel = airstrafe_v; }
+  applyAirStrafe(p, in);
+
+  // Things requiring an air action
+  if (p->air_action_cnt >= p->air_action_max) { return; }
+
+  if (in->l2 == PRESSED && holdingBack(p, in)) { airBackDash(p, in); return; }
+  if (in->l2 == PRESSED) { airDash(p, in); return; }
+  if (in->up == PRESSED) { jump(p, in); return; }
 }
 void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
   // Things that can be done in recovery
@@ -290,8 +406,7 @@ void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
   if (!isGrounded(p)) { p->y_vel += gravity; }
 
   // Basic Air Movement
-  if (in->left) { p->x_vel = -airstrafe_v; }
-  if (in->right) { p->x_vel = airstrafe_v; }
+  applyAirStrafe(p, in);
 
   // Things that cannot be done in recovery
   if (p->f_recovery > 0) { 
@@ -302,9 +417,9 @@ void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
   // Things requiring an air action
   if (p->air_action_cnt >= p->air_action_max) { return; }
 
-  if (in->l2 && holdingBack(p, in)) { airBackDash(p, in); return; }
-  if (in->l2) { airDash(p, in); return; }
-  if (in->up) { jump(p, in); return; }
+  if (in->l2 == PRESSED && holdingBack(p, in)) { airBackDash(p, in); return; }
+  if (in->l2 == PRESSED) { airDash(p, in); return; }
+  if (in->up == PRESSED) { jump(p, in); return; }
 }
 void PlayerController::handleAirDash(PlayerEntity* p, const ButtonStates* in) {
   // Decrement recovery
@@ -378,12 +493,14 @@ void PlayerController::airDash(PlayerEntity* p, const ButtonStates* in) {
   p->x_vel = airdash_v * p->v_mod;
   p->y_vel = 0;
   p->f_recovery = f_airdash_recovery;
+  p->air_action_cnt++;
 }
 void PlayerController::airBackDash(PlayerEntity* p, const ButtonStates* in) {
   p->state = AIR_BACKDASH;
   p->x_vel = air_backdash_v * p->v_mod;
   p->y_vel = 0;
   p->f_recovery = f_air_backdash_recovery;
+  p->air_action_cnt++;
 }
 void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
   p->state = CROUCH;
@@ -395,7 +512,6 @@ void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
 void PlayerController::attack(PlayerEntity* p, const ButtonStates* in) {
   p->state = ATTACK;
 }
-
 
 /**
  * @brief Apply movement to a player using their velocities
@@ -436,13 +552,44 @@ void PlayerController::applyMovement(PlayerEntity* p) {
   }
 }
 
+void PlayerController::adjustVel(float* v_cur, float v_start, float v_final, float frac) {
+  float acc = (v_final - v_start) * frac;
+  if (abs(*v_cur + acc) > abs(v_final)) {
+    *v_cur = v_final;
+  } else {
+    *v_cur += acc;
+  }
+}
+
+void PlayerController::applyAirStrafe(PlayerEntity* p, const ButtonStates* in) {
+  if (in->left) {
+    if (p->x_vel < -airstrafe_v) { 
+      // Can't strafe to go faster than strafe speed
+      return; 
+    }
+    else if (p->x_vel <= airstrafe_v) { 
+      // Within |airstrafe_v|, complete strafe control
+      p->x_vel = -airstrafe_v;
+    }
+  }
+  if (in->right) {
+    if (p->x_vel > airstrafe_v) { 
+      // Can't strafe to go faster than strafe speed
+      return; 
+    }
+    else if (p->x_vel >= -airstrafe_v) { 
+      // Within |airstrafe_v|, complete strafe control
+      p->x_vel = airstrafe_v;
+    }
+  }
+}
 
 
 /*****************************
  ******** GAME MANAGER *******
  *****************************/
 GameManager::GameManager() {
-  cur_tick = 0;
+  cur_tick = INITIAL_FRAME;
   loc_pindex = 0;
   net_pindex = 1;
   allocator = GameAllocator(net_pindex);
@@ -454,14 +601,18 @@ GameManager::GameManager() {
 }
 
 GameManager::GameManager(unsigned int net_p1_or_p2) {
-  cur_tick = 0;
+  cur_tick = INITIAL_FRAME;
+
   net_pindex = net_p1_or_p2;
   if (net_pindex == 0) { loc_pindex = 1; }
   else if (net_pindex == 1) { loc_pindex = 0; }
   else { std::cerr << "Invalid net pindex\n"; }
-
   allocator.loc_pindex = loc_pindex;
   allocator.net_pindex = net_pindex;
+
+  players[0] = new PlayerController();
+  players[1] = new PlayerController();
+  setInitialPlayerPositions();
 }
 
 void GameManager::setInitialPlayerPositions() {
@@ -477,18 +628,26 @@ void GameManager::setInitialPlayerPositions() {
 /**
  * @brief Sends inputs from SDL_Event to InputSystem
  */
-void GameManager::updateLocalInputs(SDL_Event* e) {
-  players[loc_pindex]->inputs.updateButtonStates(e);
+void GameManager::updateInputs(const ButtonStates* btns, int pindex) {
+  // Player index must be 0 or 1
+  if (pindex != 0 && pindex != 1) { std::cerr << "Invalid pindex: " << pindex << std::endl; }
 
+  // Pointer to current game scene
   GameScene* cur_scene = allocator.getCurrentScene();
-  if (!cur_scene) {
-    std::cerr << "Game allocator returned null scene to input update request\n";
-  }
+  if (!cur_scene) { std::cerr << "Game allocator returned null scene to input update request\n"; }
 
-  // Send inputs from 
-  memcpy(&cur_scene->inputs[loc_pindex], 
-         &players[loc_pindex]->inputs.buttons, 
+  // Get previous button inputs from the allocator
+  const ButtonStates* prev_inputs = allocator.getPrevInputs(pindex);
+  // Pointer to button inputs of current scene
+  ButtonStates* cur_inputs = &cur_scene->inputs[pindex];
+
+  // Copy the passed inputs to the current scene
+  memcpy(cur_inputs, 
+         btns, 
          sizeof(ButtonStates));
+
+  // Set button states (held vs pressed) based on previous scene's inputs
+  handleButtonStateTick(prev_inputs, cur_inputs);
 }
 
 void GameManager::tick() {

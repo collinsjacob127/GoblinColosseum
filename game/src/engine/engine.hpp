@@ -34,11 +34,12 @@
 
 // For rollback functionality demo:
 #define MAX_ROLLBACK_FRAMES 60
-// #define MAX_ROLLBACK_FRAMES 60
-#define FRAME_ADVANTAGE_LIMIT 5
-#define INITIAL_FRAME 0
-
 #define MAX_INPUT_FRAMES 60
+#define INITIAL_FRAME 60
+#define HISTORY_BUFFER_SIZE 120
+
+#define FRAME_ADVANTAGE_LIMIT 5
+
 
 #define DEFAULT_XDIM 3200
 #define DEFAULT_YDIM 1800
@@ -64,6 +65,12 @@ struct Keybinds {
   SDL_Scancode r2 = SDL_SCANCODE_SEMICOLON; // right trigger
 };
 
+enum Button {
+  PRESSED = 2, // Pressed this frame
+  HELD = 1,    // Still being held
+  RELEASED = 0 // Released
+};
+
 enum NumPadDir {
   DOWN_LEFT = 1,
   DOWN = 2,
@@ -76,28 +83,43 @@ enum NumPadDir {
   UP_RIGHT = 9
 };
 
+
 struct ButtonStates {
-  bool up = false;
-  bool down = false;
-  bool left = false;
-  bool right = false;
+  Button up = RELEASED;
+  Button down = RELEASED;
+  Button left = RELEASED;
+  Button right = RELEASED;
   // PS square
-  bool b1 = false; 
+  Button b1 = RELEASED; 
   // ps triangle
-  bool b2 = false; 
+  Button b2 = RELEASED; 
   // ps X
-  bool b3 = false; 
+  Button b3 = RELEASED; 
   // ps circle
-  bool b4 = false; 
-  bool l1 = false;
-  bool r1 = false;
-  bool l2 = false;
-  bool r2 = false;
+  Button b4 = RELEASED; 
+  Button l1 = RELEASED;
+  Button r1 = RELEASED;
+  Button l2 = RELEASED;
+  Button r2 = RELEASED;
   NumPadDir dir_buffer[MAX_INPUT_FRAMES];
 };
 
 // Used for debugging
-void showButtonStates(const ButtonStates* btn);
+std::string printButtonState(const Button* btn);
+void showButtonStates(const ButtonStates* btn_state);
+
+/**
+ * @brief Function to set the numpad direction of a given button state and player.
+ * @param p The player at a given tick
+ * @param btn_state The button state at the same tick
+ * @param dir The resulting direction will be saved here.
+ * @note Numpad directions are given as though a player is facing right.
+ * 7 8 9
+ * 4 5 6
+ * 1 2 3
+ * 4 is left, 6 is right, 8 is up, 2 is down, 5 is no direction, etc.
+ */
+void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
 
 class InputSystem {
  public:
@@ -105,10 +127,23 @@ class InputSystem {
   Keybinds bindings;
 
   InputSystem();
+  // Directly sets buttons to pressed or unpressed in the current allocation
   void updateButtonStates(const SDL_Event *e);
   void resetButtonStates();
   void setP2DefaultBindings();
+ private:
 };
+
+void applyButtonUpdate(const Button* prev_btn, Button* cur_btn);
+
+/** 
+ * @brief Differentiates between pressed and held button states based on previous state
+ * @param prev_buttons Pointer to the reference button state
+ * @param cur_buttons Pointer to the current button state, to be updated based on the previous.
+ * @note Updates current tick's button state based on the previous button state.
+ * ONLY USE ONCE PER TICK
+ */
+void handleButtonStateTick(const ButtonStates* prev_buttons, ButtonStates* cur_buttons);
 
 // Enum for states shared by all characters
 enum State {
@@ -148,7 +183,7 @@ struct PlayerEntity {
   float height = 300.0;
 
   int air_action_cnt = 0;
-  int air_action_max = 2;
+  int air_action_max = 3;
 
   int f_startup = 0;
   int f_active = 0;
@@ -165,11 +200,9 @@ class PlayerController {
  public:
   PlayerController();
 
-  InputSystem inputs;
-
   float walking_v = 6.0;
   float backwalking_v = -4.5;
-  float dash_v = 12.0;
+  float dash_v = 16.0;
   float dash_acc = 0.4;
 
   float backdash_v = -35.0;
@@ -234,8 +267,16 @@ class PlayerController {
   virtual void crouch(PlayerEntity* p, const ButtonStates* in);
   virtual void attack(PlayerEntity* p, const ButtonStates* in);
 
-  // Reading input buffer
-  // virtual bool isNewJump(const ButtonStates* in);
+  virtual void applyAirStrafe(PlayerEntity* p, const ButtonStates* in);
+  /**
+   * @brief Function to adjust velocity from one speed to another 
+   * @param v_cur Pointer to the current velocity, to be edited
+   * @param v_start The starting velocity
+   * @param v_final The goal velocity
+   * @param frac Between 0 and 1. What ratio between v_start and v_final 
+   * should v_cur be adjusted by.
+   */
+  virtual void adjustVel(float* v_cur, float v_start, float v_final, float frac);
 };
 
 struct GameScene {
@@ -264,6 +305,10 @@ class GameAllocator {
   GameScene* getNextScene();
 
   /**
+   * @brief Retrieve a given player's inputs from the previous scene
+   */
+  const ButtonStates* getPrevInputs(int pindex);
+  /**
    * @brief Function to roll back to a given frame.
    * @param prev_tick The frame to roll back to (sets allocator's cur_tick to this)
    * @param in The inputs to insert.
@@ -277,8 +322,18 @@ class GameAllocator {
    */
   GameScene* rollForward();
 
+  /**
+   * @brief Used to get the numpad direction at a given tick
+   * @param tick The tick to populate
+   * @param pindex The player of choice
+   * @note Used to populate motion buffer
+   */
+  void populateDirBuffer(unsigned int tick, int pindex);
+
+  void fillCurrentMotionBuffer(ButtonStates* buf);
+
  private:
-  GameScene history_buffer[MAX_ROLLBACK_FRAMES];
+  GameScene history_buffer[HISTORY_BUFFER_SIZE];
   unsigned int getCurrentIndex();
 };
 
@@ -294,7 +349,7 @@ class GameManager {
   GameManager();
   GameManager(unsigned int net_p1_or_p2);
 
-  void updateLocalInputs(SDL_Event* e);
+  void updateInputs(const ButtonStates* btns, int pindex);
   void tick();
   void rollBack(unsigned int frame, const ButtonStates* in);
 

@@ -12,6 +12,8 @@ RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   fps_timer.start();
+  Timer startup_timer;
+  startup_timer.start();
 
   game_border.x = GAME_BORDER_X0;
   game_border.y = GAME_BORDER_Y0;
@@ -32,7 +34,7 @@ RenderEngine::RenderEngine() {
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
     SDL_Quit();
     exit(EXIT_FAILURE);
-  }
+  } else { std::cout << "Window Created\n";}
 
   // Create Renderer
   ren = SDL_CreateRenderer(win, "gpu");
@@ -41,7 +43,7 @@ RenderEngine::RenderEngine() {
     SDL_DestroyWindow(win);
     SDL_Quit();
     exit(EXIT_FAILURE);
-  }
+  } else { std::cout << "Renderer set\n";}
   
   buffer_tex = SDL_CreateTexture(
     ren, 
@@ -54,7 +56,7 @@ RenderEngine::RenderEngine() {
   if (!font) {
     std::cerr << "Font load error: " << SDL_GetError() << std::endl;
     exit(EXIT_FAILURE);
-  }
+  } else { std::cout << "Font Loaded\n"; }
 
   /**
    * INITIALIZING ASSETS FOR START MENU
@@ -92,9 +94,11 @@ RenderEngine::RenderEngine() {
   SDL_Surface* gob0_png = IMG_Load("assets/characters/gob0/GOB0.png");
   player_tex = SDL_CreateTextureFromSurface(ren, gob0_png);
   SDL_DestroySurface(gob0_png);
+  std::cout << "Background and character assets loaded\n";
 
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
+  std::cout << "Renderer finished initializing (" << startup_timer.duration() << "s)\n";
 }
 
 RenderEngine::~RenderEngine() {

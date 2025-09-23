@@ -107,8 +107,9 @@ int startLocalGame(RenderEngine* renderer) {
   game.players[1] = new Hunko();
 
   // Testing local 2-player
-  InputSystem p2_inputs;
-  p2_inputs.setP2DefaultBindings();
+  InputSystem* p1_inputs = new InputSystem();
+  InputSystem* p2_inputs = new InputSystem();
+  p2_inputs->setP2DefaultBindings();
 
   // Define duration of each frame
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
@@ -132,10 +133,9 @@ int startLocalGame(RenderEngine* renderer) {
         if (e.key.key == SDLK_ESCAPE) { quit = true; }
       if (e.type == SDL_EVENT_WINDOW_RESIZED) { renderer->calculateScale(e.window.data1, e.window.data2); }
       // Send keyboard to game inputs
-      game.updateLocalInputs(&e);
 
-      p2_inputs.updateButtonStates(&e);
-      game.rollBack(game.cur_tick, &p2_inputs.buttons);
+      p1_inputs->updateButtonStates(&e);
+      p2_inputs->updateButtonStates(&e);
     }
 
     // Cap frame rate at 60 fps
@@ -161,10 +161,15 @@ int startLocalGame(RenderEngine* renderer) {
       // showButtonStates(&(game.inputs[0].buttons));
       // std::cout << std::endl;
 
+      // Send accumulated inputs to game engine
+      game.updateInputs(&p1_inputs->buttons, 0);
+      game.updateInputs(&p2_inputs->buttons, 1);
+
       // Move to next frame
       game.tick();
 
       PlayerEntity* p1 = game.getPlayer(0);
+      // showButtonStates(&game.allocator.getCurrentScene()->inputs[0]);
       std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
       << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
       << " x_vel: " << p1->x_vel << std::endl;
