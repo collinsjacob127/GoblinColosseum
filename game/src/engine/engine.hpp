@@ -108,19 +108,6 @@ struct ButtonStates {
 std::string printButtonState(const Button* btn);
 void showButtonStates(const ButtonStates* btn_state);
 
-/**
- * @brief Function to set the numpad direction of a given button state and player.
- * @param p The player at a given tick
- * @param btn_state The button state at the same tick
- * @param dir The resulting direction will be saved here.
- * @note Numpad directions are given as though a player is facing right.
- * 7 8 9
- * 4 5 6
- * 1 2 3
- * 4 is left, 6 is right, 8 is up, 2 is down, 5 is no direction, etc.
- */
-void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
-
 class InputSystem {
  public:
   ButtonStates buttons;
@@ -192,6 +179,19 @@ struct PlayerEntity {
   int f_invuln = 0;
   int f_hitstun = 0;
 };
+
+/**
+ * @brief Function to set the numpad direction of a given button state and player.
+ * @param p The player at a given tick
+ * @param btn_state The button state at the same tick
+ * @param dir The resulting direction will be saved here.
+ * @note Numpad directions are given as though a player is facing right.
+ * 7 8 9
+ * 4 5 6
+ * 1 2 3
+ * 4 is left, 6 is right, 8 is up, 2 is down, 5 is no direction, etc.
+ */
+void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
 
 /**
  * Base class for static character info
