@@ -170,7 +170,7 @@ struct PlayerEntity {
   float height = 300.0;
 
   int air_action_cnt = 0;
-  int air_action_max = 3;
+  int air_action_max = 2;
 
   int f_startup = 0;
   int f_active = 0;
@@ -205,7 +205,7 @@ class PlayerController {
   float dash_v = 16.0;
   float dash_acc = 0.4;
 
-  float backdash_v = -35.0;
+  float backdash_v = -25.0;
   int f_backdash_recovery = 15;
   int f_backdash_invuln = 6;
 
@@ -307,7 +307,9 @@ class GameAllocator {
   /**
    * @brief Retrieve a given player's inputs from the previous scene
    */
-  const ButtonStates* getPrevInputs(int pindex);
+  const ButtonStates* getInputsAtTick(int pindex, unsigned int tick);
+
+
   /**
    * @brief Function to roll back to a given frame.
    * @param prev_tick The frame to roll back to (sets allocator's cur_tick to this)
@@ -335,6 +337,8 @@ class GameAllocator {
  private:
   GameScene history_buffer[HISTORY_BUFFER_SIZE];
   unsigned int getCurrentIndex();
+  unsigned int getIndexOfTick(unsigned int tick);
+  const GameScene* getSceneAtTick(unsigned int tick);
 };
 
 class GameManager {

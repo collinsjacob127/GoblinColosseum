@@ -167,6 +167,18 @@ GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
   }
 }
 
+unsigned int GameAllocator::getIndexOfTick(unsigned int tick) {
+  return tick % HISTORY_BUFFER_SIZE;
+}
+
+/**
+ * @return The index at which the current frame's scene lies in `history_buffer`
+ */
+unsigned int GameAllocator::getCurrentIndex() {
+  return getIndexOfTick(cur_tick);
+}
+
+
 GameScene* GameAllocator::getCurrentScene() {
   return &history_buffer[getCurrentIndex()];
 }
@@ -177,17 +189,7 @@ GameScene* GameAllocator::getNextScene() {
   GameScene* new_scene = getCurrentScene();
   memcpy(new_scene, prev_scene, sizeof(GameScene));
 
-  // handleButtonStateTick(&prev_scene->inputs[loc_pindex], &new_scene->inputs[loc_pindex]);
-  // handleButtonStateTick(&prev_scene->inputs[net_pindex], &new_scene->inputs[net_pindex]);
-
   return new_scene;
-}
-
-/**
- * @return The index at which the current frame's scene lies in `history_buffer`
- */
-unsigned int GameAllocator::getCurrentIndex() {
-  return cur_tick % HISTORY_BUFFER_SIZE;
 }
 
 GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* in) {
@@ -231,14 +233,16 @@ GameScene* GameAllocator::rollForward() {
   return next_scene;
 }
 
-const ButtonStates* GameAllocator::getPrevInputs(int pindex) {
+const GameScene* GameAllocator::getSceneAtTick(unsigned int tick) {
+  return &history_buffer[getIndexOfTick(tick)];
+}
+
+const ButtonStates* GameAllocator::getInputsAtTick(int pindex, unsigned int tick) {
   if (pindex != 0 && pindex != 1) { std::cerr << "Allocator recieved bad index in getPrevInputs\n"; }
 
-  cur_tick--;
-  GameScene* prev_scene = getCurrentScene();
-  cur_tick++;
+  const GameScene* scene = getSceneAtTick(tick);
 
-  return &prev_scene->inputs[pindex];
+  return &scene->inputs[pindex];
 }
 
 void GameAllocator::populateDirBuffer(unsigned int tick, int pindex) {
@@ -361,7 +365,7 @@ void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* 
 void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) {
   if (holdingBack(p, in)) { handleStand(p, in); return;}
   if (in->l2) {
-    p->x_vel = dash_v;
+    p->x_vel = dash_v * p->v_mod;
   } else {
     handleStand(p, in);
   }
@@ -636,8 +640,6 @@ void GameManager::updateInputs(const ButtonStates* btns, int pindex) {
   GameScene* cur_scene = allocator.getCurrentScene();
   if (!cur_scene) { std::cerr << "Game allocator returned null scene to input update request\n"; }
 
-  // Get previous button inputs from the allocator
-  const ButtonStates* prev_inputs = allocator.getPrevInputs(pindex);
   // Pointer to button inputs of current scene
   ButtonStates* cur_inputs = &cur_scene->inputs[pindex];
 
@@ -645,9 +647,6 @@ void GameManager::updateInputs(const ButtonStates* btns, int pindex) {
   memcpy(cur_inputs, 
          btns, 
          sizeof(ButtonStates));
-
-  // Set button states (held vs pressed) based on previous scene's inputs
-  handleButtonStateTick(prev_inputs, cur_inputs);
 }
 
 void GameManager::tick() {
@@ -679,12 +678,13 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
  * based on the previous scene's state.
  */
 void GameManager::applyTickUpdates(GameScene* scene) {
+  // Tick the player's state machines
   players[0]->updateState(&scene->players[0], &scene->inputs[0]);
   players[1]->updateState(&scene->players[1], &scene->inputs[1]);
-  // players[0]->updateFrames(&scene->players[0], &scene->inputs[0]);
-  // players[1]->updateFrames(&scene->players[1], &scene->inputs[1]);
+  // Apply movement based on new velocities
   players[0]->applyMovement(&scene->players[0]);
   players[1]->applyMovement(&scene->players[1]);
+  // Update which direction the players are facing
   setFacingDir(&scene->players[0], &scene->players[1]);
 }
 

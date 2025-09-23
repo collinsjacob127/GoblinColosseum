@@ -145,6 +145,12 @@ int startLocalGame(RenderEngine* renderer) {
       frame_rate = (double) 1 / fps_timer.duration();
       fps_timer.start();
 
+      // Clean inputs based on previous input state
+      const ButtonStates* prev_p1_inputs = game.allocator.getInputsAtTick(0, game.cur_tick-1);
+      const ButtonStates* prev_p2_inputs = game.allocator.getInputsAtTick(1, game.cur_tick-1);
+      handleButtonStateTick(prev_p1_inputs, &p1_inputs->buttons);
+      handleButtonStateTick(prev_p2_inputs, &p2_inputs->buttons);
+
       // ROLLBACK FUNCTIONALITY DEMO
       // if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
       //   std::cout << "pre-rollback" << std::endl;
@@ -169,10 +175,16 @@ int startLocalGame(RenderEngine* renderer) {
       game.tick();
 
       PlayerEntity* p1 = game.getPlayer(0);
+      PlayerEntity* p2 = game.getPlayer(1);
       // showButtonStates(&game.allocator.getCurrentScene()->inputs[0]);
-      std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
-      << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
-      << " x_vel: " << p1->x_vel << std::endl;
+
+      // std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
+      // << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
+      // << " x_vel: " << p1->x_vel << std::endl;
+
+      std::cout << "P2 STATE: " << game.players[1]->getStateString(p2) 
+      << " R=" << p2->f_recovery << " A=" << p2->f_active << " I=" << p2->f_invuln 
+      << " x_vel: " << p2->x_vel << std::endl;
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
