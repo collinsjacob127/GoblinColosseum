@@ -126,6 +126,28 @@ void InputSystem::resetButtonStates() {
   buttons = ButtonStates();
 }
 
+std::string getNumPadDirString(const NumPadDir* dir) {
+  switch (*dir) {
+    case (DOWN_LEFT): { return "DL"; }
+    case (DOWN): {return "D"; }
+    case (DOWN_RIGHT): {return "DR";}
+    case (LEFT): {return "L";}
+    case (CENTER): {return "C";}
+    case (RIGHT): {return "R";}
+    case (UP_LEFT): {return "UL";}
+    case (UP): {return "U";}
+    case (UP_RIGHT): {return "UR";}
+    default: return " ";
+  }
+}
+
+void printMotionBuffer(NumPadDir* dir_buffer) {
+  for (unsigned int i = 0; i < MAX_INPUT_FRAMES; ++i) {
+    std::cout << getNumPadDirString(&dir_buffer[i]) << " ";
+  }
+  std::cout << std::endl;
+}
+
 void InputSystem::setP2DefaultBindings() {
   bindings.up = SDL_SCANCODE_UP;
   bindings.down = SDL_SCANCODE_DOWN;
@@ -139,130 +161,6 @@ void InputSystem::setP2DefaultBindings() {
   bindings.r1 = SDL_SCANCODE_KP_5; // right bumper
   bindings.l2 = SDL_SCANCODE_KP_1; // left trigger
   bindings.r2 = SDL_SCANCODE_KP_2; // right trigger
-}
-
-/*****************************
- ******* GAME ALLOCATOR ******
- *****************************/
-GameAllocator::GameAllocator() {
-  cur_tick = INITIAL_FRAME;
-  net_pindex = 99;
-  loc_pindex = 0;
-  if (ENABLE_HELPER_PRINTOUTS) {
-    std::cout << std::fixed << std::setprecision(2);
-    std::cout << "Frame buffer allocated: " << (float) sizeof(history_buffer)/1024 << " Kb\n";
-  }
-}
-
-GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
-  cur_tick = INITIAL_FRAME;
-  net_pindex = net_p1_or_p2;
-  // net and loc should always be opposites
-  if (net_pindex == 0) { loc_pindex = 1;}
-  else if (net_pindex == 1) { loc_pindex = 0;}
-  else { 
-    std::cerr << "Game allocator recieved invalid net_pindex (" << net_pindex
-    << ") whats up with that\n";
-    loc_pindex = 0;
-  }
-}
-
-unsigned int GameAllocator::getIndexOfTick(unsigned int tick) {
-  return tick % HISTORY_BUFFER_SIZE;
-}
-
-/**
- * @return The index at which the current frame's scene lies in `history_buffer`
- */
-unsigned int GameAllocator::getCurrentIndex() {
-  return getIndexOfTick(cur_tick);
-}
-
-
-GameScene* GameAllocator::getCurrentScene() {
-  return &history_buffer[getCurrentIndex()];
-}
-
-GameScene* GameAllocator::getNextScene() {
-  const GameScene* prev_scene = getCurrentScene();
-  cur_tick++;
-  GameScene* new_scene = getCurrentScene();
-  memcpy(new_scene, prev_scene, sizeof(GameScene));
-
-  return new_scene;
-}
-
-GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* in) {
-  if (cur_tick - prev_tick > HISTORY_BUFFER_SIZE) {
-    std::cerr << "Error: Allocator recieved request for " << cur_tick - prev_tick
-    << "f rollback" << std::endl
-    << "  cur_tick: " << cur_tick << std::endl
-    << "  prev_tick: " << prev_tick << std::endl;
-  }
-  if (net_pindex > 2) {
-    std::cerr << "Error: Rollback requested when allocator initialized with no defined"
-    << " online player" << std::endl;
-  }
-  // Update current tick label (marking that we've rolled back)
-  cur_tick = prev_tick;
-  // Copy net inputs from param to scene's net pindex input
-  memcpy(&getCurrentScene()->inputs[net_pindex], in, sizeof(ButtonStates));
-  // Returns the scene at that point in time
-  return getCurrentScene();  
-}
-
-/**
- * @brief Copy state to the next position in the buffer, without affecting
- * the local player's existing inputs
- */
-GameScene* GameAllocator::rollForward() {
-  // Temporary buffer for local player's inputs in the next frame
-  ButtonStates tmp;
-  GameScene* cur_scene = getCurrentScene();
-  cur_tick++;
-  GameScene* next_scene = getCurrentScene();
-  // Copy next frame's existing local inputs to the buffer
-  memcpy(&tmp, &next_scene->inputs[loc_pindex], sizeof(ButtonStates));
-  // Copy current frame into next frame
-  memcpy(next_scene, cur_scene, sizeof(GameScene));
-  // Copy saved inputs to next frame
-  memcpy(&next_scene->inputs[loc_pindex], &tmp, sizeof(ButtonStates));
-
-  // handleButtonStateTick(&cur_scene->inputs[net_pindex], &next_scene->inputs[net_pindex]);
-
-  return next_scene;
-}
-
-const GameScene* GameAllocator::getSceneAtTick(unsigned int tick) {
-  return &history_buffer[getIndexOfTick(tick)];
-}
-
-const ButtonStates* GameAllocator::getInputsAtTick(int pindex, unsigned int tick) {
-  if (pindex != 0 && pindex != 1) { std::cerr << "Allocator recieved bad index in getPrevInputs\n"; }
-
-  const GameScene* scene = getSceneAtTick(tick);
-
-  return &scene->inputs[pindex];
-}
-
-void GameAllocator::populateDirBuffer(unsigned int tick, int pindex) {
-  // Get pointer to the dir buffer at this tick
-
-  //...
-
-  // Loop through dir buffer 
-  unsigned int idx = cur_tick;
-  for (unsigned int i = 0; i < MAX_INPUT_FRAMES; ++i) {
-    // Calculate the correct index
-    idx = cur_tick - i;
-    // Get a pointer to the scene at this tick
-
-    // Populate this index with the correct DIR
-    // getDirFromButtonState()
-  }
-
-
-  // return getDirFromButtonState(history_buffer[tick % HISTORY_BUFFER_SIZE].inputs);
 }
 
 /***************************
@@ -588,6 +486,128 @@ void PlayerController::applyAirStrafe(PlayerEntity* p, const ButtonStates* in) {
   }
 }
 
+/*****************************
+ ******* GAME ALLOCATOR ******
+ *****************************/
+GameAllocator::GameAllocator() {
+  cur_tick = INITIAL_FRAME;
+  net_pindex = 99;
+  loc_pindex = 0;
+  if (ENABLE_HELPER_PRINTOUTS) {
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "Frame buffer allocated: " << (float) sizeof(history_buffer)/1024 << " Kb\n";
+  }
+}
+
+GameAllocator::GameAllocator(unsigned int net_p1_or_p2) {
+  cur_tick = INITIAL_FRAME;
+  net_pindex = net_p1_or_p2;
+  // net and loc should always be opposites
+  if (net_pindex == 0) { loc_pindex = 1;}
+  else if (net_pindex == 1) { loc_pindex = 0;}
+  else { 
+    std::cerr << "Game allocator recieved invalid net_pindex (" << net_pindex
+    << ") whats up with that\n";
+    loc_pindex = 0;
+  }
+}
+
+unsigned int GameAllocator::getIndexOfTick(unsigned int tick) {
+  return tick % HISTORY_BUFFER_SIZE;
+}
+
+unsigned int GameAllocator::getCurrentIndex() {
+  return getIndexOfTick(cur_tick);
+}
+
+GameScene* GameAllocator::getCurrentScene() {
+  return &history_buffer[getCurrentIndex()];
+}
+
+GameScene* GameAllocator::getNextScene() {
+  const GameScene* prev_scene = getCurrentScene();
+  cur_tick++;
+  GameScene* new_scene = getCurrentScene();
+  memcpy(new_scene, prev_scene, sizeof(GameScene));
+
+  return new_scene;
+}
+
+GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* in) {
+  if (cur_tick - prev_tick > HISTORY_BUFFER_SIZE || prev_tick < INITIAL_FRAME) {
+    std::cerr << "Error: Allocator recieved request for " << cur_tick - prev_tick
+    << "f rollback" << std::endl
+    << "  cur_tick: " << cur_tick << std::endl
+    << "  prev_tick: " << prev_tick << std::endl;
+  }
+  if (net_pindex > 2) {
+    std::cerr << "Error: Rollback requested when allocator initialized with no defined"
+    << " online player" << std::endl;
+  }
+  // Update current tick label (marking that we've rolled back)
+  cur_tick = prev_tick;
+  // Copy net inputs from param to scene's net pindex input
+  memcpy(&getCurrentScene()->inputs[net_pindex], in, sizeof(ButtonStates));
+  // Returns the scene at that point in time
+  return getCurrentScene();  
+}
+
+/**
+ * @brief Copy state to the next position in the buffer, without affecting
+ * the local player's existing inputs
+ */
+GameScene* GameAllocator::rollForward() {
+  // Temporary buffer for local player's inputs in the next frame
+  ButtonStates tmp;
+  GameScene* cur_scene = getCurrentScene();
+  cur_tick++;
+  GameScene* next_scene = getCurrentScene();
+  // Copy next frame's existing local inputs to the buffer
+  memcpy(&tmp, &next_scene->inputs[loc_pindex], sizeof(ButtonStates));
+  // Copy current frame into next frame
+  memcpy(next_scene, cur_scene, sizeof(GameScene));
+  // Copy saved inputs to next frame
+  memcpy(&next_scene->inputs[loc_pindex], &tmp, sizeof(ButtonStates));
+
+  return next_scene;
+}
+
+GameScene* GameAllocator::getSceneAtTick(unsigned int tick) {
+  return &history_buffer[getIndexOfTick(tick)];
+}
+
+const ButtonStates* GameAllocator::getInputsAtTick(int pindex, unsigned int tick) {
+  if (pindex != 0 && pindex != 1) { std::cerr << "Allocator recieved bad index in getPrevInputs\n"; }
+
+  const GameScene* scene = getSceneAtTick(tick);
+
+  return &scene->inputs[pindex];
+}
+
+void GameAllocator::populateDirBuffer(unsigned int tick, int pindex) {
+  GameScene* cur_scene = getSceneAtTick(tick);
+  NumPadDir* dst_dir;
+
+  // Start iteration at current tick
+  unsigned int idx = tick;
+
+  // Variable to hold the calculated NumPadDir
+  NumPadDir temp = CENTER;
+  GameScene* scene = getSceneAtTick(tick);
+
+  // Loop through dir buffer 
+  for (unsigned int i = 0; i < MAX_INPUT_FRAMES; ++i) {
+    // Get pointer to the dir buffer at this tick
+    dst_dir = &cur_scene->inputs[pindex].dir_buffer[i];
+    // Calculate the correct index
+    idx = cur_tick - i;
+    // Get a pointer to the scene at this tick
+    scene = getSceneAtTick(idx); 
+    // Calculate the corresponding NumPadDir
+    getDirFromButtonState(&scene->players[pindex], &scene->inputs[pindex], dst_dir);
+  }
+}
+
 
 /*****************************
  ******** GAME MANAGER *******
@@ -678,6 +698,8 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
  * based on the previous scene's state.
  */
 void GameManager::applyTickUpdates(GameScene* scene) {
+  allocator.populateDirBuffer(cur_tick, 0);
+  allocator.populateDirBuffer(cur_tick, 1);
   // Tick the player's state machines
   players[0]->updateState(&scene->players[0], &scene->inputs[0]);
   players[1]->updateState(&scene->players[1], &scene->inputs[1]);

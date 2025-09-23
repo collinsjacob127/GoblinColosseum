@@ -106,6 +106,7 @@ struct ButtonStates {
 
 // Used for debugging
 std::string printButtonState(const Button* btn);
+void printMotionBuffer(NumPadDir* dir_buffer);
 void showButtonStates(const ButtonStates* btn_state);
 
 class InputSystem {
@@ -338,7 +339,7 @@ class GameAllocator {
   GameScene history_buffer[HISTORY_BUFFER_SIZE];
   unsigned int getCurrentIndex();
   unsigned int getIndexOfTick(unsigned int tick);
-  const GameScene* getSceneAtTick(unsigned int tick);
+  GameScene* getSceneAtTick(unsigned int tick);
 };
 
 class GameManager {
@@ -348,7 +349,15 @@ class GameManager {
 
   unsigned int loc_pindex;
   unsigned int net_pindex;
+  
+  // local current tick
   unsigned int cur_tick;
+  // Latest frame received from the remote client
+  unsigned int remote_tick;
+  // Last frame where game state was synchronized
+  unsigned int sync_frame;
+  // Latest frame advantage received from the remote client
+  unsigned int remote_frame_advantage;
 
   GameManager();
   GameManager(unsigned int net_p1_or_p2);

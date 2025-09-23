@@ -146,26 +146,14 @@ int startLocalGame(RenderEngine* renderer) {
       fps_timer.start();
 
       // Clean inputs based on previous input state
-      const ButtonStates* prev_p1_inputs = game.allocator.getInputsAtTick(0, game.cur_tick-1);
-      const ButtonStates* prev_p2_inputs = game.allocator.getInputsAtTick(1, game.cur_tick-1);
-      handleButtonStateTick(prev_p1_inputs, &p1_inputs->buttons);
-      handleButtonStateTick(prev_p2_inputs, &p2_inputs->buttons);
+      handleButtonStateTick(game.allocator.getInputsAtTick(0, game.cur_tick-1), &p1_inputs->buttons);
+      handleButtonStateTick(game.allocator.getInputsAtTick(1, game.cur_tick-1), &p2_inputs->buttons);
 
       // ROLLBACK FUNCTIONALITY DEMO
-      // if (game.cur_tick > 350 && game.cur_tick % 20 == 0) {
-      //   std::cout << "pre-rollback" << std::endl;
-      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
-      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
-      //   game.rollBack(game.cur_tick - 300, &p2_dummy_buttons);
-      //   std::cout << "post-rollback" << std::endl;
-      //   std::cout << "  game cur tick: " << game.cur_tick << "\n"
-      //             << "  aloc cur tick: " << game.allocator.cur_tick << "\n";
+      // if (game.cur_tick > 120 && game.cur_tick % 20 == 0) {
+      //   game.rollBack(game.cur_tick-20, &p2_inputs->buttons);
       // }
 
-      // Debug inputs
-      // std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ")\n";
-      // showButtonStates(&(game.inputs[0].buttons));
-      // std::cout << std::endl;
 
       // Send accumulated inputs to game engine
       game.updateInputs(&p1_inputs->buttons, 0);
@@ -174,17 +162,21 @@ int startLocalGame(RenderEngine* renderer) {
       // Move to next frame
       game.tick();
 
-      PlayerEntity* p1 = game.getPlayer(0);
-      PlayerEntity* p2 = game.getPlayer(1);
+      // PlayerEntity* p1 = game.getPlayer(0);
+      // PlayerEntity* p2 = game.getPlayer(1);
+
+      // Debug inputs
+      // std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ") ";
       // showButtonStates(&game.allocator.getCurrentScene()->inputs[0]);
+      // printMotionBuffer(game.allocator.getCurrentScene()->inputs[0].dir_buffer);
 
       // std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
       // << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
       // << " x_vel: " << p1->x_vel << std::endl;
 
-      std::cout << "P2 STATE: " << game.players[1]->getStateString(p2) 
-      << " R=" << p2->f_recovery << " A=" << p2->f_active << " I=" << p2->f_invuln 
-      << " x_vel: " << p2->x_vel << std::endl;
+      // std::cout << "P2 STATE: " << game.players[1]->getStateString(p2) 
+      // << " R=" << p2->f_recovery << " A=" << p2->f_active << " I=" << p2->f_invuln 
+      // << " x_vel: " << p2->x_vel << std::endl;
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {

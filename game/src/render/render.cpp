@@ -253,7 +253,7 @@ void RenderEngine::renderGameScene(GameManager* game) {
 
   // Currently: Centers between two players, fixed size
   viewport.x = (p1->x_pos + p2->x_pos) / 2;
-  viewport.x = viewport.x > 3200 ? 3200 : viewport.x;
+  viewport.x = viewport.x > 3200 - viewport.w/2 ? 3200 - viewport.w/2 : viewport.x;
   viewport.x -= viewport.w / 2;
   viewport.x = viewport.x < 0 ? 0 : viewport.x;
   viewport.y = 900;
