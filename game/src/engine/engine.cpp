@@ -92,6 +92,10 @@ void showButtonStates(const ButtonStates* btn_state) {
   std::cout << std::endl;
 }
 
+bool isButtonPressed(const ButtonStates* in) {
+  return in->b1 || in->b2 || in->b3 || in->b4 || in->l1 || in->l2 || in->r1 || in->r2;
+}
+
 void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir) {
   // clean-slate button for switching left & right
   ButtonStates btn;
@@ -206,6 +210,37 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
   return (p->facing_right && in->left) || (!p->facing_right && in->right);
 }
 
+bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf) {
+  // Iterating backwards through the given motion
+  unsigned int j = motion.size()-1;
+  bool matches = true;
+  // Current direction; sequential repeats are OK
+  NumPadDir cur_dir = motion[j];
+  // Iterating backwards in time (forwards in mem) through motion buffer
+  for (unsigned int i = 0; i < window; ++i) {
+    // Check that they match off start
+      // if doesn't -> return false
+    
+    // If they match, keep iterating until they don't
+
+    // Once they don't match, check if matches next motion
+      // If doesn't match -> return false
+      // If does match, update cur dir
+    
+    // Repeat
+
+    // Once motion[0] is matched, return true (DON'T INDEX -1)
+    // If not, return false
+  }
+}
+
+void PlayerController::checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in) {
+  // Check specials
+}
+
+void PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
+  // Check specials
+}
 
 /**
  * @brief Set a player's state given their current state and inputs
@@ -287,6 +322,12 @@ void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
 }
 
 // Most aerial actions start here
+void PlayerController::handleAerial(PlayerEntity* p, const ButtonStates* in) {
+  // TODO: Copy stuff from fall and jump to this
+
+  // Check for aerial attack inputs
+}
+
 void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
   // Land or apply gravity
   if (isGrounded(p)) { stand(p, in); }
