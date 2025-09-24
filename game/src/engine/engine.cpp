@@ -212,7 +212,7 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
  */
 void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
   if (isActionable(p)) {
-    p->v_mod = p->facing_right ? 1.0 : -1.0;
+    p->v_mod = p->facing_right ? 1.0 : -1.0; // Velocities set based on dir facing
   }
   switch (p->state) {
     case (STAND): { handleStand(p, in); break; }
@@ -233,10 +233,10 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
 Functions that handle what to do in the state you're already in
 */
 // Most grounded actions start here
-void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
-  if (in->up == PRESSED) { 
+void PlayerController::handleGrounded(PlayerEntity* p, const ButtonStates* in) {
+  if (in->up) { 
     jump(p, in); 
-  } else if (in->l2 == PRESSED ) {
+  } else if (in->l2) {
     if (holdingBack(p, in)) {
       backdash(p, in);
     } else {
@@ -252,29 +252,33 @@ void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
     stand(p, in);
   }
 }
+
+void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
+  handleGrounded(p, in);
+}
 void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { 
   p->x_vel = 0;
-  handleStand(p, in); 
+  handleGrounded(p, in);
 }
 void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { 
   p->x_vel = 0;
-  handleStand(p, in); 
+  handleGrounded(p, in);
 }
 void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) {
   if (holdingBack(p, in)) { handleStand(p, in); return;}
   if (in->l2) {
     p->x_vel = dash_v * p->v_mod;
-  } else {
-    handleStand(p, in);
   }
+  handleGrounded(p, in);
 }
 void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
   if (p->f_invuln > 0) { p->f_invuln--; }
-  if (p->f_recovery < p->f_recovery / 2) {
-    p->x_vel /= 2;
+  if (p->f_recovery < f_backdash_recovery / 2) {
+    p->x_vel *= 0.8;
   }
   // Last frame of backdash?
   if (p->f_recovery <= 0) {
+    p->x_vel = 0;
     stand(p, in);
     return;
   } else {

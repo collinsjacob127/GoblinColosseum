@@ -11,7 +11,6 @@ void test_render_include_works() {
 RenderEngine::RenderEngine() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
-  fps_timer.start();
   Timer startup_timer;
   startup_timer.start();
 
@@ -37,7 +36,8 @@ RenderEngine::RenderEngine() {
   } else { std::cout << "Window Created\n";}
 
   // Create Renderer
-  ren = SDL_CreateRenderer(win, "gpu");
+  // ren = SDL_CreateRenderer(win, "gpu");
+  ren = SDL_CreateRenderer(win, NULL);
   if (ren == nullptr) {
     std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
     SDL_DestroyWindow(win);
@@ -178,8 +178,6 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
 }
 
 void RenderEngine::displayFPS() {
-  double FPS = 1 / fps_timer.duration();
-  fps_timer.start();
 
   SDL_Color color = { 255, 255, 255, 255 };
   // SDL_Color color = { 120, 0, 150, 255 };

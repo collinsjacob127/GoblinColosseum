@@ -27,6 +27,8 @@
 #include <iostream>
 #include <iomanip>
 #include <string.h>
+#include <vector>
+
 #include <SDL3/SDL.h>
 #include "util.hpp"
 
@@ -83,6 +85,16 @@ enum NumPadDir {
   UP_RIGHT = 9
 };
 
+enum ButtonName {
+  B1,
+  B2,
+  B3,
+  B4,
+  L1,
+  R1,
+  L2,
+  R2
+};
 
 struct ButtonStates {
   Button up = RELEASED;
@@ -194,6 +206,32 @@ struct PlayerEntity {
  */
 void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
 
+// Template class to list character attacks
+class Attack {
+ public:
+  Attack(
+    ButtonName but, 
+    std::vector<NumPadDir> mot, 
+    unsigned int window,
+    unsigned int startup,
+    unsigned int active,
+    unsigned int recovery
+  );
+
+  // Define button used to launch attack
+  ButtonName button;
+
+  // Define required input motion (vector?)
+  std::vector<NumPadDir> motion; 
+  
+  // How many frames back should this check
+  unsigned int f_window;
+
+  unsigned int f_startup;
+  unsigned int f_active;
+  unsigned int f_recovery;
+};
+
 /**
  * Base class for static character info
  */
@@ -206,7 +244,7 @@ class PlayerController {
   float dash_v = 16.0;
   float dash_acc = 0.4;
 
-  float backdash_v = -25.0;
+  float backdash_v = -20.0;
   int f_backdash_recovery = 15;
   int f_backdash_invuln = 6;
 
@@ -226,7 +264,7 @@ class PlayerController {
   float gravity = 2.5;
   // "Inverse rate of acceleration reduction" - https://www.dustloop.com/w/GGST/Frame_Data#Walk_and_Dash_Values
   // next_speed -= cur_speed / friction
-  float friction = 15.0;
+  float friction = 12.0;
 
 
   virtual void testCharacterInclude();
@@ -243,6 +281,7 @@ class PlayerController {
 
  private:
   // What to do while IN THIS STATE
+  virtual void handleGrounded(PlayerEntity* p, const ButtonStates* in);
   virtual void handleStand(PlayerEntity* p, const ButtonStates* in);
   virtual void handleWalkForwards(PlayerEntity* p, const ButtonStates* in);
   virtual void handleWalkBackwards(PlayerEntity* p, const ButtonStates* in);

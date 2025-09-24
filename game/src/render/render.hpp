@@ -37,7 +37,7 @@ class RenderEngine {
   TTF_Font* font;
   SDL_Texture* game_background;
   SDL_Texture* player_tex;
-  Timer fps_timer;
+  double FPS;
 
   SDL_Texture* buffer_tex;
   

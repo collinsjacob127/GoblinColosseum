@@ -47,7 +47,7 @@ int start(RenderEngine* renderer) {
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
   double frame_rate = -1.0;
   Timer timer, fps_timer;
-  timer.start();
+  timer.start(); fps_timer.start();
   unsigned long long n_ticks = 1;
 
   InputSystem inputs;
@@ -79,6 +79,9 @@ int start(RenderEngine* renderer) {
     // Once per frame, display everything
     if (timer.duration() >= (double) min_frame_duration*n_ticks) {
       n_ticks++;
+      frame_rate = (double) 1 / fps_timer.duration();
+      renderer->FPS = frame_rate;
+      fps_timer.start();
       // Navigate with keyboard
       if (inputs.buttons.up) {
         selection = (n_selections + selection - 1) % n_selections;
@@ -116,8 +119,7 @@ int startLocalGame(RenderEngine* renderer) {
   // Used to display FPS
   double frame_rate = -1.0;
   Timer game_timer, fps_timer;
-  game_timer.start();
-  fps_timer.start();
+  game_timer.start(); fps_timer.start();
 
   // MAIN GAME LOOP
   bool quit = false;
@@ -180,6 +182,7 @@ int startLocalGame(RenderEngine* renderer) {
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
+        renderer->FPS = frame_rate;
         renderer->renderGameScene(&game);
       }
     }
