@@ -17,7 +17,7 @@
 #include "render/render.hpp"
 #include "characters/characters.hpp"
 
-#define FRAME_RATE_CAP 10
+#define FRAME_RATE_CAP 60
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -168,14 +168,14 @@ int startLocalGame(RenderEngine* renderer) {
       // PlayerEntity* p2 = game.getPlayer(1);
 
       // Verify Motion Interpreter
-      std::vector<NumPadDir> fqc_mot = {DOWN, DOWN_RIGHT, RIGHT};
-      ButtonStates* tmp_btns = &game.allocator.getCurrentScene()->inputs[0];
-      printMotionBuffer(tmp_btns->dir_buffer);
-      if (game.players[0]->checkMotionInputs(fqc_mot, 60, tmp_btns->dir_buffer)) {
-        std::cout << "IT IS RISEN! HUZZAH! FQC IS ALIVE!\n";
-      } else {
-        std::cout << "NOPE\n";
-      }
+      // std::vector<NumPadDir> fqc_mot = {DOWN, DOWN_RIGHT, RIGHT};
+      // ButtonStates* tmp_btns = &game.allocator.getCurrentScene()->inputs[0];
+      // printMotionBuffer(tmp_btns->dir_buffer);
+      // if (game.players[0]->checkMotionInputs(fqc_mot, 60, tmp_btns->dir_buffer)) {
+      //   std::cout << "IT IS RISEN! HUZZAH! FQC IS ALIVE!\n";
+      // } else {
+      //   std::cout << "NOPE\n";
+      // }
 
       // Verify inputs
       // std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ") ";

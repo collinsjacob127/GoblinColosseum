@@ -82,7 +82,8 @@ enum NumPadDir {
   RIGHT = 6,
   UP_LEFT = 7,
   UP = 8,
-  UP_RIGHT = 9
+  UP_RIGHT = 9,
+  MISC = 10,
 };
 
 enum ButtonName {
@@ -167,6 +168,9 @@ enum State {
  */
 struct PlayerEntity {
   State state;
+  // 0 for no attack, else corresponding id of attack (index in corresponding attack vector)
+  std::string grounded_attack_idx;
+  std::string aerial_attack_idx;
 
   float v_mod = 1.0;
 
@@ -293,9 +297,13 @@ class PlayerController {
   bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf);
 
  private:
+
+  virtual void initializeAttacks();
+  virtual void initializeCharacterAttrs();
+
   // Check for valid attacks / special attacks
-  virtual void checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in);
-  virtual void checkAerialAttacks(PlayerEntity* p, const ButtonStates* in);
+  virtual bool checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in);
+  virtual bool checkAerialAttacks(PlayerEntity* p, const ButtonStates* in);
 
   // What to do while IN THIS STATE
   virtual void handleGrounded(PlayerEntity* p, const ButtonStates* in);

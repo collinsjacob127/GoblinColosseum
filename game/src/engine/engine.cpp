@@ -166,12 +166,42 @@ void InputSystem::setP2DefaultBindings() {
   bindings.l2 = SDL_SCANCODE_KP_1; // left trigger
   bindings.r2 = SDL_SCANCODE_KP_2; // right trigger
 }
+/***************************
+ ********* ATTACKS *********
+ ***************************/
+
+Attack::Attack(
+    std::string name_,
+    ButtonName button_, 
+    std::vector<NumPadDir> motion_, 
+    unsigned int f_window_,
+    unsigned int f_startup_,
+    unsigned int f_active_,
+    unsigned int f_recovery_
+  ) {
+  name = name_;
+
+  button = button_;
+  motion = motion_;
+
+  f_window = f_window_;
+  f_startup = f_startup_;
+  f_active = f_active_;
+  f_recovery = f_recovery_;
+}
+
 
 /***************************
  **** PLAYER CONTROLLER ****
  ***************************/
 
-PlayerController::PlayerController() { }
+PlayerController::PlayerController() {
+  initializeCharacterAttrs();
+  initializeAttacks();
+}
+
+void PlayerController::initializeAttacks() {}
+void PlayerController::initializeCharacterAttrs() {}
 
 void PlayerController::testCharacterInclude() {
   std::cout << "Just the base player controller, nothing to see here..." << std::endl;
@@ -224,17 +254,17 @@ bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned
     // Base case, end of motion reached
     if (j == -1) { return true; }
     if (cur_dir == buf[i]) { 
-      std::cout << "curdir: " << getNumPadDirString(&cur_dir) << " buf[" << i << "]: " << getNumPadDirString(&buf[i]) << std::endl;
+      // std::cout << "curdir: " << getNumPadDirString(&cur_dir) << " buf[" << i << "]: " << getNumPadDirString(&buf[i]) << std::endl;
       // Motion matches buffer here
-      // Move motion back on new match
+      // Move index to next motion on new match
       if (n_seq_matches == 0) { j--; }
       n_seq_matches++;
     } else {
       // Motion does not match buffer
       // Mismatch found WITHOUT prior match
       if (n_seq_matches == 0) { return false; }
-      n_seq_matches = 0;
       // Mismatch found, decrement motion and update cur_dir
+      n_seq_matches = 0;
       cur_dir = motion[j];
     }
   }
@@ -242,11 +272,17 @@ bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned
   return false;
 }
 
-void PlayerController::checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in) {
-  // Check specials
+bool PlayerController::checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in) {
+  // Loop through list of grounded attacks
+
+  // For each corresponding button, check if button pressed
+    // if button pressed, check motion
+      // if motion, run attack
+      // set state to attacking and set attack_id to the right one
+
 }
 
-void PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
+bool PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
   // Check specials
 }
 
