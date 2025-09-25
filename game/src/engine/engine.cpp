@@ -210,28 +210,36 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
   return (p->facing_right && in->left) || (!p->facing_right && in->right);
 }
 
-bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf) {
+bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf) {
+  
   // Iterating backwards through the given motion
   unsigned int j = motion.size()-1;
-  bool matches = true;
+  unsigned int n_seq_matches = 0;
+
   // Current direction; sequential repeats are OK
   NumPadDir cur_dir = motion[j];
+
   // Iterating backwards in time (forwards in mem) through motion buffer
   for (unsigned int i = 0; i < window; ++i) {
-    // Check that they match off start
-      // if doesn't -> return false
-    
-    // If they match, keep iterating until they don't
-
-    // Once they don't match, check if matches next motion
-      // If doesn't match -> return false
-      // If does match, update cur dir
-    
-    // Repeat
-
-    // Once motion[0] is matched, return true (DON'T INDEX -1)
-    // If not, return false
+    // Base case, end of motion reached
+    if (j == -1) { return true; }
+    if (cur_dir == buf[i]) { 
+      std::cout << "curdir: " << getNumPadDirString(&cur_dir) << " buf[" << i << "]: " << getNumPadDirString(&buf[i]) << std::endl;
+      // Motion matches buffer here
+      // Move motion back on new match
+      if (n_seq_matches == 0) { j--; }
+      n_seq_matches++;
+    } else {
+      // Motion does not match buffer
+      // Mismatch found WITHOUT prior match
+      if (n_seq_matches == 0) { return false; }
+      n_seq_matches = 0;
+      // Mismatch found, decrement motion and update cur_dir
+      cur_dir = motion[j];
+    }
   }
+  // Just in case
+  return false;
 }
 
 void PlayerController::checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in) {

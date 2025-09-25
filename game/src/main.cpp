@@ -17,7 +17,7 @@
 #include "render/render.hpp"
 #include "characters/characters.hpp"
 
-#define FRAME_RATE_CAP 60
+#define FRAME_RATE_CAP 10
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -36,8 +36,13 @@ int startLocalGame(RenderEngine* renderer);
 int main(int argc, char* argv[]) {
   RenderEngine renderer;
 
-  start(&renderer);
-  // startLocalGame(&renderer);
+  int selection = start(&renderer);
+  // Selection has been chosen
+  switch (selection) {
+    case 0: { startLocalGame(&renderer); break; }
+    case 1: { std::cout << "Online not yet implemented" << std::endl; break; }
+    case 2: { std::cout << "Settings not yet implemented" << std::endl; break; }
+  }
 
   return 0;
 }
@@ -94,14 +99,8 @@ int start(RenderEngine* renderer) {
     }
   }
 
-  // Selection has been chosen
-  switch (selection) {
-    case 0: { startLocalGame(renderer); break; }
-    case 1: { std::cout << "Online not yet implemented" << std::endl; break; }
-    case 2: { std::cout << "Settings not yet implemented" << std::endl; break; }
-  }
 
-  return 0;
+  return selection;
 }
 
 int startLocalGame(RenderEngine* renderer) {
@@ -141,7 +140,7 @@ int startLocalGame(RenderEngine* renderer) {
     }
 
     // Cap frame rate at 60 fps
-    if (game_timer.duration() >= (double) min_frame_duration*game.cur_tick) {
+    if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
     // if (game_timer.duration() >= 0) {
       // Reset Timer
       frame_rate = (double) 1 / fps_timer.duration();
@@ -164,14 +163,26 @@ int startLocalGame(RenderEngine* renderer) {
       // Move to next frame
       game.tick();
 
+      // DEBUGGING
       // PlayerEntity* p1 = game.getPlayer(0);
       // PlayerEntity* p2 = game.getPlayer(1);
 
-      // Debug inputs
+      // Verify Motion Interpreter
+      std::vector<NumPadDir> fqc_mot = {DOWN, DOWN_RIGHT, RIGHT};
+      ButtonStates* tmp_btns = &game.allocator.getCurrentScene()->inputs[0];
+      printMotionBuffer(tmp_btns->dir_buffer);
+      if (game.players[0]->checkMotionInputs(fqc_mot, 60, tmp_btns->dir_buffer)) {
+        std::cout << "IT IS RISEN! HUZZAH! FQC IS ALIVE!\n";
+      } else {
+        std::cout << "NOPE\n";
+      }
+
+      // Verify inputs
       // std::cout << "Tick: " << game.allocator.cur_tick << " (" << game.cur_tick << ") ";
       // showButtonStates(&game.allocator.getCurrentScene()->inputs[0]);
       // printMotionBuffer(game.allocator.getCurrentScene()->inputs[0].dir_buffer);
 
+      // Verify state
       // std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
       // << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
       // << " x_vel: " << p1->x_vel << std::endl;

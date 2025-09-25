@@ -289,9 +289,10 @@ class PlayerController {
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
 
- private:
   // Used to check for a particular sequence of motions within some window of recent frames
   bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf);
+
+ private:
   // Check for valid attacks / special attacks
   virtual void checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in);
   virtual void checkAerialAttacks(PlayerEntity* p, const ButtonStates* in);
