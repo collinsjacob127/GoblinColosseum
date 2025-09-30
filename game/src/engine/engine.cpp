@@ -92,8 +92,22 @@ void showButtonStates(const ButtonStates* btn_state) {
   std::cout << std::endl;
 }
 
-bool isButtonPressed(const ButtonStates* in) {
+bool isAnyButtonPressed(const ButtonStates* in) {
   return in->b1 || in->b2 || in->b3 || in->b4 || in->l1 || in->l2 || in->r1 || in->r2;
+}
+
+Button getButtonState(const ButtonStates* in, ButtonName b) {
+  switch (b) {
+    case (B1): { return in->b1; }
+    case (B2): { return in->b2; }
+    case (B3): { return in->b3; }
+    case (B4): { return in->b4; }
+    case (L1): { return in->l1; }
+    case (R1): { return in->r1; }
+    case (L2): { return in->l2; }
+    case (R2): { return in->r2; }
+    default: return RELEASED;
+  }
 }
 
 void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir) {
@@ -219,7 +233,10 @@ std::string PlayerController::getStateString(const PlayerEntity* p) {
     case (BACKDASH): {return "BACKDASHING";}
     case (AIR_DASH): {return "AIR DASHING";}
     case (AIR_BACKDASH): {return "AIR BACKDASHING";}
-    case (ATTACK): {return "ATTACKING";}
+    case (AIR_NORMAL): {return "AIR_NORMAL";}
+    case (AIR_SPECIAL): {return "AIR_SPECIAL";}
+    case (GROUND_NORMAL): {return "GND_NORMAL";}
+    case (GROUND_SPECIAL): {return "GND_SPECIAL";}
   }
   return "NULL";
 }
@@ -240,7 +257,7 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
   return (p->facing_right && in->left) || (!p->facing_right && in->right);
 }
 
-bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf) {
+bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, const NumPadDir* buf) {
   
   // Iterating backwards through the given motion
   unsigned int j = motion.size()-1;
@@ -272,19 +289,29 @@ bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned
   return false;
 }
 
-bool PlayerController::checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in) {
-  // Loop through list of grounded attacks
+bool PlayerController::checkAttacks(PlayerEntity* p, const ButtonStates* in, const std::vector<Attack>* attacks) {
+  // All attacks have a corresponding button
+  if (!isAnyButtonPressed(in)) { return false; }
 
-  // For each corresponding button, check if button pressed
-    // if button pressed, check motion
-      // if motion, run attack
-      // set state to attacking and set attack_id to the right one
-
+  // Check if any specials should begin
+  for (unsigned int i = 0; i < attacks->size(); ++i) {
+    const Attack* atk = &attacks->at(i);
+    ButtonName b = atk->button;
+    if (getButtonState(in, b) == PRESSED) {
+      if (checkMotionInputs(atk->motion, atk->f_window, in->dir_buffer)) {
+        // Button and motion both confirmed
+        // Begin the first attack that is matched
+        attack(p, in, atk);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
-bool PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
-  // Check specials
-}
+// bool PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
+//   // Check specials
+// }
 
 /**
  * @brief Set a player's state given their current state and inputs
@@ -304,7 +331,11 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
     case (BACKDASH): { handleBackdash(p, in); break; }
     case (AIR_DASH): { handleAirDash(p, in); break; }
     case (AIR_BACKDASH): { handleAirBackDash(p, in); break; }
-    case (ATTACK): { handleAttack(p, in); break; }
+    case (GROUND_NORMAL): { handleAttack(p, in); break; }
+    case (GROUND_SPECIAL): { handleAttack(p, in); break; }
+    case (AIR_NORMAL): { handleAttack(p, in); break; }
+    case (AIR_SPECIAL): { handleAttack(p, in); break; }
+    default: { std::cerr << "State not caught\n"; handleStand(p, in); break; }
   }
 }
 
@@ -437,9 +468,8 @@ void PlayerController::handleCrouch(PlayerEntity* p, const ButtonStates* in) {
   p->x_vel = 0;
   handleStand(p, in);
 }
-void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) { 
 
-}
+void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) {}
 
 /*
 Functions to put you into a given state
@@ -500,8 +530,10 @@ void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
   }
   p->x_vel = 0;
 }
-void PlayerController::attack(PlayerEntity* p, const ButtonStates* in) {
-  p->state = ATTACK;
+
+void PlayerController::attack(PlayerEntity* p, const ButtonStates* in, const Attack* atk) {
+  p->state = atk->state;
+  p->cur_attack = atk;
 }
 
 /**

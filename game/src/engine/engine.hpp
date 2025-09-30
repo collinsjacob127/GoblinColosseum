@@ -121,7 +121,8 @@ struct ButtonStates {
 std::string printButtonState(const Button* btn);
 void printMotionBuffer(NumPadDir* dir_buffer);
 void showButtonStates(const ButtonStates* btn_state);
-bool isButtonPressed(const ButtonStates* in); 
+bool isAnyButtonPressed(const ButtonStates* in);
+Button getButtonState(const ButtonStates* in, ButtonName b);
 
 class InputSystem {
  public:
@@ -160,17 +161,59 @@ enum State {
   JUMP,
   AIR_DASH,
   AIR_BACKDASH,
-  ATTACK
+  GROUND_NORMAL,
+  GROUND_SPECIAL,
+  AIR_NORMAL,
+  AIR_SPECIAL
 };
+
+// Template class to list character attacks
+class Attack {
+ public:
+  Attack(
+    std::string name_,
+    ButtonName button_, 
+    std::vector<NumPadDir> motion_, 
+    unsigned int f_window_,
+    unsigned int f_startup_,
+    unsigned int f_active_,
+    unsigned int f_recovery_
+  );
+
+  // i.e., AIR_NORMAL, GROUND_NORMAL, AIR_SPECIAL, or GROUND_SPECIAL
+  State state;
+  std::string name;
+
+  // Define button used to launch attack
+  ButtonName button;
+
+  // Specials have motions
+  std::vector<NumPadDir> motion; 
+  // How many frames back should this check
+  unsigned int f_window;
+
+  // Normals have directions
+  NumPadDir dir;
+  
+  // Hitboxes and hurtboxes associated with this attack
+  std::vector<BoxEntity>* getHitboxes();
+  std::vector<BoxEntity> hitboxes;
+
+  std::vector<BoxEntity>* getHurtboxes();
+  std::vector<BoxEntity> hurtboxes;
+
+  unsigned int f_startup;
+  unsigned int f_active;
+  unsigned int f_recovery;
+};
+
 
 /**
  * Struct for dynamic character info
  */
 struct PlayerEntity {
   State state;
-  // 0 for no attack, else corresponding id of attack (index in corresponding attack vector)
-  std::string grounded_attack_idx;
-  std::string aerial_attack_idx;
+  const Attack* cur_attack;
 
   float v_mod = 1.0;
 
@@ -211,39 +254,6 @@ struct PlayerEntity {
  */
 void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
 
-// Template class to list character attacks
-class Attack {
- public:
-  Attack(
-    std::string name_,
-    ButtonName button_, 
-    std::vector<NumPadDir> motion_, 
-    unsigned int f_window_,
-    unsigned int f_startup_,
-    unsigned int f_active_,
-    unsigned int f_recovery_
-  );
-
-  std::string name;
-
-  // Define button used to launch attack
-  ButtonName button;
-
-  // Define required input motion (vector?)
-  std::vector<NumPadDir> motion; 
-  
-  // Hitboxes and hurtboxes associated with this attack
-  // std::vector<BoxEntity>* getHitboxes();
-  // std::vector<BoxEntity> hurtboxes;
-
-  // How many frames back should this check
-  unsigned int f_window;
-
-  unsigned int f_startup;
-  unsigned int f_active;
-  unsigned int f_recovery;
-};
-
 /**
  * Base class for static character info
  */
@@ -251,8 +261,10 @@ class PlayerController {
  public:
   PlayerController();
 
-  std::vector<Attack> grounded_attacks;
-  std::vector<Attack> aerial_attacks;
+  std::vector<Attack> gnd_specials;
+  std::vector<Attack> air_specials;
+  std::vector<Attack> gnd_normals;
+  std::vector<Attack> air_normals;
 
   float walking_v = 6.0;
   float backwalking_v = -4.5;
@@ -294,7 +306,7 @@ class PlayerController {
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
 
   // Used to check for a particular sequence of motions within some window of recent frames
-  bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, NumPadDir* buf);
+  bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, const NumPadDir* buf);
 
  private:
 
@@ -302,8 +314,8 @@ class PlayerController {
   virtual void initializeCharacterAttrs();
 
   // Check for valid attacks / special attacks
-  virtual bool checkGroundedAttacks(PlayerEntity* p, const ButtonStates* in);
-  virtual bool checkAerialAttacks(PlayerEntity* p, const ButtonStates* in);
+  virtual bool checkAttacks(PlayerEntity* p, const ButtonStates* in, const std::vector<Attack>* attacks);
+  // virtual bool checkAerialAttacks(PlayerEntity* p, const ButtonStates* in);
 
   // What to do while IN THIS STATE
   virtual void handleGrounded(PlayerEntity* p, const ButtonStates* in);
@@ -319,7 +331,11 @@ class PlayerController {
   virtual void handleJump(PlayerEntity* p, const ButtonStates* in);
   virtual void handleAirDash(PlayerEntity* p, const ButtonStates* in);
   virtual void handleAirBackDash(PlayerEntity* p, const ButtonStates* in);
+
   virtual void handleAttack(PlayerEntity* p, const ButtonStates* in);
+  // virtual void handleGroundSpecial(PlayerEntity* p, const ButtonStates* in);
+  // virtual void handleAirNormal(PlayerEntity* p, const ButtonStates* in);
+  // virtual void handleAirSpecial(PlayerEntity* p, const ButtonStates* in);
 
   // Entering the state (frame 0)
   virtual void stand(PlayerEntity* p, const ButtonStates* in);
@@ -332,7 +348,9 @@ class PlayerController {
   virtual void airDash(PlayerEntity* p, const ButtonStates* in);
   virtual void airBackDash(PlayerEntity* p, const ButtonStates* in);
   virtual void crouch(PlayerEntity* p, const ButtonStates* in);
-  virtual void attack(PlayerEntity* p, const ButtonStates* in);
+  // Begin an attack
+  virtual void attack(PlayerEntity* p, const ButtonStates* in, const Attack* atk);
+  // virtual void special(PlayerEntity* p, const ButtonStates* in, int id);
 
   virtual void applyAirStrafe(PlayerEntity* p, const ButtonStates* in);
   /**
