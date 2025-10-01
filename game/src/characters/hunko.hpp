@@ -14,9 +14,11 @@
 
 class Hunko : public PlayerController {
  public:
+  Hunko();
   void testCharacterInclude() override;
 
  private:
   void initializeAttacks() override;
   void initializeCharacterAttrs() override;
+  void handleAttack(PlayerEntity* p, const ButtonStates* in) override;
 };

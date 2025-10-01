@@ -164,7 +164,7 @@ int startLocalGame(RenderEngine* renderer) {
       game.tick();
 
       // DEBUGGING
-      // PlayerEntity* p1 = game.getPlayer(0);
+      PlayerEntity* p1 = game.getPlayer(0);
       // PlayerEntity* p2 = game.getPlayer(1);
 
       // Verify Motion Interpreter
@@ -183,7 +183,7 @@ int startLocalGame(RenderEngine* renderer) {
       // printMotionBuffer(game.allocator.getCurrentScene()->inputs[0].dir_buffer);
 
       // Verify state
-      // std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) 
+      // std::cout << "P1 STATE: " << game.players[0]->getStateString(p1) << std::endl; 
       // << " R=" << p1->f_recovery << " A=" << p1->f_active << " I=" << p1->f_invuln 
       // << " x_vel: " << p1->x_vel << std::endl;
 

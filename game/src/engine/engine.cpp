@@ -140,6 +140,10 @@ void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state,
   }
 }
 
+void printPlayerFrames(const PlayerEntity* p) {
+  std::cout << "s: " << p->f_startup << " a: " << p->f_active << " r: " << p->f_recovery << std::endl;
+}
+
 void InputSystem::resetButtonStates() {
   buttons = ButtonStates();
 }
@@ -204,6 +208,29 @@ Attack::Attack(
   f_recovery = f_recovery_;
 }
 
+std::vector<BoxEntity>* Attack::getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
+  return &hitbox_sets.at(getCurAtkFrame(f_s, f_a, f_r));
+}
+std::vector<BoxEntity>* Attack::getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
+  return &hurtbox_sets.at(f_s+f_a+f_r);
+}
+
+unsigned int Attack::getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
+  unsigned int idx = 0;
+  // If past startup, add startup frames to idx
+  if (f_s == 0) { 
+    idx += f_startup; 
+    if (f_s == 0) { 
+      idx += f_active; 
+      idx += f_recovery - f_r;
+    } else {
+      idx += f_active - f_a;
+    }
+  } else {
+    idx += f_startup - f_s;
+  }
+  return idx;
+}
 
 /***************************
  **** PLAYER CONTROLLER ****
@@ -292,12 +319,15 @@ bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned
 bool PlayerController::checkAttacks(PlayerEntity* p, const ButtonStates* in, const std::vector<Attack>* attacks) {
   // All attacks have a corresponding button
   if (!isAnyButtonPressed(in)) { return false; }
-
+  if (!attacks) { std::cerr << "There's no attacks lol\n";}
+  // std::cout << attacks->size() << std::endl;
   // Check if any specials should begin
   for (unsigned int i = 0; i < attacks->size(); ++i) {
     const Attack* atk = &attacks->at(i);
     ButtonName b = atk->button;
+    // std::cout << printButtonState(&in->b1) << std::endl;
     if (getButtonState(in, b) == PRESSED) {
+      // std::cout << "button pressed\n";
       if (checkMotionInputs(atk->motion, atk->f_window, in->dir_buffer)) {
         // Button and motion both confirmed
         // Begin the first attack that is matched
@@ -335,7 +365,10 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
     case (GROUND_SPECIAL): { handleAttack(p, in); break; }
     case (AIR_NORMAL): { handleAttack(p, in); break; }
     case (AIR_SPECIAL): { handleAttack(p, in); break; }
-    default: { std::cerr << "State not caught\n"; handleStand(p, in); break; }
+    default: { 
+      std::cerr << "State not caught: " << p->state << std::endl; 
+      handleStand(p, in); break; 
+    }
   }
 }
 
@@ -344,7 +377,10 @@ Functions that handle what to do in the state you're already in
 */
 // Most grounded actions start here
 void PlayerController::handleGrounded(PlayerEntity* p, const ButtonStates* in) {
-  if (in->up) { 
+  // if (checkAttacks(p, in, &gnd_normals)) { return; }
+  if (checkAttacks(p, in, &gnd_specials)) {
+    std::cout << "Attack got through!" << std::endl;
+  } else if (in->up) { 
     jump(p, in); 
   } else if (in->l2) {
     if (holdingBack(p, in)) {
@@ -469,7 +505,9 @@ void PlayerController::handleCrouch(PlayerEntity* p, const ButtonStates* in) {
   handleStand(p, in);
 }
 
-void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) {}
+void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) {
+  std::cout << "Error: Attack handled as blank character\n";
+}
 
 /*
 Functions to put you into a given state
@@ -534,6 +572,7 @@ void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
 void PlayerController::attack(PlayerEntity* p, const ButtonStates* in, const Attack* atk) {
   p->state = atk->state;
   p->cur_attack = atk;
+  p->f_startup = atk->f_startup;
 }
 
 /**

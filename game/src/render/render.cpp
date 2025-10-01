@@ -144,37 +144,36 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->height
   };
 
+  // Hitboxes red
+  SDL_FRect hitbox;
+  SDL_SetRenderDrawColor(ren, 255, 0, 0, 0.5);     
+  if (p->hitboxes) {
+    for (size_t i = 0; i < p->hitboxes->size(); ++i) {
+      convertBoxEntityToFRect(&p->hitboxes->at(i), &hitbox);
+      hitbox.x += p->x_pos;
+      hitbox.y += p->y_pos;
+      SDL_RenderFillRect(ren, &hitbox);
+    }
+  }
+
+  // Hurtboxes green
+  SDL_SetRenderDrawColor(ren, 0, 255, 0, 0.5);     
+  SDL_FRect hurtbox;
+  if (p->hurtboxes) {
+    for (size_t i = 0; i < p->hurtboxes->size(); ++i) {
+      convertBoxEntityToFRect(&p->hurtboxes->at(i), &hurtbox);
+      hurtbox.x += p->x_pos;
+      hurtbox.y += p->y_pos;
+      SDL_RenderFillRect(ren, &hurtbox);
+    }
+  }
+
+  // Rendering the player's texture
   if (p->facing_right) {
     SDL_RenderTexture(ren, player_tex, NULL, &green_square);
   } else {
     SDL_RenderTextureRotated(ren, player_tex, NULL, &green_square, 0, NULL, SDL_FLIP_HORIZONTAL);
   }
-
-  if (p->f_active + p->f_startup + p->f_recovery == 0) { return; }
-
-  if (p->f_startup > 0) {
-    // startup
-    SDL_SetRenderDrawColor(ren, 255, 247, 0, 255);     
-  }
-  if (p->f_active > 0) {
-    // active
-    SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);     
-  }
-  if (p->f_recovery > 0) {
-    // recovery
-    SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
-  }
-
-
-  // Active frames > 0
-  SDL_FRect atk_square{
-    p->x_pos + p->width,
-    p->y_pos + p->height / 4,
-    100,
-    50,
-  };
-
-  SDL_RenderFillRect(ren, &atk_square);  // Render the rectangle
 }
 
 void RenderEngine::displayFPS() {

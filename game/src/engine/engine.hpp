@@ -42,6 +42,8 @@
 
 #define FRAME_ADVANTAGE_LIMIT 5
 
+#define MAX_N_HITBOXES 4
+#define MAX_N_HURTBOXES 4
 
 #define DEFAULT_XDIM 3200
 #define DEFAULT_YDIM 1800
@@ -196,12 +198,13 @@ class Attack {
   NumPadDir dir;
   
   // Hitboxes and hurtboxes associated with this attack
-  std::vector<BoxEntity>* getHitboxes();
-  std::vector<BoxEntity> hitboxes;
+  std::vector<BoxEntity>* getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r);
+  std::vector<std::vector<BoxEntity>> hitbox_sets;
 
-  std::vector<BoxEntity>* getHurtboxes();
-  std::vector<BoxEntity> hurtboxes;
+  std::vector<BoxEntity>* getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r);
+  std::vector<std::vector<BoxEntity>> hurtbox_sets;
 
+  unsigned int getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r);
   unsigned int f_startup;
   unsigned int f_active;
   unsigned int f_recovery;
@@ -239,7 +242,12 @@ struct PlayerEntity {
 
   int f_invuln = 0;
   int f_hitstun = 0;
+
+  std::vector<BoxEntity>* hitboxes;
+  std::vector<BoxEntity>* hurtboxes;
 };
+
+void printPlayerFrames(const PlayerEntity* p);
 
 /**
  * @brief Function to set the numpad direction of a given button state and player.
@@ -265,6 +273,8 @@ class PlayerController {
   std::vector<Attack> air_specials;
   std::vector<Attack> gnd_normals;
   std::vector<Attack> air_normals;
+
+  std::vector<BoxEntity> default_hurtboxes;
 
   float walking_v = 6.0;
   float backwalking_v = -4.5;
@@ -307,8 +317,6 @@ class PlayerController {
 
   // Used to check for a particular sequence of motions within some window of recent frames
   bool checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, const NumPadDir* buf);
-
- private:
 
   virtual void initializeAttacks();
   virtual void initializeCharacterAttrs();
