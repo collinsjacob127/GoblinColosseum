@@ -104,9 +104,9 @@ int start(RenderEngine* renderer) {
 }
 
 int startLocalGame(RenderEngine* renderer) {
-  GameManager game;
-  game.players[0] = new Hunko();
-  game.players[1] = new Hunko();
+  PlayerController* p1 = new Hunko();
+  PlayerController* p2 = new Hunko();
+  GameManager game(p1, p2, 1);
 
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
@@ -155,7 +155,6 @@ int startLocalGame(RenderEngine* renderer) {
       //   game.rollBack(game.cur_tick-20, &p2_inputs->buttons);
       // }
 
-
       // Send accumulated inputs to game engine
       game.updateInputs(&p1_inputs->buttons, 0);
       game.updateInputs(&p2_inputs->buttons, 1);
@@ -164,7 +163,7 @@ int startLocalGame(RenderEngine* renderer) {
       game.tick();
 
       // DEBUGGING
-      PlayerEntity* p1 = game.getPlayer(0);
+      // PlayerEntity* p1 = game.getPlayer(0);
       // PlayerEntity* p2 = game.getPlayer(1);
 
       // Verify Motion Interpreter
@@ -192,7 +191,7 @@ int startLocalGame(RenderEngine* renderer) {
       // << " x_vel: " << p2->x_vel << std::endl;
 
       // Only render if game engine is caught up
-      if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1)) {
+      if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
         renderer->FPS = frame_rate;
         renderer->renderGameScene(&game);
       }

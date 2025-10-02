@@ -48,3 +48,23 @@ void rescaleBox(float pos_scale, float size_scale, BoxEntity* box) {
   box->width *= size_scale;
   box->height *= size_scale;
 }
+
+std::ostream& operator<<(std::ostream& os, const BoxEntity& obj) {
+  os << "x: " << obj.x << ", ";
+  os << "y: " << obj.y << ", ";
+  os << "w: " << obj.width << ", ";
+  os << "h: " << obj.height;
+  return os;
+}
+
+Coordinate getBoxCenterCoordinate(const BoxEntity* box) {
+  Coordinate pnt;
+  pnt.x = box->x + box->width / 2;
+  pnt.y = box->y + box->height / 2;
+  return pnt;
+}
+
+void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt) {
+  box->x = pnt.x + box->width / 2;
+  box->y = pnt.y + box->height / 2;
+}

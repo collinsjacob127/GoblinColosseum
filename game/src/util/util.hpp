@@ -51,8 +51,11 @@ struct BoxEntity {
   float y = 0.0;
   float width = 10.0;
   float height = 10.0;
+  friend std::ostream& operator<<(std::ostream& os, const BoxEntity& obj);
 };
 
 bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box);
 void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect);
 void rescaleBox(float pos_scale, float size_scale, BoxEntity* box);
+Coordinate getBoxCenterCoordinate(const BoxEntity* box);
+void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt);

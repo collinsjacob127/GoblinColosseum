@@ -62,6 +62,7 @@ class RenderEngine {
   void calculateScale(int win_width, int win_height);
 
  private:
+  void renderBoxes(const PlayerEntity* p);
   void renderPlayer(const PlayerEntity *player);
   void displayFPS();
   void clearScreen();

@@ -141,7 +141,11 @@ void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state,
 }
 
 void printPlayerFrames(const PlayerEntity* p) {
-  std::cout << "s: " << p->f_startup << " a: " << p->f_active << " r: " << p->f_recovery << std::endl;
+  std::cout << "s: " << p->f_startup 
+  << " a: " << p->f_active 
+  << " r: " << p->f_recovery 
+  << " tot: " << p->cur_attack->getCurAtkFrame(p->f_startup, p->f_active, p->f_recovery) 
+  << std::endl;
 }
 
 void InputSystem::resetButtonStates() {
@@ -208,26 +212,29 @@ Attack::Attack(
   f_recovery = f_recovery_;
 }
 
-std::vector<BoxEntity>* Attack::getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
-  return &hitbox_sets.at(getCurAtkFrame(f_s, f_a, f_r));
-}
-std::vector<BoxEntity>* Attack::getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
-  return &hurtbox_sets.at(f_s+f_a+f_r);
+unsigned int Attack::getTotalFrames() {
+  return f_active + f_recovery + f_startup;
 }
 
-unsigned int Attack::getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r) {
+const std::vector<BoxEntity>* Attack::getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) const {
+  unsigned int cur_f = getCurAtkFrame(f_s, f_a, f_r);
+  // std::cout << "Recieved hitbox request\n";
+  // std::cout << "Current attack frame is: " << cur_f << std::endl;
+  // std::cout << "Size of hitbox sets for atk: " << hitbox_sets.size() << std::endl;
+  return &hitbox_sets.at(cur_f);
+}
+const std::vector<BoxEntity>* Attack::getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) const {
+  return &hurtbox_sets.at(getCurAtkFrame(f_s,f_a,f_r));
+}
+
+unsigned int Attack::getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r) const {
   unsigned int idx = 0;
-  // If past startup, add startup frames to idx
-  if (f_s == 0) { 
-    idx += f_startup; 
-    if (f_s == 0) { 
-      idx += f_active; 
-      idx += f_recovery - f_r;
-    } else {
-      idx += f_active - f_a;
-    }
-  } else {
-    idx += f_startup - f_s;
+  if (f_s) {
+    idx = f_startup - f_s;
+  } else if (f_a) {
+    idx = f_startup + (f_active - f_a);
+  } else if (f_r) {
+    idx = f_startup + f_active + (f_recovery - f_r);
   }
   return idx;
 }
@@ -339,9 +346,68 @@ bool PlayerController::checkAttacks(PlayerEntity* p, const ButtonStates* in, con
   return false;
 }
 
-// bool PlayerController::checkAerialAttacks(PlayerEntity* p, const ButtonStates* in) {
-//   // Check specials
-// }
+Coordinate PlayerController::getPlayerCenter(PlayerEntity* p) {
+  return {p->x_pos + p->width/2, p->y_pos + p->height/2};
+}
+
+void PlayerController::updateBoxes(PlayerEntity* p) {
+  const Attack* atk = p->cur_attack;
+  if (atk == nullptr) {
+    p->base_hurtboxes = &default_hurtboxes;
+    p->base_hitboxes = &default_hitboxes;
+    // std::cout << "No attack, default boxes:" << std::endl;
+    // std::cout << "   hit: " << p->base_hitboxes->at(0) << std::endl;
+    // std::cout << "   hurt: " << p->base_hurtboxes->at(0) << std::endl;
+  } else {
+    p->base_hitboxes = atk->getHitboxes(p->f_startup, p->f_active, p->f_recovery);
+    p->base_hurtboxes = atk->getHurtboxes(p->f_startup, p->f_active, p->f_recovery);
+    // std::cout << "Yes attack, base boxes:" << std::endl;
+    // std::cout << "   hit: " << p->base_hitboxes->at(0) << std::endl;
+    // std::cout << "   hurt: " << p->base_hurtboxes->at(0) << std::endl;
+  }
+  p->hitboxes.clear();
+  p->hurtboxes.clear();
+  // std::cout << "Should be 0: " << p->hitboxes.size() << std::endl;
+  // std::cout << "Should be 0: " << p->hurtboxes.size() << std::endl;
+
+  // Get the player's current center
+  Coordinate p_cen = getPlayerCenter(p);
+
+  // Loop through player's hitboxes
+  for (size_t i = 0; i < p->base_hitboxes->size(); i++) {
+    const BoxEntity* ref_box = &p->base_hitboxes->at(i);
+    BoxEntity box;
+    if (p->facing_right) {
+      box.x = p_cen.x + ref_box->x;
+    } else {
+      box.x = (p_cen.x - ref_box->x) - ref_box->width;
+    }
+    box.y = p_cen.y + ref_box->y - p->height/2;
+    box.width = ref_box->width;
+    box.height = ref_box->height;
+    // std::cout << "Ref hitbox: " << *ref_box << std::endl;
+    // std::cout << "New hitbox: " << box << std::endl;
+    p->hitboxes.push_back(box);
+  }
+
+  for (size_t i = 0; i < p->base_hurtboxes->size(); i++) {
+    const BoxEntity* ref_box = &p->base_hurtboxes->at(i);
+    BoxEntity box;
+    if (p->facing_right) {
+      box.x = p_cen.x + ref_box->x;
+    } else {
+      box.x = (p_cen.x - ref_box->x) - ref_box->width;
+    }
+    box.y = p_cen.y + ref_box->y - p->height/2;
+    box.width = ref_box->width;
+    box.height = ref_box->height;
+    // std::cout << "Ref hurtbox: " << *ref_box << std::endl;
+    // std::cout << "New hurtbox: " << box << std::endl;
+    p->hurtboxes.push_back(box);
+  }
+  // std::cout << "Player has " << p->hitboxes.size() << " hitboxes." << std::endl;
+  // std::cout << "Player has " << p->hurtboxes.size() << " hurtboxes." << std::endl;
+}
 
 /**
  * @brief Set a player's state given their current state and inputs
@@ -513,6 +579,8 @@ void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) {
 Functions to put you into a given state
 */
 void PlayerController::stand(PlayerEntity* p, const ButtonStates* in) {
+  p->base_hitboxes = &default_hitboxes;
+  p->base_hurtboxes = &default_hurtboxes;
   p->state = STAND;
   p->air_action_cnt = 0;
 }
@@ -784,18 +852,20 @@ GameManager::GameManager() {
   setInitialPlayerPositions();
 }
 
-GameManager::GameManager(unsigned int net_p1_or_p2) {
+GameManager::GameManager(PlayerController* p1, PlayerController* p2, unsigned int net_pindex_) {
   cur_tick = INITIAL_FRAME;
 
-  net_pindex = net_p1_or_p2;
+  net_pindex = net_pindex_;
   if (net_pindex == 0) { loc_pindex = 1; }
   else if (net_pindex == 1) { loc_pindex = 0; }
   else { std::cerr << "Invalid net pindex\n"; }
+
   allocator.loc_pindex = loc_pindex;
   allocator.net_pindex = net_pindex;
 
-  players[0] = new PlayerController();
-  players[1] = new PlayerController();
+  players[0] = p1;
+  players[1] = p2;
+
   setInitialPlayerPositions();
 }
 
@@ -860,14 +930,31 @@ void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
 void GameManager::applyTickUpdates(GameScene* scene) {
   allocator.populateDirBuffer(cur_tick, 0);
   allocator.populateDirBuffer(cur_tick, 1);
+
+  PlayerController* p1_con = players[0];
+  PlayerController* p2_con = players[1];
+
+  PlayerEntity* p1_ent = &scene->players[0];
+  PlayerEntity* p2_ent = &scene->players[1];
+
+  ButtonStates* p1_but = &scene->inputs[0];
+  ButtonStates* p2_but = &scene->inputs[1];
+
   // Tick the player's state machines
-  players[0]->updateState(&scene->players[0], &scene->inputs[0]);
-  players[1]->updateState(&scene->players[1], &scene->inputs[1]);
+  p1_con->updateState(p1_ent, p1_but);
+  p2_con->updateState(p2_ent, p2_but);
+
+
   // Apply movement based on new velocities
-  players[0]->applyMovement(&scene->players[0]);
-  players[1]->applyMovement(&scene->players[1]);
+  p1_con->applyMovement(p1_ent);
+  p2_con->applyMovement(p2_ent);
+
+  // Update hitboxes to current positions
+  p1_con->updateBoxes(p1_ent);
+  p2_con->updateBoxes(p2_ent);
+
   // Update which direction the players are facing
-  setFacingDir(&scene->players[0], &scene->players[1]);
+  setFacingDir(p1_ent, p2_ent);
 }
 
 /**

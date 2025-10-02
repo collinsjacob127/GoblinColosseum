@@ -32,6 +32,8 @@
 #include <SDL3/SDL.h>
 #include "util.hpp"
 
+#define ENABLE_BOX_DEBUG true
+
 #define ENABLE_HELPER_PRINTOUTS true
 
 // For rollback functionality demo:
@@ -166,7 +168,11 @@ enum State {
   GROUND_NORMAL,
   GROUND_SPECIAL,
   AIR_NORMAL,
-  AIR_SPECIAL
+  AIR_SPECIAL,
+  GROUND_HITSTUN,
+  AIR_HITSTUN,
+  SOFT_KNOCKDOWN,
+  HARD_KNOCKDOWN
 };
 
 // Template class to list character attacks
@@ -198,13 +204,14 @@ class Attack {
   NumPadDir dir;
   
   // Hitboxes and hurtboxes associated with this attack
-  std::vector<BoxEntity>* getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r);
+  const std::vector<BoxEntity>* getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) const;
   std::vector<std::vector<BoxEntity>> hitbox_sets;
 
-  std::vector<BoxEntity>* getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r);
+  const std::vector<BoxEntity>* getHurtboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) const;
   std::vector<std::vector<BoxEntity>> hurtbox_sets;
 
-  unsigned int getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r);
+  unsigned int getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r) const;
+  unsigned int getTotalFrames();
   unsigned int f_startup;
   unsigned int f_active;
   unsigned int f_recovery;
@@ -230,8 +237,8 @@ struct PlayerEntity {
   float x_vel = 0.0;
   float y_vel = 0.0;
 
-  float width = 100.0;
-  float height = 300.0;
+  float width = 200.0;
+  float height = 600.0;
 
   int air_action_cnt = 0;
   int air_action_max = 2;
@@ -243,8 +250,10 @@ struct PlayerEntity {
   int f_invuln = 0;
   int f_hitstun = 0;
 
-  std::vector<BoxEntity>* hitboxes;
-  std::vector<BoxEntity>* hurtboxes;
+  const std::vector<BoxEntity>* base_hitboxes;
+  const std::vector<BoxEntity>* base_hurtboxes;
+  std::vector<BoxEntity> hitboxes;
+  std::vector<BoxEntity> hurtboxes;
 };
 
 void printPlayerFrames(const PlayerEntity* p);
@@ -275,6 +284,7 @@ class PlayerController {
   std::vector<Attack> air_normals;
 
   std::vector<BoxEntity> default_hurtboxes;
+  std::vector<BoxEntity> default_hitboxes;
 
   float walking_v = 6.0;
   float backwalking_v = -4.5;
@@ -307,9 +317,15 @@ class PlayerController {
   virtual void testCharacterInclude();
   virtual std::string getStateString(const PlayerEntity* p);
 
+  Coordinate getPlayerCenter(PlayerEntity* p);
+  virtual void updateBoxes(PlayerEntity* p);
+
+  // Core of the state machine
   virtual void updateState(PlayerEntity* p, const ButtonStates* in);
+  // Called at end of tick, applies velocity and handles collisions
   void applyMovement(PlayerEntity* p);
 
+  // Helpers for verifying a character's state based on non-`STATE` values
   bool isActionable(PlayerEntity* p);
   bool isGrounded(PlayerEntity* p);
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
@@ -452,7 +468,7 @@ class GameManager {
   unsigned int remote_frame_advantage;
 
   GameManager();
-  GameManager(unsigned int net_p1_or_p2);
+  GameManager(PlayerController* p1, PlayerController* p2, unsigned int net_pindex);
 
   void updateInputs(const ButtonStates* btns, int pindex);
   void tick();

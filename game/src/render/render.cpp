@@ -44,6 +44,7 @@ RenderEngine::RenderEngine() {
     SDL_Quit();
     exit(EXIT_FAILURE);
   } else { std::cout << "Renderer set\n";}
+  SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
   
   buffer_tex = SDL_CreateTexture(
     ren, 
@@ -136,6 +137,39 @@ void RenderEngine::checkRenderDrivers() {
   }
 }
 
+void RenderEngine::renderBoxes(const PlayerEntity* p) {
+  // Hitboxes red
+  SDL_FRect hitbox;
+  SDL_SetRenderDrawColor(ren, 255, 0, 0, 120);     
+  for (size_t i = 0; i < p->hitboxes.size(); ++i) {
+    convertBoxEntityToFRect(&p->hitboxes.at(i), &hitbox);
+    // if (ENABLE_BOX_DEBUG)
+    //   std::cout << "Rendering hitbox at " << hitbox.x << ", " << hitbox.y << std::endl;
+    SDL_RenderFillRect(ren, &hitbox);
+  }
+
+  // Hurtboxes based on state
+  if (p->f_startup + p->f_active + p->f_recovery) {
+    // Display as non-actionable (yellow)
+    SDL_SetRenderDrawColor(ren, 255, 255, 0, 50);     
+  } else {
+    // Display as actionable (green)
+    SDL_SetRenderDrawColor(ren, 0, 255, 0, 50);     
+  }
+  if (p->state == GROUND_HITSTUN || p->state == AIR_HITSTUN) {
+    // Display as hitstun (orange)
+    SDL_SetRenderDrawColor(ren, 255, 115, 5, 50);     
+  }
+  SDL_FRect hurtbox;
+  for (size_t i = 0; i < p->hurtboxes.size(); ++i) {
+    convertBoxEntityToFRect(&p->hurtboxes.at(i), &hurtbox);
+    // if (ENABLE_BOX_DEBUG)
+    //   std::cout << "Rendering hurtbox at " << hurtbox.x << ", " << hurtbox.y << std::endl;
+    SDL_RenderFillRect(ren, &hurtbox);
+  }
+
+}
+
 void RenderEngine::renderPlayer(const PlayerEntity *p) {
   SDL_FRect green_square{ 
     p->x_pos,
@@ -143,30 +177,6 @@ void RenderEngine::renderPlayer(const PlayerEntity *p) {
     p->width,
     p->height
   };
-
-  // Hitboxes red
-  SDL_FRect hitbox;
-  SDL_SetRenderDrawColor(ren, 255, 0, 0, 0.5);     
-  if (p->hitboxes) {
-    for (size_t i = 0; i < p->hitboxes->size(); ++i) {
-      convertBoxEntityToFRect(&p->hitboxes->at(i), &hitbox);
-      hitbox.x += p->x_pos;
-      hitbox.y += p->y_pos;
-      SDL_RenderFillRect(ren, &hitbox);
-    }
-  }
-
-  // Hurtboxes green
-  SDL_SetRenderDrawColor(ren, 0, 255, 0, 0.5);     
-  SDL_FRect hurtbox;
-  if (p->hurtboxes) {
-    for (size_t i = 0; i < p->hurtboxes->size(); ++i) {
-      convertBoxEntityToFRect(&p->hurtboxes->at(i), &hurtbox);
-      hurtbox.x += p->x_pos;
-      hurtbox.y += p->y_pos;
-      SDL_RenderFillRect(ren, &hurtbox);
-    }
-  }
 
   // Rendering the player's texture
   if (p->facing_right) {
@@ -257,14 +267,18 @@ void RenderEngine::renderGameScene(GameManager* game) {
 
   // Render full scene to temp buffer
   SDL_SetRenderTarget(ren, buffer_tex);
-  clearScreen();
+  // clearScreen();
   SDL_RenderTexture(ren, game_background, NULL, NULL);
+
+  renderBoxes(p1);
   renderPlayer(p1);
+
+  renderBoxes(p2);
   renderPlayer(p2);
 
   // Render viewport selection to window
   SDL_SetRenderTarget(ren, NULL);
-  clearScreen();
+  // clearScreen();
   SDL_RenderTexture(ren, buffer_tex, &viewport, NULL);
   displayFPS();
   SDL_RenderPresent(ren);
