@@ -33,8 +33,8 @@ cd game
 # Build SDL library files
 cmake -S . -B build
 
-# Build the game (-j4 builds in parallel)
-cmake --build build -j4
+# Build the game
+cmake --build build --parallel
 
 # Run the game
 ./build/src/GOBLIN
