@@ -28,9 +28,6 @@ Prerequisites:
 # Move into the game subdirectory (GoblinColosseum/game)
 cd game
 
-# Download external packages for SDLs text library
-./libs/SDL_ttf/external/download.sh
-
 # Build SDL library files
 cmake -S . -B build
 
