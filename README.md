@@ -20,6 +20,7 @@ cd GoblinColosseum/
 Prerequisites:
 - cmake
 - git
+- git-lfs (Make sure you run `git lfs install`)
 
 (Instructions based loosely on those given by [SDL3 docs](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-cmake.md))
 
@@ -27,14 +28,11 @@ Prerequisites:
 # Move into the game subdirectory (GoblinColosseum/game)
 cd game
 
-# Download external packages for SDLs text library
-./libs/SDL_ttf/external/download.sh
-
 # Build SDL library files
 cmake -S . -B build
 
-# Build the game (-j4 builds in parallel)
-cmake --build build -j4
+# Build the game
+cmake --build build --parallel
 
 # Run the game
 ./build/src/GOBLIN
