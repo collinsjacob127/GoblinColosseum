@@ -20,7 +20,7 @@ cd GoblinColosseum/
 Prerequisites:
 - cmake
 - git
-- git-lfs (Make sure you run `git lfs install`
+- git-lfs (Make sure you run `git lfs install`)
 
 (Instructions based loosely on those given by [SDL3 docs](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-cmake.md))
 
