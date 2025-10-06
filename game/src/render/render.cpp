@@ -99,6 +99,7 @@ RenderEngine::RenderEngine() {
 
   SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);  // Set render draw color to black
   SDL_RenderClear(ren);         // Clear the renderer
+  SDL_GL_SetSwapInterval(2);
   std::cout << "Renderer finished initializing (" << startup_timer.duration() << "s)\n";
 }
 

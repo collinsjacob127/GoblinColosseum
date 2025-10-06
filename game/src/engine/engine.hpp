@@ -237,8 +237,8 @@ struct PlayerEntity {
   float x_vel = 0.0;
   float y_vel = 0.0;
 
-  float width = 200.0;
-  float height = 600.0;
+  float width = 150.0;
+  float height = 400.0;
 
   int air_action_cnt = 0;
   int air_action_max = 2;
@@ -377,6 +377,7 @@ class PlayerController {
   // virtual void special(PlayerEntity* p, const ButtonStates* in, int id);
 
   virtual void applyAirStrafe(PlayerEntity* p, const ButtonStates* in);
+
   /**
    * @brief Function to adjust velocity from one speed to another 
    * @param v_cur Pointer to the current velocity, to be edited
@@ -478,6 +479,7 @@ class GameManager {
 
  private:
   void applyTickUpdates(GameScene* scene);
+  void handlePlayerCollisions(PlayerEntity* p1, PlayerEntity* p2);
   void decrementFrames(PlayerEntity* p1);
   void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
   void setInitialPlayerPositions();

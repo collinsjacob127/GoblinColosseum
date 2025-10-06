@@ -949,12 +949,48 @@ void GameManager::applyTickUpdates(GameScene* scene) {
   p1_con->applyMovement(p1_ent);
   p2_con->applyMovement(p2_ent);
 
+  handlePlayerCollisions(p1_ent, p2_ent);
+
   // Update hitboxes to current positions
   p1_con->updateBoxes(p1_ent);
   p2_con->updateBoxes(p2_ent);
 
   // Update which direction the players are facing
   setFacingDir(p1_ent, p2_ent);
+}
+
+void GameManager::handlePlayerCollisions(PlayerEntity* p1, PlayerEntity* p2) {
+  BoxEntity p1_box(p1->x_pos, p1->y_pos, p1->width, p1->height);
+  BoxEntity p2_box(p2->x_pos, p2->y_pos, p2->width, p2->height);
+  Coordinate p1_cen = p1_box.getCenter();
+  Coordinate p2_cen = p2_box.getCenter();
+  
+  PlayerEntity *left_p, *right_p;
+  BoxEntity *left_box, *right_box;
+  bool x_aligned = false;
+
+  if (p1_box.checkCollision(&p2_box)) {
+    if (p1_cen.x < p2_cen.x) {
+      left_p = p1; left_box = &p1_box;
+      right_p = p2; right_box = &p2_box;
+    } else if (p1_cen.x > p2_cen.x) {
+      left_p = p2; left_box = &p2_box;
+      right_p = p1; right_box = &p1_box;
+    } else {
+      x_aligned = true;
+    }
+  } else {
+    return; // No collision - return
+  }
+
+  // Edge case
+  if (x_aligned) {
+    // TODO: Implement this (one player on top of the other)
+    return;
+  }
+
+  //TODO: Base case for collision
+  // Don't let them collide
 }
 
 /**

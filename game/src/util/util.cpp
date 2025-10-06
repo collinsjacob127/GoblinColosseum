@@ -30,6 +30,38 @@ double Timer::duration() {
     return static_cast<double>(ns) / 1e9;
 }
 
+BoxEntity::BoxEntity() {};
+BoxEntity::BoxEntity(float x_, float y_, float w_, float h_) {
+  x = x_;
+  y = y_;
+  width = w_;
+  height = h_;
+}
+
+bool checkPointInRange(float x, float x0, float x1) {
+  return (x >= x0 && x <= x1);
+}
+
+bool BoxEntity::checkCollision(BoxEntity* box) {
+  return 
+    (
+      checkPointInRange(x, box->x, box->x + box->width) 
+      || 
+      checkPointInRange(x + width, box->x, box->x + box->width)
+    ) && (
+      checkPointInRange(y, box->y, box->y + box->height)
+      ||
+      checkPointInRange(y + height, box->y, box->y + box->height)
+    );
+}
+
+Coordinate BoxEntity::getCenter() {
+  Coordinate coord;
+  coord.x = x + width/2;
+  coord.y = y + height/2;
+  return coord;
+}
+
 bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box) {
   return (coord->x <= box->x + box->width && coord->x >= box->x) && \
          (coord->y <= box->y + box->height && coord->y >= box->y);

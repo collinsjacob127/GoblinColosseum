@@ -8,10 +8,10 @@
 Hunko::Hunko() {
   // Define temporary box for saving in defaults
   BoxEntity tmp_hurtbox;
-  tmp_hurtbox.x = -100;
+  tmp_hurtbox.x = -75;
   tmp_hurtbox.y = 0;
-  tmp_hurtbox.width = 200;
-  tmp_hurtbox.height = 600;
+  tmp_hurtbox.width = 150;
+  tmp_hurtbox.height = 400;
   default_hurtboxes.push_back(tmp_hurtbox);
 
   // BoxEntity tmp_hitbox;
@@ -32,7 +32,9 @@ void Hunko::initializeAttacks() {
   Attack* atk; // Pointer to whatever attack is being defined
   size_t f = 0; // Used for indexing frames
   BoxEntity tmp_hitbox; // Used to define hitboxes
-
+  float default_x0 = -default_hurtboxes[0].x;
+  // float default_x0 = 0;
+  float default_y0 = default_hurtboxes[0].y/2;
   /*******************************
    ****** GROUNDED NORMALS *******
    *******************************/
@@ -46,8 +48,8 @@ void Hunko::initializeAttacks() {
   }
   // Define active boxes
   for (f = 0; f < atk->f_active; ++f) {
-    tmp_hitbox.x = 50 + 5 * f;
-    tmp_hitbox.width = 300 + 10 * f;
+    tmp_hitbox.x = default_x0 + 5 * f;
+    tmp_hitbox.width = default_y0 + 10 * f;
     tmp_hitbox.height = 150;
     // std::cout << "Pushing to atk hitbox sets\n";
     atk->hitbox_sets.push_back({tmp_hitbox});
@@ -74,12 +76,12 @@ void Hunko::initializeAttacks() {
   gnd_specials.push_back(Attack( "ILLEGAL_HOMERUN", B4, {DOWN, DOWN_RIGHT, RIGHT}, 30, 10, 20, 8));
   atk = &gnd_specials.at(gnd_specials.size()-1);
   // Set hitboxes etc. for ILLEGAL HOMERUN
-  tmp_hitbox.x = 100;
+  tmp_hitbox.x = default_x0;
   tmp_hitbox.y = 0;
   tmp_hitbox.width = 200;
   tmp_hitbox.height = 200;
   BoxEntity tmp2;
-  tmp2.x = 300;
+  tmp2.x = default_x0 + 200;
   tmp2.y = 50;
   tmp2.width = 100;
   tmp2.height = 100;
@@ -112,7 +114,7 @@ void Hunko::initializeAttacks() {
   }
   // Define active boxes
   for (f = 0; f < atk->f_active; ++f) {
-    tmp_hitbox.x = 50 + 5 * f;
+    tmp_hitbox.x = default_x0 + 5 * f;
     tmp_hitbox.width = 300 + 5 * f;
     tmp_hitbox.height = 150;
     // std::cout << "Pushing to atk hitbox sets\n";
