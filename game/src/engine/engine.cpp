@@ -292,7 +292,6 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
 }
 
 bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, const NumPadDir* buf) {
-  
   // Iterating backwards through the given motion
   unsigned int j = motion.size()-1;
   unsigned int n_seq_matches = 0;
