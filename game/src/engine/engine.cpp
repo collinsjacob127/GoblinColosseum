@@ -279,8 +279,8 @@ bool PlayerController::isActionable(PlayerEntity* p) {
   return (p->f_startup + p->f_active + p->f_recovery == 0);
 }
 
-bool PlayerController::isGrounded(PlayerEntity* p) {
-  return p->y_pos + p->height >= GAME_BORDER_Y1;
+bool PlayerEntity::isGrounded() {
+  return y_pos + height >= GAME_BORDER_Y1;
 }
 
 bool PlayerController::holdingForward(const PlayerEntity* p, const ButtonStates* in) {
@@ -414,6 +414,10 @@ void PlayerController::updateBoxes(PlayerEntity* p) {
 void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
   if (isActionable(p)) {
     p->v_mod = p->facing_right ? 1.0 : -1.0; // Velocities set based on dir facing
+    // End dash when you get crossed over
+    if (p->state == DASH) { 
+      stand(p, in); 
+    }
   }
   switch (p->state) {
     case (STAND): { handleStand(p, in); break; }
@@ -447,7 +451,8 @@ void PlayerController::handleGrounded(PlayerEntity* p, const ButtonStates* in) {
     std::cout << "Attack got through!" << std::endl;
   } else if (in->up) { 
     jump(p, in); 
-  } else if (in->l2) {
+  } else if (in->l2 == PRESSED) {
+    // if (in->l2 != PRESSED) { return; }
     if (holdingBack(p, in)) {
       backdash(p, in);
     } else {
@@ -468,19 +473,40 @@ void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
   handleGrounded(p, in);
 }
 void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* in) { 
-  p->x_vel = 0;
+  // if (holdingForward(p, in)) {
+  //   p->x_vel = abs(p->x_vel) - walking_v < 0 ? p->x_vel : walking_v * p->v_mod;
+  // }
+  if (p->x_vel <= p->v_mod * walking_v){
+    p->x_vel = 0;
+  }
   handleGrounded(p, in);
 }
 void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { 
-  p->x_vel = 0;
+  // p->x_vel = abs(p->x_vel) - abs(backwalking_v) < 0 ? p->x_vel : backwalking_v;
+  if (p->x_vel >= p->v_mod * backwalking_v){
+    p->x_vel = 0;
+  }
   handleGrounded(p, in);
 }
 void PlayerController::handleDash(PlayerEntity* p, const ButtonStates* in) {
-  if (holdingBack(p, in)) { handleStand(p, in); return;}
-  if (in->l2) {
-    p->x_vel = dash_v * p->v_mod;
+  if (holdingBack(p, in)) { 
+    walkBackwards(p, in); 
+    return;
   }
-  handleGrounded(p, in);
+
+  if (in->up) { jump(p, in); return; }
+
+  if (!in->l2 && !holdingForward(p, in)) { 
+    stand(p, in); 
+    p->x_vel = walking_v * p->v_mod;
+    return; 
+  }
+
+  if (p->x_vel * p->v_mod >= 0) {
+    p->x_vel = dash_v * p->v_mod;
+  } else {
+    p->x_vel += dash_acc * p->v_mod;
+  }
 }
 void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
   if (p->f_invuln > 0) { p->f_invuln--; }
@@ -506,7 +532,7 @@ void PlayerController::handleAerial(PlayerEntity* p, const ButtonStates* in) {
 
 void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
   // Land or apply gravity
-  if (isGrounded(p)) { stand(p, in); }
+  if (p->isGrounded()) { stand(p, in); }
   else { p->y_vel += gravity; }
 
   // Basic Air Movement
@@ -526,7 +552,7 @@ void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
   if (p->y_vel >= 0) { fall(p, in); }
 
   // Gravity
-  if (!isGrounded(p)) { p->y_vel += gravity; }
+  if (!p->isGrounded()) { p->y_vel += gravity; }
 
   // Basic Air Movement
   applyAirStrafe(p, in);
@@ -603,10 +629,12 @@ void PlayerController::fall(PlayerEntity* p, const ButtonStates* in) {
 void PlayerController::dash(PlayerEntity* p, const ButtonStates* in) {
   p->state = DASH;
   if (abs(p->x_vel) < abs(dash_v)) {
-    p->x_vel = dash_v * p->v_mod;
-  } else {
-    p->x_vel += dash_acc * p->v_mod;
-  }
+    // Moving slower than dash speed
+    p->x_vel = dash_v * p->v_mod; // set speed to initial dash speed
+  } 
+  // else {
+  //   p->x_vel += dash_acc * p->v_mod;
+  // }
 }
 void PlayerController::backdash(PlayerEntity* p, const ButtonStates* in) {
   p->state = BACKDASH;
@@ -642,6 +670,34 @@ void PlayerController::attack(PlayerEntity* p, const ButtonStates* in, const Att
   p->f_startup = atk->f_startup;
 }
 
+bool PlayerEntity::preventStageCollisionFloor() {
+  if (y_pos + y_vel + height > GAME_BORDER_Y1) {
+    // p->y_vel = GAME_BORDER_Y1 - (p->y_pos + p->height);
+    y_vel = 0;
+    y_pos = GAME_BORDER_Y1 - height;
+    return true;
+  }
+  return false;
+}
+
+bool PlayerEntity::preventStageCollisionLeft() {
+  if (x_pos + x_vel < GAME_BORDER_X0) {
+    x_vel = 0;
+    x_pos = GAME_BORDER_X0;
+    return true;
+  }
+  return false;
+}
+
+bool PlayerEntity::preventStageCollisionRight() {
+  if (x_pos + x_vel + width > GAME_BORDER_X1) {
+    x_vel = 0;
+    x_pos = GAME_BORDER_X1 - width;
+    return true;
+  }
+  return false;
+}
+
 /**
  * @brief Apply movement to a player using their velocities
  * @param p Pointer to the player's entity in the game scene
@@ -649,35 +705,25 @@ void PlayerController::attack(PlayerEntity* p, const ButtonStates* in, const Att
  */
 void PlayerController::applyMovement(PlayerEntity* p) {
   // Don't collide left wall
-  if (p->x_pos + p->x_vel < GAME_BORDER_X0) {
-    p->x_vel = 0;
-    p->x_pos = GAME_BORDER_X0;
-  }
-
-  // Don't collide right wall
-  if (p->x_pos + p->x_vel + p->width > GAME_BORDER_X1) {
-    p->x_vel = 0;
-    p->x_pos = GAME_BORDER_X1 - p->width;
-  }
-
-  // Don't collide floor
-  if (p->y_pos + p->y_vel + p->height > GAME_BORDER_Y1) {
-    p->y_vel = GAME_BORDER_Y1 - (p->y_pos + p->height);
-  }
+  p->preventStageCollisionLeft();
+  p->preventStageCollisionRight();
+  p->preventStageCollisionFloor();
 
   // Apply velocities
   p->x_pos += p->x_vel;
   p->y_pos += p->y_vel;
 
   // Friction
-  if (isGrounded(p)) {
+  if (p->isGrounded()) {
     float fric_acc = p->x_vel / friction;
     // Check min speed
     if (abs(p->x_vel) < 2.5) {
       p->x_vel = 0;
     }
     // Apply friction
-    p->x_vel -= fric_acc; 
+    if (p->x_vel != 0) {
+      p->x_vel -= fric_acc; 
+    }
   }
 }
 
@@ -943,12 +989,11 @@ void GameManager::applyTickUpdates(GameScene* scene) {
   p1_con->updateState(p1_ent, p1_but);
   p2_con->updateState(p2_ent, p2_but);
 
+  handlePlayerCollisions(p1_ent, p2_ent);
 
   // Apply movement based on new velocities
   p1_con->applyMovement(p1_ent);
   p2_con->applyMovement(p2_ent);
-
-  handlePlayerCollisions(p1_ent, p2_ent);
 
   // Update hitboxes to current positions
   p1_con->updateBoxes(p1_ent);
@@ -959,37 +1004,112 @@ void GameManager::applyTickUpdates(GameScene* scene) {
 }
 
 void GameManager::handlePlayerCollisions(PlayerEntity* p1, PlayerEntity* p2) {
-  BoxEntity p1_box(p1->x_pos, p1->y_pos, p1->width, p1->height);
-  BoxEntity p2_box(p2->x_pos, p2->y_pos, p2->width, p2->height);
+  // Boxes after applying velocity
+  BoxEntity p1_box(p1->x_pos + p1->x_vel, p1->y_pos, p1->width, p1->height);
+  BoxEntity p2_box(p2->x_pos + p2->x_vel, p2->y_pos, p2->width, p2->height);
   Coordinate p1_cen = p1_box.getCenter();
   Coordinate p2_cen = p2_box.getCenter();
-  
+
   PlayerEntity *left_p, *right_p;
+  Coordinate *left_cen, *right_cen;
   BoxEntity *left_box, *right_box;
   bool x_aligned = false;
 
   if (p1_box.checkCollision(&p2_box)) {
-    if (p1_cen.x < p2_cen.x) {
-      left_p = p1; left_box = &p1_box;
-      right_p = p2; right_box = &p2_box;
+    // Determine which player on the left and which player on the right
+    if (p1_cen.x <= p2_cen.x) {
+      left_p = p1; left_box = &p1_box; left_cen = &p1_cen;
+      right_p = p2; right_box = &p2_box; right_cen = &p2_cen;
     } else if (p1_cen.x > p2_cen.x) {
-      left_p = p2; left_box = &p2_box;
-      right_p = p1; right_box = &p1_box;
+      left_p = p2; left_box = &p2_box; left_cen = &p2_cen;
+      right_p = p1; right_box = &p1_box; right_cen = &p1_cen;
     } else {
-      x_aligned = true;
+      x_aligned = true; // currently impossible
     }
   } else {
     return; // No collision - return
   }
 
+  float p_x_avg = (p1_cen.x + p2_cen.x)/2;
+  float stage_center = (float) ((float) GAME_BORDER_X0 + (float) GAME_BORDER_X1) / 2; 
+
   // Edge case
   if (x_aligned) {
-    // TODO: Implement this (one player on top of the other)
+    // TODO: Implement this (one player centered on top of the other)
     return;
   }
 
-  //TODO: Base case for collision
-  // Don't let them collide
+  float overlap_w = right_p->x_pos - (left_p->x_pos + left_p->width);
+  overlap_w = abs(overlap_w * (overlap_w < 0));
+  
+  float mean_vel = (right_p->x_vel + left_p->x_vel) / 10;
+
+  // Left cornered
+  if (left_p->preventStageCollisionLeft() || left_p->x_pos == GAME_BORDER_X0) {
+    // Left player is pressed against corner
+    if (right_p->isGrounded()) {
+      // Right player is grounded, snap to left player
+      right_p->x_pos = left_p->x_pos + left_p->width;
+      right_p->x_vel = 0;
+    } else if (left_p->isGrounded()) {
+      // Right player in air, slide out
+      right_p->x_vel = overlap_w / 8;
+    } else {
+      // Both players in air
+      right_p->x_pos = left_p->x_pos + left_p->width;
+      right_p->x_vel = 0;
+    }
+    return;
+  }
+
+  // Right cornered
+  if (right_p->preventStageCollisionRight() || right_p->x_pos == GAME_BORDER_X1 - right_p->width) {
+    // right player is pressed against corner
+    if (left_p->isGrounded() && right_p->isGrounded()) {
+      // both grounded, snap right against left
+      left_p->x_pos = right_p->x_pos - left_p->width;
+      left_p->x_vel = 0;
+    } else if (right_p->isGrounded()) {
+      // left player in air, slide out
+      left_p->x_vel = -overlap_w / 8;
+    } else {
+      // Both players in air
+      left_p->x_pos = right_p->x_pos - left_p->width;
+      left_p->x_vel = 0;
+    }
+    return;
+  }
+  
+  // Default midscreen collisions
+  // Average their velocities and only apply avg if pushes them away more than not
+  left_p->x_vel = std::min(left_p->x_vel, mean_vel);
+  right_p->x_vel = std::max(right_p->x_vel, mean_vel);
+  
+  if (left_p->x_vel > 0) {
+    left_p->x_pos = right_p->x_pos - left_p->width;
+  }
+  if (right_p->x_vel < 0) {
+    right_p->x_pos = left_p->x_pos + left_p->width;
+  }
+
+  overlap_w = right_p->x_pos - (left_p->x_pos + left_p->width);
+  overlap_w = abs(overlap_w * (overlap_w < 0));
+  float l_cen_x = left_p->x_pos + left_p->width/2;
+  float r_cen_x = right_p->x_pos + right_p->width/2;
+  float cen_x = (l_cen_x + r_cen_x)/2;
+
+  if (overlap_w > 0) {
+    if (cen_x > stage_center) {
+      // Clip left when players are right of center
+      left_p->x_pos = right_p->x_pos - left_p->width;
+    } else {
+      right_p->x_pos = left_p->x_pos + left_p->width;
+    }
+  }
+  // // Unclip aerial collisions
+  // left_p->x_vel -= overlap_w / 8;
+  // right_p->x_vel += overlap_w / 8;
+  
 }
 
 /**
@@ -1001,10 +1121,11 @@ PlayerEntity* GameManager::getPlayer(unsigned int pid) {
 }
 
 void GameManager::setFacingDir(PlayerEntity* p1, PlayerEntity* p2) {
-  if (p1->x_pos + p1->width/2 < p2->x_pos + p2->width/2) {
+  float p_dist = (p1->x_pos + p1->width/2) - (p2->x_pos + p2->width/2);
+  if (p_dist < 0) {
     p1->facing_right = true;
     p2->facing_right = false;
-  } else {
+  } else if (p_dist > 0) {
     p1->facing_right = false;
     p2->facing_right = true;
   }

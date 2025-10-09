@@ -250,6 +250,10 @@ struct PlayerEntity {
   int f_invuln = 0;
   int f_hitstun = 0;
 
+  bool preventStageCollisionFloor();
+  bool preventStageCollisionLeft();
+  bool preventStageCollisionRight();
+  bool isGrounded();
   const std::vector<BoxEntity>* base_hitboxes;
   const std::vector<BoxEntity>* base_hurtboxes;
   std::vector<BoxEntity> hitboxes;
@@ -289,7 +293,7 @@ class PlayerController {
   float walking_v = 6.0;
   float backwalking_v = -4.5;
   float dash_v = 16.0;
-  float dash_acc = 0.4;
+  float dash_acc = 0.2;
 
   float backdash_v = -20.0;
   int f_backdash_recovery = 15;
@@ -311,8 +315,7 @@ class PlayerController {
   float gravity = 2.5;
   // "Inverse rate of acceleration reduction" - https://www.dustloop.com/w/GGST/Frame_Data#Walk_and_Dash_Values
   // next_speed -= cur_speed / friction
-  float friction = 12.0;
-
+  float friction = 50.0;
 
   virtual void testCharacterInclude();
   virtual std::string getStateString(const PlayerEntity* p);
@@ -327,7 +330,6 @@ class PlayerController {
 
   // Helpers for verifying a character's state based on non-`STATE` values
   bool isActionable(PlayerEntity* p);
-  bool isGrounded(PlayerEntity* p);
   bool holdingForward(const PlayerEntity* p, const ButtonStates* in);
   bool holdingBack(const PlayerEntity* p, const ButtonStates* in);
 
