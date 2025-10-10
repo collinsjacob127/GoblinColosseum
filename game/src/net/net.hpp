@@ -5,5 +5,13 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+#include <memory>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
-void test_net_include_works();
+int testNetClient();

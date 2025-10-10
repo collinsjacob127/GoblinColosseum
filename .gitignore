@@ -8,5 +8,6 @@
 # Ignore standard and windows builds
 *build/
 *win-build/
+*lin-build/
 *.psd
 
