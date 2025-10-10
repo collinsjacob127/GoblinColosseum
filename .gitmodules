@@ -10,3 +10,7 @@
 [submodule "game/libs/SDL_image"]
 	path = game/libs/SDL_image
   url = https://github.com/libsdl-org/SDL_image.git
+
+[submodule "game/libs/cpp-netlib"]
+	path = game/libs/cpp-netlib
+	url = https://github.com/cpp-netlib/cpp-netlib
