@@ -413,9 +413,10 @@ void PlayerController::updateBoxes(PlayerEntity* p) {
  */
 void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
   if (isActionable(p)) {
+    float prev_mod = p->v_mod;
     p->v_mod = p->facing_right ? 1.0 : -1.0; // Velocities set based on dir facing
     // End dash when you get crossed over
-    if (p->state == DASH) { 
+    if (p->state == DASH && prev_mod != p->v_mod) { 
       stand(p, in); 
     }
   }
