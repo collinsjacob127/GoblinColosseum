@@ -905,6 +905,7 @@ GameManager::GameManager(PlayerController* p1, PlayerController* p2, unsigned in
   if (net_pindex == 0) { loc_pindex = 1; }
   else if (net_pindex == 1) { loc_pindex = 0; }
   else { std::cerr << "Invalid net pindex\n"; }
+  allocator = GameAllocator(net_pindex);
 
   allocator.loc_pindex = loc_pindex;
   allocator.net_pindex = net_pindex;

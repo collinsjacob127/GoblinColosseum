@@ -37,3 +37,10 @@ add_custom_command(
             "${PROJECT_BINARY_DIR}/assets/"
     COMMENT "Copying assets recursively"
 )
+
+install(TARGETS GOBLIN libs
+  RUNTIME_DEPENDENCIES DESTINATION Release
+  RUNTIME DESTINATION Release
+  LIBRARY DESTINATION Release
+  ARCHIVE DESTINATION Release
+)

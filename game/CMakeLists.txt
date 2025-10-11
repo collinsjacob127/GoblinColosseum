@@ -4,7 +4,7 @@
 # https://stackoverflow.com/questions/13703647/how-to-properly-add-include-directories-with-cmake
 
 cmake_minimum_required(VERSION 3.16)
-project(GOBLIN VERSION 1.0)
+project(GOBLIN VERSION 0.1.0)
 
 # Using C++ Version 17
 set(CMAKE_CXX_STANDARD 17)
@@ -22,6 +22,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+
+if(WIN32)
+include(InstallRequiredSystemLibraries)
+option(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
 
 # Prep c++ toolchain .dlls for windows install
 # if(WIN32)
@@ -44,17 +49,32 @@ add_subdirectory(src)
 # 
 install(DIRECTORY assets DESTINATION Release)
 # install(TARGETS libs RUNTIME_DEPENDENCIES DESTINATION Release)
-install(TARGETS GOBLIN RUNTIME_DEPENDENCIES DESTINATION Release)
+# install(TARGETS GOBLIN RUNTIME_DEPENDENCIES DESTINATION Release)
 
+install(TARGETS GOBLIN libs
+  RUNTIME_DEPENDENCIES DESTINATION Release
+  RUNTIME DESTINATION Release
+  LIBRARY DESTINATION Release
+  ARCHIVE DESTINATION Release
+)
+
+if (win32)
+install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION Release)
+endif()
+
+# if(WIN32)
+# install(TARGET_RUNTIME_DLLS)
+# endif()
 
 # Copy assets to mf
 # file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/OpenSans-Regular.ttf" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/src/")
 
 # Requirements for CPack / making an installer
-include(InstallRequiredSystemLibraries)
+include(CPack)
+
+set(CPACK_PACKAGE_NAME "GoblinColosseum")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../License.txt")
-set(CPACK_PACKAGE_VERSION_MAJOR "${GOBLIN_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${GOBLIN_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 if(WIN32)
   set(CPACK_GENERATOR "ZIP")
   set(CPACK_SOURCE_GENERATOR "ZIP")
@@ -62,4 +82,7 @@ else()
   set(CPACK_GENERATOR "TGZ")
   set(CPACK_SOURCE_GENERATOR "TGZ")
 endif()
-include(CPack)
+
+include(GetPrerequisites)
+set(CPACK_INSTALL_WITH_DEPS_DEPS_DIRS "Release")
+set(CPACK_INSTALL_WITH_DEPS TRUE)

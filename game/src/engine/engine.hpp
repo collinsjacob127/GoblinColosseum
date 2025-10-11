@@ -222,7 +222,7 @@ class Attack {
  * Struct for dynamic character info
  */
 struct PlayerEntity {
-  State state;
+  State state = STAND;
   const Attack* cur_attack;
 
   float v_mod = 1.0;
