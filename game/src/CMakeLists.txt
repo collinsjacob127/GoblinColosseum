@@ -19,8 +19,9 @@ target_link_libraries(GOBLIN PRIVATE
     net
 )
 
-target_link_options(GOBLIN PRIVATE)
+target_link_options(GOBLIN PUBLIC)
 
+# Copy DLLs for windows installation
 if(WIN32)
   add_custom_command(
     TARGET GOBLIN POST_BUILD
@@ -28,3 +29,11 @@ if(WIN32)
     COMMAND_EXPAND_LISTS
   )
 endif()
+
+add_custom_command(
+    TARGET GOBLIN POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../assets/"
+            "${PROJECT_BINARY_DIR}/assets/"
+    COMMENT "Copying assets recursively"
+)

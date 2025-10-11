@@ -1,7 +1,17 @@
 /**
- * This is a modified version of the tutorial found here:
+ * Author: Jacob Collins
+ * 
+ * Description:
+ *  Server for matchmaking, and potentially other future server-side features.
+ *  When requesting an online game, users send packets here, then this script
+ *  connects users- sending them eachothers IPs, then waits until they time out
+ *  or until a match_end notification packet arrives, at which point the servers
+ *  records will be updated.
+ * 
+ * References:
  * https://medium.com/@naseefcse/ip-tcp-programming-for-beginners-using-c-5bafb3788001
  */
+
 #include <iostream>
 #include <string>
 #include <memory>
@@ -14,7 +24,15 @@
 constexpr int PORT = 53243;
 constexpr int BUFFER_SIZE = 1024;
 
+struct PlayerEntry {
+  uint32_t id;                // Unique ID for this peer
+  int socket_descriptor;
+  struct sockaddr_in address; // IP addr & port num
+};
+
 int main() {
+    fd_set all_sockets, call_set;
+
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;

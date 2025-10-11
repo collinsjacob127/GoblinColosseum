@@ -22,6 +22,7 @@ int testNetClient() {
   std::cout << "Running windows netcode" << std::endl;
     Timer timer;
     timer.start();
+
     
     WSADATA wsaData;
     int iResult;
