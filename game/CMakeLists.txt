@@ -24,8 +24,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 if(WIN32)
-include(InstallRequiredSystemLibraries)
-option(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+# include(InstallRequiredSystemLibraries)
+# option(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
 # Prep c++ toolchain .dlls for windows install
@@ -43,31 +43,37 @@ add_subdirectory(libs)
 # Link the source code
 add_subdirectory(src)
 
-# set(installable_libs libs src)
-# install(TARGETS ${installable_libs} DESTINATION )
-
 # 
 install(DIRECTORY assets DESTINATION Release)
-# install(TARGETS libs RUNTIME_DEPENDENCIES DESTINATION Release)
+install(TARGETS libs RUNTIME_DEPENDENCIES DESTINATION Release)
 # install(TARGETS GOBLIN RUNTIME_DEPENDENCIES DESTINATION Release)
 
+# install(TARGETS GOBLIN libs
+#   RUNTIME_DEPENDENCIES DESTINATION Release
+#   RUNTIME DESTINATION Release
+#   LIBRARY DESTINATION Release
+#   ARCHIVE DESTINATION Release
+# )
 install(TARGETS GOBLIN libs
-  RUNTIME_DEPENDENCIES DESTINATION Release
   RUNTIME DESTINATION Release
   LIBRARY DESTINATION Release
   ARCHIVE DESTINATION Release
 )
 
 if (win32)
-install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION Release)
-endif()
+install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION Release COMPONENT Libraries)
+install(FILES $<TARGET_RUNTIME_DLLS:GOBLIN> TYPE BIN DESTINATION Release)
 
-# if(WIN32)
-# install(TARGET_RUNTIME_DLLS)
-# endif()
+
+endif()
 
 # Copy assets to mf
 # file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/OpenSans-Regular.ttf" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/src/")
+
+file(GLOB DLL_FILES "${CMAKE_BINARY_DIR}/*.dll")
+install(FILES ${DLL_FILES}
+  DESTINATION Release
+)
 
 # Requirements for CPack / making an installer
 include(CPack)
