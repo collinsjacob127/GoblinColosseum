@@ -28,14 +28,6 @@ if(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:GOBLIN> $<TARGET_FILE_DIR:GOBLIN>
     COMMAND_EXPAND_LISTS
   )
-  # install(TARGETS GOBLIN
-  #   RUNTIME LIBRARY ARCHIVE COMPONENT "GOBLIN EXE"
-  #   DESTINATION Release 
-  # )
-  # install(FILES $<TARGET_RUNTIME_DLLS:GOBLIN> $<TARGET_FILE_DIR:GOBLIN>
-  #   COMPONENT "GOBLIN DLLS"
-  #   DESTINATION Release
-  # )
 endif()
 
 add_custom_command(
@@ -48,17 +40,3 @@ add_custom_command(
 
 set(installable_libs util engine characters net render)
 install(TARGETS ${installable_libs} DESTINATION Release)
-
-# install(TARGETS GOBLIN libs
-#   RUNTIME_DEPENDENCIES DESTINATION Release
-#   RUNTIME DESTINATION Release
-#   LIBRARY DESTINATION Release
-#   ARCHIVE DESTINATION Release
-# )
-
-# install(TARGETS GOBLIN libs
-#   # RUNTIME_DEPENDENCIES DESTINATION Release
-#   RUNTIME DESTINATION Release
-#   LIBRARY DESTINATION Release
-#   ARCHIVE DESTINATION Release
-# )
