@@ -14,3 +14,15 @@
 #	path = game/libs/SDL_image
 #  url = https://github.com/libsdl-org/SDL_image.git
 
+[submodule "game/libs/SDL"]
+	path = game/libs/SDL
+	url = https://github.com/libsdl-org/SDL.git
+	branch = release-3.2.x
+[submodule "game/libs/SDL_image"]
+	path = game/libs/SDL_image
+	url = https://github.com/libsdl-org/SDL_image.git
+	branch = release-3.2.x
+[submodule "game/libs/SDL_ttf"]
+	path = game/libs/SDL_ttf
+	url = https://github.com/libsdl-org/SDL_ttf.git
+	branch = release-3.2.x
