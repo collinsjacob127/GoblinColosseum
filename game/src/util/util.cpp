@@ -63,6 +63,8 @@ Coordinate BoxEntity::getCenter() {
   return coord;
 }
 
+// Replace with this:
+// A.x < B.x + B.width && A.x + A.width > B.x && A.y < B.y + B.height && A.y + A.height > B.y
 bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box) {
   return (coord->x <= box->x + box->width && coord->x >= box->x) && \
          (coord->y <= box->y + box->height && coord->y >= box->y);

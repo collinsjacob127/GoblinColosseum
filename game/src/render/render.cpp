@@ -117,11 +117,11 @@ RenderEngine::~RenderEngine() {
   SDL_DestroyTexture(player_tex);
   SDL_DestroyTexture(buffer_tex);
 
-  for (size_t i = 0; i < char_textures.size(); ++i) {
-    SDL_DestroyTexture(char_textures.at(i).crouching);
-    SDL_DestroyTexture(char_textures.at(i).jumping);
-    SDL_DestroyTexture(char_textures.at(i).standing);
-  }
+  // for (size_t i = 0; i < char_textures.size(); ++i) {
+  //   SDL_DestroyTexture(char_textures.at(i).crouching);
+  //   SDL_DestroyTexture(char_textures.at(i).jumping);
+  //   SDL_DestroyTexture(char_textures.at(i).standing);
+  // }
 
   // SDL_DestroyGPUDevice(device);
   SDL_DestroyRenderer(ren);

@@ -355,7 +355,10 @@ bool PlayerController::checkAttacks(PlayerEntity* p, const ButtonStates* in, con
 }
 
 Coordinate PlayerController::getPlayerCenter(PlayerEntity* p) {
-  return {p->x_pos + p->width/2, p->y_pos + p->height/2};
+  Coordinate ret_coord;
+  ret_coord.x = p->x_pos + p->width/2;
+  ret_coord.y = p->y_pos + p->height/2;
+  return ret_coord;
 }
 
 void PlayerController::updateBoxes(PlayerEntity* p) {
@@ -493,14 +496,14 @@ void PlayerController::handleWalkForwards(PlayerEntity* p, const ButtonStates* i
   // if (holdingForward(p, in)) {
   //   p->x_vel = abs(p->x_vel) - walking_v < 0 ? p->x_vel : walking_v * p->v_mod;
   // }
-  if (p->x_vel <= p->v_mod * walking_v){
+  if (abs(p->x_vel) <= abs(walking_v)){
     p->x_vel = 0;
   }
   handleGrounded(p, in);
 }
 void PlayerController::handleWalkBackwards(PlayerEntity* p, const ButtonStates* in) { 
   // p->x_vel = abs(p->x_vel) - abs(backwalking_v) < 0 ? p->x_vel : backwalking_v;
-  if (p->x_vel >= p->v_mod * backwalking_v){
+  if (abs(p->x_vel) <= abs(backwalking_v)){
     p->x_vel = 0;
   }
   handleGrounded(p, in);

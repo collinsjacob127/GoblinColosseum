@@ -107,11 +107,11 @@ int start(RenderEngine* renderer) {
 
 int startLocalGame(RenderEngine* renderer) {
   PlayerController* p1 = new Hunko();
-  PlayerController* p2 = new Grogorio();
+  PlayerController* p2 = new Hunko();
   GameManager game(p1, p2, 1);
 
-  renderer->initializeCharacterTextures(0, p1->getCharacterId());
-  renderer->initializeCharacterTextures(1, p2->getCharacterId());
+  // renderer->initializeCharacterTextures(0, p1->getCharacterId());
+  // renderer->initializeCharacterTextures(1, p2->getCharacterId());
 
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
@@ -168,8 +168,8 @@ int startLocalGame(RenderEngine* renderer) {
       game.tick();
 
       // DEBUGGING
-      PlayerEntity* p1 = game.getPlayer(0);
-      PlayerEntity* p2 = game.getPlayer(1);
+      // PlayerEntity* p1 = game.getPlayer(0);
+      // PlayerEntity* p2 = game.getPlayer(1);
 
       // Verify Motion Interpreter
       // std::vector<NumPadDir> fqc_mot = {DOWN, DOWN_RIGHT, RIGHT};
@@ -210,10 +210,10 @@ int startLocalGame(RenderEngine* renderer) {
   }
 
   // Clean up game 
-  delete p1;
-  delete p2;
-  delete p1_inputs;
-  delete p2_inputs;
+  // delete p1;
+  // delete p2;
+  // delete p1_inputs;
+  // delete p2_inputs;
 
   return 1;
 }

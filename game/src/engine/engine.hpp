@@ -263,6 +263,7 @@ struct PlayerEntity {
   bool preventStageCollisionRight();
   bool isGrounded();
   bool isAttacking();
+
   const std::vector<BoxEntity>* base_hitboxes;
   const std::vector<BoxEntity>* base_hurtboxes;
   std::vector<BoxEntity> hitboxes;
