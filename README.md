@@ -18,6 +18,7 @@ cd GoblinColosseum/
 ### Building on Linux
 
 Prerequisites:
+
 - cmake
 - git
 - git-lfs (Make sure you run `git lfs install`)
@@ -25,7 +26,8 @@ Prerequisites:
 (Instructions based loosely on those given by [SDL3 docs](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-cmake.md))
 
 (**Optional**) You *may* need to [install the pre-requisite dev tools](https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md#build-dependencies) for window management:
-```
+
+```{sh}
 sudo apt-get install build-essential git make \
 pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
 libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
@@ -48,7 +50,7 @@ cmake -S . -B build
 cmake --build build --parallel
 
 # Run the game
-./build/src/GOBLIN
+./build/GOBLIN
 ```
 
 ### Building on Windows
@@ -56,17 +58,22 @@ cmake --build build --parallel
 1. Download [MSYS2](https://www.msys2.org/)
 2. Open MSYS2 UCRT64.
 3. Install working toolchain
+
 ```{sh}
 pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-sdl3
 ```
+
 4. Build (while in GoblinColosseum/game directory)
+
 ```{sh}
 cmake -S . -B build
 cmake --build build --parallel
 ```
+
 5. Run
+
 ```{sh}
-./build/src/GOBLIN.exe
+./build/GOBLIN.exe
 ```
 
 If you run into issues, here is what I referenced to figure it out: [MinGW SDL3 Instructions](https://github.com/libsdl-org/SDL/blob/main/docs/INTRO-mingw.md)
