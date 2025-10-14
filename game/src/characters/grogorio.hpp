@@ -1,7 +1,7 @@
 /**
  * Author: Jacob Collins
  * Description:
- * This file has the PlayerController subclass for Hunko, the Brutish
+ * This file has the PlayerController subclass for Grogorio, the Goblin Prince
  */
 
 #pragma once
@@ -12,9 +12,9 @@
 #include <SDL3/SDL.h>
 #include "engine.hpp"
 
-class Hunko : public PlayerController {
+class Grogorio : public PlayerController {
  public:
-  Hunko();
+  Grogorio();
   void testCharacterInclude() override;
 
  private:

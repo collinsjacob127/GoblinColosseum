@@ -3,9 +3,9 @@
  * Keybinds, actions, movement
  */
 
-#include "hunko.hpp"
+#include "grogorio.hpp"
 
-Hunko::Hunko() {
+Grogorio::Grogorio() {
   // Define temporary box for saving in defaults
   BoxEntity tmp_hurtbox;
   tmp_hurtbox.x = -75;
@@ -26,7 +26,7 @@ Hunko::Hunko() {
   initializeAttacks();
 }
 
-void Hunko::initializeAttacks() {
+void Grogorio::initializeAttacks() {
   // HITBOX AND HURTBOX COORDINATES ARE RELATIVE TO PLAYER'S CENTER
 
   Attack* atk; // Pointer to whatever attack is being defined
@@ -266,11 +266,11 @@ void Hunko::initializeAttacks() {
    *******************************/
 }
 
-void Hunko::initializeCharacterAttrs() {
+void Grogorio::initializeCharacterAttrs() {
 
 }
 
-void Hunko::handleAttack(PlayerEntity* p, const ButtonStates* in) {
+void Grogorio::handleAttack(PlayerEntity* p, const ButtonStates* in) {
   if (p->f_recovery) {
     if (--p->f_recovery == 0) {
       // Exit the attack
@@ -323,10 +323,10 @@ void Hunko::handleAttack(PlayerEntity* p, const ButtonStates* in) {
   // printPlayerFrames(p);
 }
 
-void Hunko::testCharacterInclude() {
-  std::cout << "HUNKO IS HERE!" << std::endl;
+void Grogorio::testCharacterInclude() {
+  std::cout << "GROGORIO IS HERE!" << std::endl;
 }
 
-int Hunko::getCharacterId() {
-  return CHARACTER_ID_HUNKO;
+int Grogorio::getCharacterId() {
+  return CHARACTER_ID_GROGORIO;
 }
