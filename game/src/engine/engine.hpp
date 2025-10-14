@@ -333,7 +333,6 @@ class PlayerController {
 
   virtual void testCharacterInclude();
   virtual std::string getStateString(const PlayerEntity* p);
-  virtual std::string getStatePngPath(const PlayerEntity* p);
 
   virtual int getCharacterId();
 

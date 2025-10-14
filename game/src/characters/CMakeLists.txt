@@ -5,8 +5,10 @@ add_library(characters "")
 target_sources(characters
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/hunko.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/grogorio.cpp
     PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/hunko.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/grogorio.hpp
         ${CMAKE_CURRENT_LIST_DIR}/characters.hpp
     )
 

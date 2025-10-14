@@ -25,6 +25,8 @@ RenderEngine::RenderEngine() {
 
   scale = 1.0;
 
+  char_textures.resize(2);
+
   // Create Window
   SDL_WindowFlags flags = {};
   flags |= SDL_WINDOW_OPENGL;
@@ -115,6 +117,12 @@ RenderEngine::~RenderEngine() {
   SDL_DestroyTexture(player_tex);
   SDL_DestroyTexture(buffer_tex);
 
+  for (size_t i = 0; i < char_textures.size(); ++i) {
+    SDL_DestroyTexture(char_textures.at(i).crouching);
+    SDL_DestroyTexture(char_textures.at(i).jumping);
+    SDL_DestroyTexture(char_textures.at(i).standing);
+  }
+
   // SDL_DestroyGPUDevice(device);
   SDL_DestroyRenderer(ren);
   SDL_DestroyWindow(win);
@@ -172,13 +180,32 @@ void RenderEngine::renderBoxes(const PlayerEntity* p) {
 
 }
 
-void RenderEngine::renderPlayer(const PlayerEntity *p) {
+void RenderEngine::renderPlayer(const PlayerEntity *p, int p_index) {
   SDL_FRect green_square{ 
     p->x_pos,
     p->y_pos, 
     p->width,
     p->height
   };
+
+  // CharacterTextures* textures = &char_textures.at(p_index);
+  // switch (p->state) {
+  //   case JUMP: {
+  //     player_tex = textures->jumping;
+  //     break;
+  //   }
+  //   case CROUCH: {
+  //     player_tex = textures->crouching;
+  //     break;
+  //   }
+  //   default: {
+  //     player_tex = textures->standing;
+  //   }
+  // }
+
+  // float tex_w, tex_h;
+  // SDL_GetTextureSize(player_tex, &tex_w, &tex_h);
+  // std::cout << "Tex w: " << tex_w << " tex h: " << tex_h << std::endl;
 
   // Rendering the player's texture
   if (p->facing_right) {
@@ -277,10 +304,10 @@ void RenderEngine::renderGameScene(GameManager* game) {
   SDL_RenderTexture(ren, game_background, NULL, NULL);
 
   renderBoxes(p1);
-  renderPlayer(p1);
+  renderPlayer(p1, 0);
 
   renderBoxes(p2);
-  renderPlayer(p2);
+  renderPlayer(p2, 1);
 
   // Render viewport selection to window
   SDL_SetRenderTarget(ren, NULL);
@@ -288,4 +315,38 @@ void RenderEngine::renderGameScene(GameManager* game) {
   SDL_RenderTexture(ren, buffer_tex, &viewport, NULL);
   displayFPS();
   SDL_RenderPresent(ren);
+}
+
+void RenderEngine::loadTextureFromPath(std::string fname, SDL_Texture* tex_to_be) {
+  // std::cout << "Loading texture " << fname.c_str() << std::endl;
+  SDL_Surface* tmp_surface = IMG_Load(fname.c_str());
+  // Verify read correctly
+  if (tmp_surface == nullptr) { std::cerr << "failed to load png: " << fname.c_str() << "\n"; }
+  tex_to_be = SDL_CreateTextureFromSurface(ren, tmp_surface);
+  SDL_DestroySurface(tmp_surface);
+}
+
+void RenderEngine::initializeCharacterTextures(int p_index, int character_id) {
+  switch (character_id) {
+    case CHARACTER_ID_HUNKO: {
+      // std::cout << "Loading hunko textures" << std::endl;
+      char_textures[p_index].character_id = CHARACTER_ID_HUNKO;
+      std::string prefix = "assets/characters/hunko/HUNKO_";
+      loadTextureFromPath(prefix + "STAND.png", char_textures[p_index].standing);
+      loadTextureFromPath(prefix + "JUMP.png", char_textures[p_index].jumping);
+      loadTextureFromPath(prefix + "CROUCH.png", char_textures[p_index].crouching);
+      break;
+    }
+    case CHARACTER_ID_GROGORIO: {
+      char_textures[p_index].character_id = CHARACTER_ID_GROGORIO;
+      std::string prefix = "assets/characters/gob0/";
+      loadTextureFromPath(prefix + "GOB0.png", char_textures[p_index].standing);
+      loadTextureFromPath(prefix + "GOB0.png", char_textures[p_index].jumping);
+      loadTextureFromPath(prefix + "GOB0.png", char_textures[p_index].crouching);
+      break;
+    }
+    default: {
+      std::cerr << "Invalid Character ID Passed to render engine" << std::endl;
+    }
+  }
 }

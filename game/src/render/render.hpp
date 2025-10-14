@@ -26,6 +26,13 @@ struct StartMenu {
   SDL_Texture* quit_tex;
 };
 
+struct CharacterTextures {
+  int character_id;
+  SDL_Texture* standing;
+  SDL_Texture* jumping;
+  SDL_Texture* crouching;
+};
+
 
 class RenderEngine {
  public:
@@ -33,6 +40,8 @@ class RenderEngine {
   SDL_Renderer* ren;
   SDL_Texture* ren_tex;
   SDL_GPUDevice* device;
+
+  std::vector<CharacterTextures> char_textures;
 
   TTF_Font* font;
   SDL_Texture* game_background;
@@ -56,14 +65,15 @@ class RenderEngine {
 
   void checkRenderDrivers();
   
-
+  void loadTextureFromPath(std::string fname, SDL_Texture* tex_to_be);
+  void initializeCharacterTextures(int p_index, int character_id);
   void renderGameScene(GameManager* game);
   void renderStartMenu(int selection);
   void calculateScale(int win_width, int win_height);
 
  private:
   void renderBoxes(const PlayerEntity* p);
-  void renderPlayer(const PlayerEntity *player);
+  void renderPlayer(const PlayerEntity *player, int p_index);
   void displayFPS();
   void clearScreen();
 };

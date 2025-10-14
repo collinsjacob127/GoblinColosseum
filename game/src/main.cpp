@@ -107,8 +107,11 @@ int start(RenderEngine* renderer) {
 
 int startLocalGame(RenderEngine* renderer) {
   PlayerController* p1 = new Hunko();
-  PlayerController* p2 = new Hunko();
+  PlayerController* p2 = new Grogorio();
   GameManager game(p1, p2, 1);
+
+  renderer->initializeCharacterTextures(0, p1->getCharacterId());
+  renderer->initializeCharacterTextures(1, p2->getCharacterId());
 
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
