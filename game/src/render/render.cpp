@@ -30,8 +30,8 @@ RenderEngine::RenderEngine() {
   // Create Window
   SDL_WindowFlags flags = {};
   flags |= SDL_WINDOW_OPENGL;
-  // flags |= SDL_WINDOW_BORDERLESS;
-  // flags |= SDL_WINDOW_FULLSCREEN;
+  flags |= SDL_WINDOW_BORDERLESS;
+  flags |= SDL_WINDOW_FULLSCREEN;
   win = SDL_CreateWindow("Goblin Colosseum", 1920, 1080, flags);
   if (win == nullptr) {
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;

@@ -208,5 +208,12 @@ int startLocalGame(RenderEngine* renderer) {
       }
     }
   }
+
+  // Clean up game 
+  delete p1;
+  delete p2;
+  delete p1_inputs;
+  delete p2_inputs;
+
   return 1;
 }
