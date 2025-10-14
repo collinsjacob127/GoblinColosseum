@@ -169,8 +169,8 @@ enum State {
   GROUND_SPECIAL,
   AIR_NORMAL,
   AIR_SPECIAL,
-  GROUND_HITSTUN,
-  AIR_HITSTUN,
+  BLOCKSTUN,
+  HITSTUN,
   SOFT_KNOCKDOWN,
   HARD_KNOCKDOWN
 };
@@ -188,21 +188,24 @@ class Attack {
     unsigned int f_recovery_
   );
 
+  int id = 0;
+  float x_vel = 0;
+  float y_vel = 0;
+  float damage = 0;
+  float proration = 1.0;
+  int level = 1.0;
+
   // i.e., AIR_NORMAL, GROUND_NORMAL, AIR_SPECIAL, or GROUND_SPECIAL
   State state;
   std::string name;
 
   // Define button used to launch attack
   ButtonName button;
-
-  // Specials have motions
   std::vector<NumPadDir> motion; 
+
   // How many frames back should this check
   unsigned int f_window;
 
-  // Normals have directions
-  NumPadDir dir;
-  
   // Hitboxes and hurtboxes associated with this attack
   const std::vector<BoxEntity>* getHitboxes(unsigned int f_s, unsigned int f_a, unsigned int f_r) const;
   std::vector<std::vector<BoxEntity>> hitbox_sets;
@@ -211,7 +214,7 @@ class Attack {
   std::vector<std::vector<BoxEntity>> hurtbox_sets;
 
   unsigned int getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned int f_r) const;
-  unsigned int getTotalFrames();
+  unsigned int getTotalFrames() const;
   unsigned int f_startup;
   unsigned int f_active;
   unsigned int f_recovery;
@@ -229,10 +232,15 @@ struct PlayerEntity {
 
   bool block = false;
 
+  float health = 1000;
+  float proration = 1.0;
+  float g_mult = 1.0;
+
   float x_pos = 1920.0/2.0;
   float y_pos = 1080.0/2.0;
 
   bool facing_right = true;
+  bool has_hit = false;
 
   float x_vel = 0.0;
   float y_vel = 0.0;
@@ -254,6 +262,7 @@ struct PlayerEntity {
   bool preventStageCollisionLeft();
   bool preventStageCollisionRight();
   bool isGrounded();
+  bool isAttacking();
   const std::vector<BoxEntity>* base_hitboxes;
   const std::vector<BoxEntity>* base_hurtboxes;
   std::vector<BoxEntity> hitboxes;
@@ -274,6 +283,11 @@ void printPlayerFrames(const PlayerEntity* p);
  * 4 is left, 6 is right, 8 is up, 2 is down, 5 is no direction, etc.
  */
 void getDirFromButtonState(const PlayerEntity* p, const ButtonStates* btn_state, NumPadDir* dir);
+
+enum CHARACTER_NAMES {
+  CHARACTER_ID_HUNKO = 0,
+  CHARACTER_ID_GROGORIO = 1
+};
 
 /**
  * Base class for static character info
@@ -309,16 +323,19 @@ class PlayerController {
   int f_air_backdash_recovery = 6;
   int f_air_backdash_invuln = 4;
 
-  float jumping_v = -35.0;
+  float jumping_v = -30.0;
   int f_jumping_recovery = 5;
 
-  float gravity = 2.5;
+  float gravity = 1.5;
   // "Inverse rate of acceleration reduction" - https://www.dustloop.com/w/GGST/Frame_Data#Walk_and_Dash_Values
   // next_speed -= cur_speed / friction
   float friction = 50.0;
 
   virtual void testCharacterInclude();
   virtual std::string getStateString(const PlayerEntity* p);
+  virtual std::string getStatePngPath(const PlayerEntity* p);
+
+  virtual int getCharacterId();
 
   Coordinate getPlayerCenter(PlayerEntity* p);
   virtual void updateBoxes(PlayerEntity* p);
@@ -351,8 +368,9 @@ class PlayerController {
   virtual void handleDash(PlayerEntity* p, const ButtonStates* in);
   virtual void handleBackdash(PlayerEntity* p, const ButtonStates* in);
   virtual void handleCrouch(PlayerEntity* p, const ButtonStates* in);
+  virtual void handleHitstun(PlayerEntity* p, const ButtonStates* in);
 
-  virtual void handleAerial(PlayerEntity* p, const ButtonStates* in);
+  virtual bool handleAerial(PlayerEntity* p, const ButtonStates* in);
   virtual void handleFall(PlayerEntity* p, const ButtonStates* in);
   virtual void handleJump(PlayerEntity* p, const ButtonStates* in);
   virtual void handleAirDash(PlayerEntity* p, const ButtonStates* in);
@@ -482,6 +500,7 @@ class GameManager {
  private:
   void applyTickUpdates(GameScene* scene);
   void handlePlayerCollisions(PlayerEntity* p1, PlayerEntity* p2);
+  void handleAttackCollisions(PlayerEntity* src, PlayerEntity* dst);
   void decrementFrames(PlayerEntity* p1);
   void setFacingDir(PlayerEntity* p1, PlayerEntity* p2);
   void setInitialPlayerPositions();

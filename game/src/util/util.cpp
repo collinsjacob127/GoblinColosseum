@@ -42,6 +42,7 @@ bool checkPointInRange(float x, float x0, float x1) {
   return (x >= x0 && x <= x1);
 }
 
+// Doesn't work if not inside eachother
 bool BoxEntity::checkCollision(BoxEntity* box) {
   return 
     (

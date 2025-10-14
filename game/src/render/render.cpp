@@ -23,11 +23,13 @@ RenderEngine::RenderEngine() {
   viewport.w = 1600;
   viewport.h = 900;
 
+  scale = 1.0;
+
   // Create Window
   SDL_WindowFlags flags = {};
   flags |= SDL_WINDOW_OPENGL;
-  flags |= SDL_WINDOW_BORDERLESS;
-  flags |= SDL_WINDOW_FULLSCREEN;
+  // flags |= SDL_WINDOW_BORDERLESS;
+  // flags |= SDL_WINDOW_FULLSCREEN;
   win = SDL_CreateWindow("Goblin Colosseum", 1920, 1080, flags);
   if (win == nullptr) {
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -40,7 +42,6 @@ RenderEngine::RenderEngine() {
   ren = SDL_CreateRenderer(win, NULL);
   if (ren == nullptr) {
     std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-    SDL_DestroyWindow(win);
     SDL_Quit();
     exit(EXIT_FAILURE);
   } else { std::cout << "Renderer set\n";}
@@ -157,7 +158,7 @@ void RenderEngine::renderBoxes(const PlayerEntity* p) {
     // Display as actionable (green)
     SDL_SetRenderDrawColor(ren, 0, 255, 0, 50);     
   }
-  if (p->state == GROUND_HITSTUN || p->state == AIR_HITSTUN) {
+  if (p->state == HITSTUN) {
     // Display as hitstun (orange)
     SDL_SetRenderDrawColor(ren, 255, 115, 5, 50);     
   }
@@ -205,8 +206,10 @@ void RenderEngine::displayFPS() {
   float texW = 0, texH = 0;
   SDL_GetTextureSize(texture, &texW, &texH);
 
-  SDL_FRect dst = {output_rect.x+output_rect.w - (texW*scale*(float)1.5), 20*scale, texW*scale, texH*scale};
+  int ren_w, ren_h;
+  SDL_GetCurrentRenderOutputSize(ren, &ren_w, &ren_h);
 
+  SDL_FRect dst = {ren_w - (texW*scale*(float)1.5), 20*scale, texW*scale, texH*scale};
   SDL_RenderTexture(ren, texture, NULL, &dst);
 
   SDL_DestroyTexture(texture);
@@ -255,9 +258,11 @@ void RenderEngine::renderGameScene(GameManager* game) {
   const PlayerEntity* p1 = &scene->players[0];
   const PlayerEntity* p2 = &scene->players[1];
 
-  // std::cout << "p1xy: (" << p1->x_pos << ", " << p1->y_pos << ")\n";
-  // std::cout << "p2xy: (" << p2->x_pos << ", " << p2->y_pos << ")\n";
-  // std::cout << std::endl;
+  // int win_w, win_h;
+  // if (!SDL_GetWindowSize(win, &win_w, &win_h)) {
+  //   std::cerr << SDL_GetError() << std::endl;
+  // }
+  // calculateScale(win_w, win_h);
 
   // Currently: Centers between two players, fixed size
   viewport.x = (p1->x_pos + p2->x_pos) / 2;

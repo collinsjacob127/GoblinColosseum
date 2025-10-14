@@ -212,7 +212,7 @@ Attack::Attack(
   f_recovery = f_recovery_;
 }
 
-unsigned int Attack::getTotalFrames() {
+unsigned int Attack::getTotalFrames() const {
   return f_active + f_recovery + f_startup;
 }
 
@@ -239,6 +239,10 @@ unsigned int Attack::getCurAtkFrame(unsigned int f_s, unsigned int f_a, unsigned
   return idx;
 }
 
+bool PlayerEntity::isAttacking() {
+  return (state == GROUND_NORMAL) || (state == GROUND_SPECIAL) 
+  || (state == AIR_NORMAL) || (state == AIR_SPECIAL);
+}
 /***************************
  **** PLAYER CONTROLLER ****
  ***************************/
@@ -275,8 +279,13 @@ std::string PlayerController::getStateString(const PlayerEntity* p) {
   return "NULL";
 }
 
+int PlayerController::getCharacterId() {
+  std::cout << "Character ID request recieved for non-overloaded PC" << std::endl;
+  return -1;
+}
+
 bool PlayerController::isActionable(PlayerEntity* p) {
-  return (p->f_startup + p->f_active + p->f_recovery == 0);
+  return (p->f_startup + p->f_active + p->f_recovery + p->f_hitstun == 0);
 }
 
 bool PlayerEntity::isGrounded() {
@@ -420,6 +429,10 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
       stand(p, in); 
     }
   }
+  if (p->f_hitstun) { 
+    p->state = HITSTUN; 
+    p->f_recovery = 0; p->f_startup = 0; p->f_active = 0;
+  }
   switch (p->state) {
     case (STAND): { handleStand(p, in); break; }
     case (CROUCH): { handleCrouch(p, in); break; }
@@ -435,6 +448,7 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
     case (GROUND_SPECIAL): { handleAttack(p, in); break; }
     case (AIR_NORMAL): { handleAttack(p, in); break; }
     case (AIR_SPECIAL): { handleAttack(p, in); break; }
+    case (HITSTUN): { handleHitstun(p, in); break; }
     default: { 
       std::cerr << "State not caught: " << p->state << std::endl; 
       handleStand(p, in); break; 
@@ -447,10 +461,11 @@ Functions that handle what to do in the state you're already in
 */
 // Most grounded actions start here
 void PlayerController::handleGrounded(PlayerEntity* p, const ButtonStates* in) {
-  // if (checkAttacks(p, in, &gnd_normals)) { return; }
-  if (checkAttacks(p, in, &gnd_specials)) {
-    std::cout << "Attack got through!" << std::endl;
-  } else if (in->up) { 
+  
+  if (checkAttacks(p, in, &gnd_specials)) { return; }
+  if (checkAttacks(p, in, &gnd_normals)) { return; }
+  
+  if (in->up) { 
     jump(p, in); 
   } else if (in->l2 == PRESSED) {
     // if (in->l2 != PRESSED) { return; }
@@ -468,6 +483,7 @@ void PlayerController::handleGrounded(PlayerEntity* p, const ButtonStates* in) {
   } else {
     stand(p, in);
   }
+  p->block = holdingBack(p, in) && isActionable(p);
 }
 
 void PlayerController::handleStand(PlayerEntity* p, const ButtonStates* in) {
@@ -525,51 +541,46 @@ void PlayerController::handleBackdash(PlayerEntity* p, const ButtonStates* in) {
 }
 
 // Most aerial actions start here
-void PlayerController::handleAerial(PlayerEntity* p, const ButtonStates* in) {
-  // TODO: Copy stuff from fall and jump to this
+bool PlayerController::handleAerial(PlayerEntity* p, const ButtonStates* in) {
+  // Land or apply gravity
+  if (p->isGrounded()) { 
+    p->f_active = 0; p->f_startup = 0; p->f_recovery = 0;
+    stand(p, in); 
+  }
+  else { p->y_vel += gravity; }
 
+  applyAirStrafe(p, in);
+
+  if (!isActionable(p)) { return false; }
   // Check for aerial attack inputs
+  if (checkAttacks(p, in, &air_specials)) { return true; }
+  if (checkAttacks(p, in, &air_normals)) { return true; }
+
+  // Things requiring an air action
+  if (p->air_action_cnt >= p->air_action_max) { return false; }
+
+  if (in->l2 == PRESSED && holdingBack(p, in)) { airBackDash(p, in); return true; }
+  if (in->l2 == PRESSED) { airDash(p, in); return true; }
+  if (in->up == PRESSED) { jump(p, in); return true; }
+
+  return false;
 }
 
 void PlayerController::handleFall(PlayerEntity* p, const ButtonStates* in) {
-  // Land or apply gravity
-  if (p->isGrounded()) { stand(p, in); }
-  else { p->y_vel += gravity; }
-
   // Basic Air Movement
   if (in->down) { p->y_vel += fastfall_v; }
-  applyAirStrafe(p, in);
 
-  // Things requiring an air action
-  if (p->air_action_cnt >= p->air_action_max) { return; }
-
-  if (in->l2 == PRESSED && holdingBack(p, in)) { airBackDash(p, in); return; }
-  if (in->l2 == PRESSED) { airDash(p, in); return; }
-  if (in->up == PRESSED) { jump(p, in); return; }
+  if (handleAerial(p, in)) { return; }
 }
 void PlayerController::handleJump(PlayerEntity* p, const ButtonStates* in) {
   // Things that can be done in recovery
   // Fall when falling
   if (p->y_vel >= 0) { fall(p, in); }
 
-  // Gravity
-  if (!p->isGrounded()) { p->y_vel += gravity; }
-
-  // Basic Air Movement
-  applyAirStrafe(p, in);
+  if (p->f_recovery > 0) { p->f_recovery--; }
 
   // Things that cannot be done in recovery
-  if (p->f_recovery > 0) { 
-    p->f_recovery--;
-    return; 
-  }
-
-  // Things requiring an air action
-  if (p->air_action_cnt >= p->air_action_max) { return; }
-
-  if (in->l2 == PRESSED && holdingBack(p, in)) { airBackDash(p, in); return; }
-  if (in->l2 == PRESSED) { airDash(p, in); return; }
-  if (in->up == PRESSED) { jump(p, in); return; }
+  if (handleAerial(p, in)) { return; }
 }
 void PlayerController::handleAirDash(PlayerEntity* p, const ButtonStates* in) {
   // Decrement recovery
@@ -593,20 +604,39 @@ void PlayerController::handleAirBackDash(PlayerEntity* p, const ButtonStates* in
   }
 }
 void PlayerController::handleCrouch(PlayerEntity* p, const ButtonStates* in) {
+  if (checkAttacks(p, in, &gnd_specials)) { return; }
+  if (checkAttacks(p, in, &gnd_normals)) { return; }
   p->x_vel = 0;
-  handleStand(p, in);
+  if (!in->down) {
+    stand(p, in);
+  }
+  p->block = holdingBack(p, in) && isActionable(p);
 }
 
 void PlayerController::handleAttack(PlayerEntity* p, const ButtonStates* in) {
   std::cout << "Error: Attack handled as blank character\n";
 }
 
+void PlayerController::handleHitstun(PlayerEntity* p, const ButtonStates* in) {
+  p->y_vel += gravity * p->g_mult;
+
+  if (--p->f_hitstun == 0) {
+    if (p->isGrounded()) {
+      stand(p, in);
+    } else {
+      fall(p, in);
+    }
+  }
+}
+
 /*
 Functions to put you into a given state
 */
 void PlayerController::stand(PlayerEntity* p, const ButtonStates* in) {
-  p->base_hitboxes = &default_hitboxes;
-  p->base_hurtboxes = &default_hurtboxes;
+  p->y_vel = 0;
+  // updateBoxes(p);
+  // p->base_hitboxes = &default_hitboxes;
+  // p->base_hurtboxes = &default_hurtboxes;
   p->state = STAND;
   p->air_action_cnt = 0;
 }
@@ -659,9 +689,9 @@ void PlayerController::airBackDash(PlayerEntity* p, const ButtonStates* in) {
 }
 void PlayerController::crouch(PlayerEntity* p, const ButtonStates* in) {
   p->state = CROUCH;
-  if (holdingBack(p, in)) {
-    p->block = true;
-  }
+  std::vector<BoxEntity> crouching_box = default_hurtboxes;
+  crouching_box[0].height = default_hurtboxes[0].height / 2;
+  p->hurtboxes = crouching_box;
   p->x_vel = 0;
 }
 
@@ -1001,8 +1031,70 @@ void GameManager::applyTickUpdates(GameScene* scene) {
   p1_con->updateBoxes(p1_ent);
   p2_con->updateBoxes(p2_ent);
 
+  handleAttackCollisions(p1_ent, p2_ent);
+  handleAttackCollisions(p2_ent, p1_ent);
+
   // Update which direction the players are facing
   setFacingDir(p1_ent, p2_ent);
+}
+
+void GameManager::handleAttackCollisions(PlayerEntity* src, PlayerEntity* dst) {
+  // Prevent multi-collision from same attack
+  if (src->has_hit) { return; }
+
+  bool hit = false;
+  BoxEntity hitbox, hurtbox;
+  const Attack *atk = src->cur_attack;
+
+  // Loop through hitboxes
+  for (size_t i = 0; i < src->hitboxes.size(); ++i) {
+    hitbox = src->hitboxes.at(i); // set hitbox
+    // Loop through hurtboxes
+    for (size_t j = 0; j < dst->hurtboxes.size(); ++j) {
+      hurtbox = dst->hurtboxes.at(j); // set hurtbox
+      // Check collision
+      if (hitbox.checkCollision(&hurtbox) || hurtbox.checkCollision(&hitbox)) {
+        hit = true; break;
+      }
+    }
+    // Collision found -> break
+    if (hit) {break;}
+  }
+  // No collisions -> return
+  if (!hit) { return; }
+
+  if (dst->block) {
+    std::cout << "Blocked" << std::endl;
+    return;
+  }
+
+  // Update hit player's frames
+  unsigned int src_frames_remaining = atk->getTotalFrames(); 
+  src_frames_remaining -= atk->getCurAtkFrame(src->f_startup, src->f_active, src->f_recovery);
+
+  // Notify counter-hit
+  float counterhit = 1.0;
+  if (dst->isAttacking()) { 
+    counterhit = 1.5;
+    std::cout << "COUNTER" << std::endl; 
+    // dst-> = src_frames_remaining - atk->level * counterhit;
+  }
+
+  src->has_hit = true;
+  std::cout << "!HIT LANDED!" << std::endl;
+
+  // Apply damage
+  dst->health -= atk->damage * dst->proration;
+  // Apply hit vector
+  dst->x_vel = atk->x_vel * src->v_mod;
+  dst->y_vel = atk->y_vel * dst->g_mult;
+
+  // Update proration
+  dst->proration *= atk->proration;
+  // Update gravity multiplier
+  dst->g_mult += 0.1;
+
+  dst->f_hitstun = src_frames_remaining + atk->level * counterhit;
 }
 
 void GameManager::handlePlayerCollisions(PlayerEntity* p1, PlayerEntity* p2) {
