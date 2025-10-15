@@ -16,22 +16,37 @@
 #include <string>
 #include <memory>
 #include <cstring>
+#include <string.h>
+#include <sstream>
+#include <map>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 
-constexpr int PORT = 53243;
+constexpr int SERVER_PORT = 53243;
 constexpr int BUFFER_SIZE = 1024;
 
 struct PlayerEntry {
-  uint32_t id;                // Unique ID for this peer
-  int socket_descriptor;
+  uint32_t id = 0;                // Unique ID for this peer
+  int socket_descriptor = 0;
   struct sockaddr_in address; // IP addr & port num
+
+  std::string getReprString() {
+    std::stringstream ss;
+    char ip_buffer[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
+    ss << "ID: " << id;
+    ss << " Sock Desc: " << socket_descriptor;
+    ss << " IP: " << ip_buffer << ":" << ntohs(address.sin_port);
+    return ss.str();
+  }
 };
 
 int main() {
     fd_set all_sockets, call_set;
+    FD_ZERO(&all_sockets);
 
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -53,7 +68,7 @@ int main() {
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(SERVER_PORT);
 
     // Bind the socket to the network address and port
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
@@ -67,12 +82,19 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "Server listening on port " << PORT << std::endl;
+    std::cout << "Server listening on port " << SERVER_PORT << std::endl;
+
+    PlayerEntry tmp_player_ent;
 
     // Accept incoming connection
     if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
         perror("accept");
         exit(EXIT_FAILURE);
+    } else {
+      tmp_player_ent.id = 0;
+      tmp_player_ent.socket_descriptor = new_socket;
+      tmp_player_ent.address = address;
+      std::cout << tmp_player_ent.getReprString() << std::endl;
     }
 
     // Read and echo the received message

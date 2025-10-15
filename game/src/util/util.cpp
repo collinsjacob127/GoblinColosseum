@@ -42,17 +42,14 @@ bool checkPointInRange(float x, float x0, float x1) {
   return (x >= x0 && x <= x1);
 }
 
-// Doesn't work if not inside eachother
+// Replace with this:
+// A.x < B.x + B.width && A.x + A.width > B.x 
+// && A.y < B.y + B.height && A.y + A.height > B.y
 bool BoxEntity::checkCollision(BoxEntity* box) {
-  return 
-    (
-      checkPointInRange(x, box->x, box->x + box->width) 
-      || 
-      checkPointInRange(x + width, box->x, box->x + box->width)
+  return (
+      x < box->x + box->width && x + width > box->x
     ) && (
-      checkPointInRange(y, box->y, box->y + box->height)
-      ||
-      checkPointInRange(y + height, box->y, box->y + box->height)
+      y < box->y + box->height && y + height > box->y
     );
 }
 
@@ -63,8 +60,6 @@ Coordinate BoxEntity::getCenter() {
   return coord;
 }
 
-// Replace with this:
-// A.x < B.x + B.width && A.x + A.width > B.x && A.y < B.y + B.height && A.y + A.height > B.y
 bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box) {
   return (coord->x <= box->x + box->width && coord->x >= box->x) && \
          (coord->y <= box->y + box->height && coord->y >= box->y);
