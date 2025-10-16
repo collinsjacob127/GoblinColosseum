@@ -432,10 +432,11 @@ void PlayerController::updateState(PlayerEntity* p, const ButtonStates* in) {
       stand(p, in); 
     }
   }
-  if (p->f_hitstun) { 
+  if (p->f_hitstun) {
     p->state = HITSTUN; 
     p->f_recovery = 0; p->f_startup = 0; p->f_active = 0;
   }
+  if(!p->isAttacking()) { p->has_hit = false; }
   switch (p->state) {
     case (STAND): { handleStand(p, in); break; }
     case (CROUCH): { handleCrouch(p, in); break; }
@@ -1078,7 +1079,7 @@ void GameManager::handleAttackCollisions(PlayerEntity* src, PlayerEntity* dst) {
   // Notify counter-hit
   float counterhit = 1.0;
   if (dst->isAttacking()) { 
-    counterhit = 1.5;
+    counterhit = 2.0;
     std::cout << "COUNTER" << std::endl; 
     // dst-> = src_frames_remaining - atk->level * counterhit;
   }

@@ -51,6 +51,7 @@ void Hunko::initializeAttacks() {
   atk->proration = 0.9;
   atk->x_vel = 10.0;
   atk->y_vel = 0.0;
+  atk->level = 2.0;
   for (f = 0; f < atk->f_active; ++f) {
     tmp_hitbox.x = default_x0;
     tmp_hitbox.y = default_y0 * 1.5;
@@ -115,6 +116,7 @@ void Hunko::initializeAttacks() {
   atk->proration = 0.8;
   atk->x_vel = 15.0;
   atk->y_vel = -10.0;
+  atk->level = 4.0;
   // Define startup boxes
   for (f = 0; f < atk->f_startup; ++f) {
     // std::cout << "Pushing to atk hitbox sets\n";
@@ -145,6 +147,7 @@ void Hunko::initializeAttacks() {
   atk->proration = 0.9;
   atk->x_vel = 5.0;
   atk->y_vel = -5.0;
+  atk->level = 3.0;
   // Set hitboxes etc. for ILLEGAL HOMERUN
   tmp_hitbox.x = default_x0;
   tmp_hitbox.y = 0;
@@ -233,6 +236,7 @@ void Hunko::initializeAttacks() {
   atk->proration = 0.8;
   atk->x_vel = 5.0;
   atk->y_vel = -8.0;
+  atk->level = 4.0;
   // Define startup boxes
   for (f = 0; f < atk->f_startup; ++f) {
     // std::cout << "Pushing to atk hitbox sets\n";

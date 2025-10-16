@@ -34,8 +34,8 @@ int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
 
 int main(int argc, char* argv[]) {
-  testNetClient();
-  return 0;
+  // testNetClient();
+  // return 0;
   RenderEngine renderer;
 
   int selection = start(&renderer);
