@@ -29,6 +29,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include "util.hpp"
+
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr int BUFFER_SIZE = 1024;
@@ -81,6 +83,9 @@ int bindAndListen(const char *service);
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 
 int main() {
+  Timer server_timer;
+  server_timer.start();
+
   // all sockets -> all active
   // call_set -> oft overwritten, only used for select()
   fd_set all_sockets, call_set;
@@ -88,6 +93,11 @@ int main() {
 
   // Socket where server accept() new connections thru
   int listen_socket = bindAndListen(SERVER_PORT);
+  int opt = 1;
+  if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    perror("setsockopt");
+    exit(EXIT_FAILURE);
+  }
   FD_SET(listen_socket, &all_sockets);
 
   // always equal to the max fd from which the program can accept() new conns
@@ -133,13 +143,20 @@ int main() {
 
   bool continue_server = true;
   while (continue_server) {
+    // printf("%lf\r", server_timer.duration());
+    // std::cout << std::flush;
+    if (server_timer.duration() > 60.0) { continue_server = false; }
 
     call_set = all_sockets;
     // Select can only handle 1024 fds; update to poll()
-    int num_s = select(max_socket + 1, &call_set, NULL, NULL, NULL);
+    timeval timeout_dur;
+    timeout_dur.tv_sec = 0;
+    timeout_dur.tv_usec = 100'000;
+    int num_s = select(max_socket + 1, &call_set, NULL, NULL, &timeout_dur);
     if (num_s < 0) {
       perror("ERROR from select() call");
-      // TODO: Close all open sockets before returning
+      closeAllInSet(&all_sockets, 3, max_socket);
+      exit(EXIT_FAILURE);
     }
 
     // Loop through all possible sockets (skipping std in/out/err)
@@ -166,7 +183,7 @@ int main() {
         PlayerEntry new_player(new_socket, new_address);
         // Insert to registry map
         registry.insert_or_assign(new_socket, new_player);
-        printf("A client has connected via socket %d from %s%u.\n", 
+        printf("A client has connected via socket %d from %s:%u.\n", 
           new_socket, 
           new_player.ipv4_str.c_str(),
           new_player.port_num
@@ -200,7 +217,7 @@ int main() {
           /* Recieved empty */
           close(s);
           FD_CLR(s, &all_sockets);
-          printf("User %d @ %s:%u disconnected.", 
+          printf("User %d @ %s:%u disconnected.\n", 
             registry.at(s).id,
             registry.at(s).ipv4_str.c_str(),
             registry.at(s).port_num
@@ -221,7 +238,8 @@ int main() {
   }
 
   // Close the server's socket
-  close(listen_socket);
+  closeAllInSet(&all_sockets, 3, max_socket);
+  printf("Server closing...\n");
   return 0;
 }
 

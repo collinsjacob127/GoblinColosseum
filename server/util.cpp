@@ -65,13 +65,6 @@ bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box) {
          (coord->y <= box->y + box->height && coord->y >= box->y);
 }
 
-void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect) {
-  frect->x = box->x;
-  frect->y = box->y;
-  frect->h = box->height;
-  frect->w = box->width;
-}
-
 void rescaleBox(float pos_scale, float size_scale, BoxEntity* box) {
   box->x *= pos_scale;
   box->y *= pos_scale;

@@ -40,14 +40,13 @@ int main(int argc, char* argv[]) {
    * 
    ***/
   // FUUUUCK >:D
-  // testNetClient();
-  // return 0;
-
-
-
-
-
+  testNetClient();
   return 0;
+
+
+
+
+
   /**
    * 
    * Don't fuck below
