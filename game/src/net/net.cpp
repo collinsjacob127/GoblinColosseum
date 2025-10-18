@@ -33,7 +33,7 @@ int testNetClient() {
   SOCKET connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   sockaddr_in serverAddr;
   serverAddr.sin_family = AF_INET;
-  inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr); // Connect to localhost
+  inet_pton(AF_INET, SERVER_ADDR, &serverAddr.sin_addr); // Connect to localhost
   serverAddr.sin_port = htons(SERVER_PORT); // Example port
 
   connect(connectSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
@@ -111,7 +111,7 @@ int testNetClient() {
     serv_addr.sin_port = htons(SERVER_PORT);
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return -1;
     }

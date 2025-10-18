@@ -12,6 +12,8 @@
 #include "engine.hpp"
 #include "util.hpp"
 
+constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+
 struct ClientServerConnectPacket {
   
 };
