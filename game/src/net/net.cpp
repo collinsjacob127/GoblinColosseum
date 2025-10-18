@@ -66,15 +66,6 @@ int testNetClient() {
     printf("Bytes Sent: %ld\n", iResult);
   }
 
-  char recvbuf[BUFFER_SIZE];
-  iResult = recv(connectSocket, recvbuf, BUFFER_SIZE, 0);
-  if (iResult == SOCKET_ERROR) {
-    printf("send failed with error: %d\n", WSAGetLastError());
-    closesocket(connectSocket);
-    WSACleanup();
-    return 1;
-  }
-  std::cout << "Recieved: " << recvbuf << std::endl;
 
   // shutdown the connection since no more data will be sent
   iResult = shutdown(connectSocket, SD_SEND);
@@ -89,9 +80,10 @@ int testNetClient() {
   do {
 
     iResult = recv(connectSocket, buffer, BUFFER_SIZE, 0);
-    if ( iResult > 0 )
+    if ( iResult > 0 ) {
       printf("Bytes received: %d\n", iResult);
-    else if ( iResult == 0 )
+      std::cout << "Recieved: " << buffer << std::endl;
+    } else if ( iResult == 0 )
       printf("Connection closed\n");
     else
       printf("recv failed with error: %d\n", WSAGetLastError());
@@ -115,58 +107,58 @@ int testNetClient() {
 
 int testNetClient() {
   std::cout << "Running linux netcode" << std::endl;
-    Timer timer;
-    timer.start();
+  Timer timer;
+  timer.start();
 
-    int sock = 0;
-    struct sockaddr_in serv_addr;
-    char buffer[BUFFER_SIZE] = {0};
+  int sock = 0;
+  struct sockaddr_in serv_addr;
+  char buffer[BUFFER_SIZE] = {0};
 
-    // Creating socket file descriptor
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        std::cerr << "Socket creation error" << std::endl;
-        return -1;
+  // Creating socket file descriptor
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    std::cerr << "Socket creation error" << std::endl;
+    return -1;
+  }
+
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(SERVER_PORT);
+
+  // Convert IPv4 and IPv6 addresses from text to binary form
+  if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
+    std::cerr << "Invalid address/ Address not supported" << std::endl;
+    return -1;
+  }
+
+  // Connect to the server
+  if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    std::cerr << "Connection Failed" << std::endl;
+    return -1;
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    if (timer.duration() < 2 * i) {
+      --i;
+      continue;
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(SERVER_PORT);
+    std::stringstream ss;
+    ss << "Hello #" << i << " from UNIX client";
+    std::string hello = ss.str();
 
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
-        std::cerr << "Invalid address/ Address not supported" << std::endl;
-        return -1;
-    }
+    send(sock, hello.c_str(), hello.size(), 0);
+    std::cout << "Hello message sent" << std::endl;
+  }
 
-    // Connect to the server
-    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "Connection Failed" << std::endl;
-        return -1;
-    }
+  ssize_t valread = read(sock, buffer, BUFFER_SIZE);
+  std::cout << "Received: " << buffer << std::endl;
 
-    for (int i = 0; i < 3; ++i) {
-      if (timer.duration() < 2 * i) {
-        --i;
-        continue;
-      }
+  // Close the socket
+  close(sock);
 
-      std::stringstream ss;
-      ss << "Hello #" << i << " from UNIX client";
-      std::string hello = ss.str();
+  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
+  << timer.duration() << "s\n";
 
-      send(sock, hello.c_str(), hello.size(), 0);
-      std::cout << "Hello message sent" << std::endl;
-    }
-
-    ssize_t valread = read(sock, buffer, BUFFER_SIZE);
-    std::cout << "Received: " << buffer << std::endl;
-
-    // Close the socket
-    close(sock);
-
-    std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-    << timer.duration() << "s\n";
-
-    return 0;
+  return 0;
 }
 
 #endif

@@ -34,15 +34,18 @@
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr int BUFFER_SIZE = 1024;
-constexpr int MAX_PENDING = 10;
+constexpr int MAX_PENDING = 1000;
 
 struct PlayerEntry {
   uint32_t id = 0;            // Unique ID for this peer
+  std::string user_name = "";
+  bool match_made = false;
   int socket_descriptor = 0;
   struct sockaddr_in address; // IP addr & port num
   std::string ipv4_str = "";
   uint16_t port_num;
 
+  PlayerEntry() {}
   PlayerEntry(int sock_desc, sockaddr_in addr) {
     socket_descriptor = sock_desc;
     address = addr;
@@ -107,19 +110,6 @@ int main() {
   // Maps fd -> Player Entry
   std::map<int, PlayerEntry> registry;
   std::cout << "Initial registry size: " << registry.size() << std::endl;
-
-  // // Get server's socket info
-  // if (getsockname(server_fd, (struct sockaddr *)&address, &addr_len) < 0) {
-  //   perror("getsockname failed");
-  //   close(server_fd);
-  //   exit(EXIT_FAILURE);
-  // }
-  // PlayerEntry tmp_player_ent;
-  // tmp_player_ent.id = 999;
-  // tmp_player_ent.socket_descriptor = server_fd; 
-  // tmp_player_ent.address = address;
-  // std::cout << "Server Info: " << tmp_player_ent.getReprString() << std::endl;
-
   printf("Server has started!\n");
 
   bool continue_server = true;
@@ -191,26 +181,71 @@ int main() {
         len = recv(s, buf, sizeof(buf), 0);
         if (len < 0) {
           /* Quit on error */
+
           perror("Error occured in recv() call, closing and exiting...");
           closeAllInSet(&all_sockets, 3, max_socket);
           exit(EXIT_FAILURE);
+
         } else if (len == 0) {
           /* Recieved empty */
-          // close(s);
-          // FD_CLR(s, &all_sockets);
-          // printf("User %d @ %s:%u disconnected.\n", 
-          //   registry.at(s).id,
-          //   registry.at(s).ipv4_str.c_str(),
-          //   registry.at(s).port_num
-          // );
-          // registry.erase(s);
+
+          // Only close if a match has been made for this user
+          if (!registry.at(s).match_made) { continue; }
+
+          // Match has been made, user connection finished
+          close(s);
+          FD_CLR(s, &all_sockets);
+          printf("User %d @ %s:%u disconnected.\n", 
+            registry.at(s).id,
+            registry.at(s).ipv4_str.c_str(),
+            registry.at(s).port_num
+          );
+          registry.erase(s);
+
         } else {
           /* Recieved non-empty */
-          std::cout << "Received: " << buf << std::endl;
 
-          std::string out_msg = "The server says hello!";
-          send(s, out_msg.c_str(), out_msg.size(), 0);
-          std::cout << "Sent: " << out_msg << std::endl;
+          std::cout << "Received: " << buf << std::endl;
+          PlayerEntry *cur_client = &registry.at(s);
+
+          // Check if user has already provided their name
+          if (cur_client->user_name == "") {
+            // No name -> Recieve username from client
+            cur_client->user_name = buf;
+          } else {
+            // Yes name -> Recieve username of peer client wishes to connect with
+            PlayerEntry tmp = getEntryFromUserName(&registry, buf);
+
+            // Check that user not requesting self
+            if (tmp.user_name == cur_client->user_name) {
+              std::stringstream ss;
+              ss << "Matchmaking error, user requested self:\n";
+              ss << cur_client->getReprString().c_str(); 
+              perror(ss.str().c_str());
+              continue;
+            }
+
+            // Check that user not requesting invalid 
+            if (tmp.user_name == "") {
+              std::stringstream ss;
+              ss << "Matchmaking error, non-existant peer requested by user:\n";
+              ss << cur_client->getReprString().c_str(); 
+              perror(ss.str().c_str());
+              continue;
+            }
+
+            // All good, send the peer's info
+            std::stringstream ss;
+            ss << tmp.ipv4_str << ":" << tmp.port_num;
+            std::string out_msg = ss.str();
+
+            send(s, out_msg.c_str(), out_msg.size(), 0);
+
+            std::cout << "Sent: " << out_msg << "to client:" 
+            << cur_client->getReprString() << std::endl;
+            cur_client->match_made = true;
+          }
+
         }
       }
     }
@@ -276,4 +311,19 @@ void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd) {
     
     close(i);
   }
+}
+
+/**
+ * @brief Given the current registry, return the PlayerEntry of whichever
+ * client has the corresponding username.
+ * @return Returns the corrent player entry, or default player entry on not-found.
+ */
+PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::string uname) {
+  PlayerEntry tmp;
+  for (size_t i = 0; i < registry->size(); ++i) {
+    if (registry->at(i).user_name == uname) {
+      tmp = registry->at(i);
+    }
+  }
+  return tmp;
 }
