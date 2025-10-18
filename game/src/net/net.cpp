@@ -44,16 +44,37 @@ int testNetClient() {
     return 1;
   }
 
-  const char *sendbuf = "this is a test";
-  // std::string hello = "Hello from client";
-  iResult = send( connectSocket, sendbuf, (int)strlen(sendbuf), 0 );
+  // Send test packet thrice
+  for (int i = 0; i < 3; ++i) {
+    // Send one per 2 second
+    if (timer.duration() < (double)i * 2) {
+      --i;
+      continue;
+    }
+
+    std::stringstream ss;
+    ss << "Hello #" << i << " from Windows client!" << std::endl;
+    std::string hello = ss.str();
+
+    iResult = send( connectSocket, hello.c_str(), hello.size(), 0 );
+    if (iResult == SOCKET_ERROR) {
+      printf("send failed with error: %d\n", WSAGetLastError());
+      closesocket(connectSocket);
+      WSACleanup();
+      return 1;
+    }
+    printf("Bytes Sent: %ld\n", iResult);
+  }
+
+  char recvbuf[BUFFER_SIZE];
+  iResult = recv(connectSocket, recvbuf, BUFFER_SIZE, 0);
   if (iResult == SOCKET_ERROR) {
     printf("send failed with error: %d\n", WSAGetLastError());
     closesocket(connectSocket);
     WSACleanup();
     return 1;
   }
-  printf("Bytes Sent: %ld\n", iResult);
+  std::cout << "Recieved: " << recvbuf << std::endl;
 
   // shutdown the connection since no more data will be sent
   iResult = shutdown(connectSocket, SD_SEND);
@@ -122,10 +143,20 @@ int testNetClient() {
         return -1;
     }
 
-    std::string hello = "Hello from client";
-    send(sock, hello.c_str(), hello.size(), 0);
+    for (int i = 0; i < 3; ++i) {
+      if (timer.duration() < 2 * i) {
+        --i;
+        continue;
+      }
 
-    std::cout << "Hello message sent" << std::endl;
+      std::stringstream ss;
+      ss << "Hello #" << i << " from UNIX client";
+      std::string hello = ss.str();
+
+      send(sock, hello.c_str(), hello.size(), 0);
+      std::cout << "Hello message sent" << std::endl;
+    }
+
     ssize_t valread = read(sock, buffer, BUFFER_SIZE);
     std::cout << "Received: " << buffer << std::endl;
 

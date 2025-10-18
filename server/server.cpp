@@ -96,6 +96,7 @@ int main() {
   int opt = 1;
   if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
     perror("setsockopt");
+    close(listen_socket);
     exit(EXIT_FAILURE);
   }
   FD_SET(listen_socket, &all_sockets);
@@ -107,26 +108,6 @@ int main() {
   std::map<int, PlayerEntry> registry;
   std::cout << "Initial registry size: " << registry.size() << std::endl;
 
-  // // Creating socket file descriptor
-  // if ((server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == 0) {
-  //   perror("socket failed");
-  //   exit(EXIT_FAILURE);
-  // }
-  // int opt = 1;
-  // // Forcefully attaching socket to the port
-  // if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-  //   perror("setsockopt");
-  //   exit(EXIT_FAILURE);
-  // }
-  // // Set server properties
-  // server_addr.sin_family = AF_INET;
-  // server_addr.sin_addr.s_addr = INADDR_ANY;
-  // server_addr.sin_port = htons(SERVER_PORT);
-  // // Bind the socket to the network address and port
-  // if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-  //   perror("bind failed");
-  //   exit(EXIT_FAILURE);
-  // }
   // // Get server's socket info
   // if (getsockname(server_fd, (struct sockaddr *)&address, &addr_len) < 0) {
   //   perror("getsockname failed");
@@ -215,14 +196,14 @@ int main() {
           exit(EXIT_FAILURE);
         } else if (len == 0) {
           /* Recieved empty */
-          close(s);
-          FD_CLR(s, &all_sockets);
-          printf("User %d @ %s:%u disconnected.\n", 
-            registry.at(s).id,
-            registry.at(s).ipv4_str.c_str(),
-            registry.at(s).port_num
-          );
-          registry.erase(s);
+          // close(s);
+          // FD_CLR(s, &all_sockets);
+          // printf("User %d @ %s:%u disconnected.\n", 
+          //   registry.at(s).id,
+          //   registry.at(s).ipv4_str.c_str(),
+          //   registry.at(s).port_num
+          // );
+          // registry.erase(s);
         } else {
           /* Recieved non-empty */
           std::cout << "Received: " << buf << std::endl;
