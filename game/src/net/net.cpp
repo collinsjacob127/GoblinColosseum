@@ -18,69 +18,70 @@ constexpr int BUFFER_SIZE = 1024;
 
 #pragma comment(lib, "Ws2_32.lib")
 
+
 int testNetClient() {
   std::cout << "Running windows netcode" << std::endl;
-    Timer timer;
-    timer.start();
+  Timer timer;
+  timer.start();
 
-    
-    WSADATA wsaData;
-    int iResult;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-    char buffer[BUFFER_SIZE] = {0};
+  // Do boilerplate winsock stuff 
+  WSADATA wsaData;
+  int iResult;
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
+  char buffer[BUFFER_SIZE] = {0};
 
-    SOCKET connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    sockaddr_in serverAddr;
-    serverAddr.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr); // Connect to localhost
-    serverAddr.sin_port = htons(SERVER_PORT); // Example port
+  SOCKET connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  sockaddr_in serverAddr;
+  serverAddr.sin_family = AF_INET;
+  inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr); // Connect to localhost
+  serverAddr.sin_port = htons(SERVER_PORT); // Example port
 
-    connect(connectSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
-    // ... send and receive data with connectSocket ...
-    if (connectSocket == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
-        WSACleanup();
-        return 1;
-    }
+  connect(connectSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
+  // ... send and receive data with connectSocket ...
+  if (connectSocket == INVALID_SOCKET) {
+    printf("Unable to connect to server!\n");
+    WSACleanup();
+    return 1;
+  }
 
-    const char *sendbuf = "this is a test";
-    // std::string hello = "Hello from client";
-    iResult = send( connectSocket, sendbuf, (int)strlen(sendbuf), 0 );
-    if (iResult == SOCKET_ERROR) {
-        printf("send failed with error: %d\n", WSAGetLastError());
-        closesocket(connectSocket);
-        WSACleanup();
-        return 1;
-    }
-    printf("Bytes Sent: %ld\n", iResult);
-
-    // shutdown the connection since no more data will be sent
-    iResult = shutdown(connectSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(connectSocket);
-        WSACleanup();
-        return 1;
-    }
-
-// Receive until the peer closes the connection
-    do {
-
-        iResult = recv(connectSocket, buffer, BUFFER_SIZE, 0);
-        if ( iResult > 0 )
-            printf("Bytes received: %d\n", iResult);
-        else if ( iResult == 0 )
-            printf("Connection closed\n");
-        else
-            printf("recv failed with error: %d\n", WSAGetLastError());
-
-    } while( iResult > 0 );
-
+  const char *sendbuf = "this is a test";
+  // std::string hello = "Hello from client";
+  iResult = send( connectSocket, sendbuf, (int)strlen(sendbuf), 0 );
+  if (iResult == SOCKET_ERROR) {
+    printf("send failed with error: %d\n", WSAGetLastError());
     closesocket(connectSocket);
     WSACleanup();
-    std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-    << timer.duration() << "s\n";
-    return 0;
+    return 1;
+  }
+  printf("Bytes Sent: %ld\n", iResult);
+
+  // shutdown the connection since no more data will be sent
+  iResult = shutdown(connectSocket, SD_SEND);
+  if (iResult == SOCKET_ERROR) {
+    printf("shutdown failed with error: %d\n", WSAGetLastError());
+    closesocket(connectSocket);
+    WSACleanup();
+    return 1;
+  }
+
+// Receive until the peer closes the connection
+  do {
+
+    iResult = recv(connectSocket, buffer, BUFFER_SIZE, 0);
+    if ( iResult > 0 )
+      printf("Bytes received: %d\n", iResult);
+    else if ( iResult == 0 )
+      printf("Connection closed\n");
+    else
+      printf("recv failed with error: %d\n", WSAGetLastError());
+
+  } while( iResult > 0 );
+
+  closesocket(connectSocket);
+  WSACleanup();
+  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
+  << timer.duration() << "s\n";
+  return 0;
 }
 
 #else

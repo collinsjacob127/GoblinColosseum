@@ -1,6 +1,7 @@
 # Author: Jacob Collins
 
 TARGETS = server.x
+HPP_FILES = utils.hpp
 CPP_FILES = server.cpp
 
 CFLAGS = -Wall -g

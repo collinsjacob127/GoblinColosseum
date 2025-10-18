@@ -16,5 +16,10 @@ struct ClientServerConnectPacket {
   
 };
 
+struct P2PConnectInfo {
+  std::string peer_addr = "";
+  int port = 0;
+  int character_id = CHARACTER_ID_HUNKO;
+};
 
 int testNetClient();

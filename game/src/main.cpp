@@ -34,8 +34,25 @@ int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
 
 int main(int argc, char* argv[]) {
+  /****
+   * 
+   *  Fuck below 
+   * 
+   ***/
+  // FUUUUCK >:D
   // testNetClient();
   // return 0;
+
+
+
+
+
+  return 0;
+  /**
+   * 
+   * Don't fuck below
+   * 
+   */
   RenderEngine renderer;
 
   int selection = start(&renderer);

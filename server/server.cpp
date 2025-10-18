@@ -30,7 +30,7 @@
 #include <unistd.h>
 
 // constexpr int SERVER_PORT = 0;
-constexpr char* SERVER_PORT = "53243";
+constexpr char* SERVER_PORT = (char*)"53243";
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 10;
 
@@ -38,14 +38,33 @@ struct PlayerEntry {
   uint32_t id = 0;            // Unique ID for this peer
   int socket_descriptor = 0;
   struct sockaddr_in address; // IP addr & port num
+  std::string ipv4_str = "";
+  uint16_t port_num;
+
+  PlayerEntry(int sock_desc, sockaddr_in addr) {
+    socket_descriptor = sock_desc;
+    address = addr;
+
+    char ip_buffer[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
+    ipv4_str = std::string(ip_buffer);
+
+    port_num = ntohs(address.sin_port);
+  }
 
   std::string getReprString() {
     std::stringstream ss;
-    char ip_buffer[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
+
+    // Set ipv4 str if not yet set
+    if (ipv4_str == "") {
+      char ip_buffer[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
+      ipv4_str = std::string(ip_buffer);
+    }
+
     ss << "ID: " << id;
     ss << " Sock Desc: " << socket_descriptor;
-    ss << " IP: " << ip_buffer << ":" << ntohs(address.sin_port);
+    ss << " IP: " << ipv4_str << ":" << ntohs(address.sin_port);
     return ss.str();
   }
 };
@@ -57,21 +76,24 @@ struct PlayerEntry {
  * @return Passively opened socket or -1 on error. Caller is responsible for
  * calling accept and closing the socket.
  */
-int bind_and_listen(const char *service);
+int bindAndListen(const char *service);
 
+void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 
 int main() {
-
-  int opt = 1;
-
-  // Tracking active sockets
+  // all sockets -> all active
+  // call_set -> oft overwritten, only used for select()
   fd_set all_sockets, call_set;
   FD_ZERO(&all_sockets);
 
   // Socket where server accept() new connections thru
-  int listen_socket = bind_and_listen(SERVER_PORT);
+  int listen_socket = bindAndListen(SERVER_PORT);
   FD_SET(listen_socket, &all_sockets);
 
+  // always equal to the max fd from which the program can accept() new conns
+  int max_socket = listen_socket;
+
+  // Maps fd -> Player Entry
   std::map<int, PlayerEntry> registry;
   std::cout << "Initial registry size: " << registry.size() << std::endl;
 
@@ -80,24 +102,21 @@ int main() {
   //   perror("socket failed");
   //   exit(EXIT_FAILURE);
   // }
-
+  // int opt = 1;
   // // Forcefully attaching socket to the port
   // if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
   //   perror("setsockopt");
   //   exit(EXIT_FAILURE);
   // }
-
   // // Set server properties
   // server_addr.sin_family = AF_INET;
   // server_addr.sin_addr.s_addr = INADDR_ANY;
   // server_addr.sin_port = htons(SERVER_PORT);
-
   // // Bind the socket to the network address and port
   // if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
   //   perror("bind failed");
   //   exit(EXIT_FAILURE);
   // }
-
   // // Get server's socket info
   // if (getsockname(server_fd, (struct sockaddr *)&address, &addr_len) < 0) {
   //   perror("getsockname failed");
@@ -112,49 +131,101 @@ int main() {
 
   printf("Server has started!\n");
 
-  // bool continue_server = true;
-  // while (continue_server) {
+  bool continue_server = true;
+  while (continue_server) {
 
-  // Start listening for incoming connections
-  if (listen(listen_socket, 3) < 0) {
-    perror("listen");
-    close(listen_socket);
-    exit(EXIT_FAILURE);
+    call_set = all_sockets;
+    // Select can only handle 1024 fds; update to poll()
+    int num_s = select(max_socket + 1, &call_set, NULL, NULL, NULL);
+    if (num_s < 0) {
+      perror("ERROR from select() call");
+      // TODO: Close all open sockets before returning
+    }
+
+    // Loop through all possible sockets (skipping std in/out/err)
+    for (int s = 3; s <= max_socket; ++s) {
+      // Skip unready sockets
+      if (!FD_ISSET(s, &call_set))
+        continue;
+
+      // New connection available
+      if (s == listen_socket) {
+        // Handling NEW connection
+
+        // Bind socket to local interface and passive open
+        int new_socket;
+        struct sockaddr_in new_address;
+        socklen_t addr_len = sizeof(new_address);
+        if ((new_socket = accept(s, (struct sockaddr*)&new_address, &addr_len)) < 0) {
+          perror("Invalid accept attempted, closing server and exiting...");
+          closeAllInSet(&all_sockets, 3, max_socket);
+          exit(EXIT_FAILURE);
+        }
+
+        // Populate PlayerEntry
+        PlayerEntry new_player(new_socket, new_address);
+        // Insert to registry map
+        registry.insert_or_assign(new_socket, new_player);
+        printf("A client has connected via socket %d from %s%u.\n", 
+          new_socket, 
+          new_player.ipv4_str.c_str(),
+          new_player.port_num
+        );
+
+        // Add this socket to file descriptor set
+        FD_SET(new_socket, &all_sockets);
+
+        // Update max socket
+        max_socket = std::max(new_socket, max_socket);
+      } else {
+        // Handling EXISTING connection
+
+        // Remove closed connections from our client list
+        if (!FD_ISSET(s, &call_set)) {
+          printf("this shouldn't happen\n");
+          continue;
+        }
+
+        char buf[BUFFER_SIZE] = {0};
+        int len;
+
+        // Populate buffer with packet contents
+        len = recv(s, buf, sizeof(buf), 0);
+        if (len < 0) {
+          /* Quit on error */
+          perror("Error occured in recv() call, closing and exiting...");
+          closeAllInSet(&all_sockets, 3, max_socket);
+          exit(EXIT_FAILURE);
+        } else if (len == 0) {
+          /* Recieved empty */
+          close(s);
+          FD_CLR(s, &all_sockets);
+          printf("User %d @ %s:%u disconnected.", 
+            registry.at(s).id,
+            registry.at(s).ipv4_str.c_str(),
+            registry.at(s).port_num
+          );
+          registry.erase(s);
+        } else {
+          /* Recieved non-empty */
+          std::cout << "Received: " << buf << std::endl;
+
+          std::string out_msg = "The server says hello!";
+          send(s, out_msg.c_str(), out_msg.size(), 0);
+          std::cout << "Sent: " << out_msg << std::endl;
+        }
+      }
+    }
+
+
   }
 
-
-  // Accept incoming connection
-  int new_socket;
-  struct sockaddr_in new_address;
-  socklen_t addr_len = sizeof(new_address);
-  if ((new_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
-    perror("accept");
-    close(listen_socket);
-    exit(EXIT_FAILURE);
-  } else {
-    // tmp_player_ent.id = 0;
-    // tmp_player_ent.socket_descriptor = new_socket;
-    // tmp_player_ent.address = address;
-    // std::cout << tmp_player_ent.getReprString() << std::endl;
-  }
-
-  // Read and echo the received message
-  char buffer[BUFFER_SIZE] = {0};
-  ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
-  std::cout << "Received: " << buffer << std::endl;
-  send(new_socket, buffer, valread, 0);
-  std::cout << "Echo message sent" << std::endl;
-
-  // }
-
-  // Close the socket
-  close(new_socket);
+  // Close the server's socket
   close(listen_socket);
-
   return 0;
 }
 
-int bind_and_listen(const char *service) {
+int bindAndListen(const char *service) {
   struct addrinfo hints;
   struct addrinfo *rp, *result;
   int s;
@@ -196,4 +267,14 @@ int bind_and_listen(const char *service) {
   freeaddrinfo(result);
 
   return s;
+}
+
+void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd) {
+  for (int i = min_fd; i <= max_fd; ++i) {
+    // Ignore unset fds
+    if (!FD_ISSET(i, socket_list))
+      continue;
+    
+    close(i);
+  }
 }
