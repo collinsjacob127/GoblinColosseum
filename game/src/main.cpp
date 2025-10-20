@@ -39,7 +39,6 @@ int main(int argc, char* argv[]) {
    *  Fuck below 
    * 
    ***/
-  // FUUUUCK >:D
   testNetClient();
   return 0;
 

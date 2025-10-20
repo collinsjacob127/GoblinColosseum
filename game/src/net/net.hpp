@@ -14,6 +14,7 @@
 #include "util.hpp"
 
 constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+constexpr size_t MAX_USERNAME_LEN = 24;
 
 struct ClientServerConnectPacket {
   
@@ -26,3 +27,4 @@ struct P2PConnectInfo {
 };
 
 int testNetClient();
+std::string getUserName();

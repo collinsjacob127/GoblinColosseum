@@ -110,6 +110,9 @@ int testNetClient() {
   Timer timer;
   timer.start();
 
+  /**
+   * Connecting to server
+   */
   int sock = 0;
   struct sockaddr_in serv_addr;
   char buffer[BUFFER_SIZE] = {0};
@@ -133,21 +136,14 @@ int testNetClient() {
   if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
     std::cerr << "Connection Failed" << std::endl;
     return -1;
+  } else {
+    printf("Connected to server\n");
   }
 
-  for (int i = 0; i < 3; ++i) {
-    if (timer.duration() < 2 * i) {
-      --i;
-      continue;
-    }
-
-    std::stringstream ss;
-    ss << "Hello #" << i << " from UNIX client";
-    std::string hello = ss.str();
-
-    send(sock, hello.c_str(), hello.size(), 0);
-    std::cout << "Hello message sent" << std::endl;
-  }
+  printf("Provide your username:\n");
+  std::string usr_name = getUserName();
+  send(sock, usr_name.c_str(), usr_name.size(), 0);
+  std::cout << "Username sent: " << usr_name << std::endl;
 
   ssize_t valread = read(sock, buffer, BUFFER_SIZE);
   std::cout << "Received: " << buffer << std::endl;
@@ -162,3 +158,17 @@ int testNetClient() {
 }
 
 #endif
+
+std::string getUserName() {
+  std::string usr_name;
+  std::cout << "Enter your username: " << std::endl;
+  std::cin >> usr_name;
+  while(usr_name.size() == 0 || usr_name.size() > MAX_USERNAME_LEN-1) {
+    std::cout << "Error] Invalid username: " << usr_name << std::endl;
+    std::cout << "Error] Username must be 1-24 characters (" 
+    << usr_name.size() << " is invalid." << std::endl;
+    usr_name = "";
+    std::cin >> usr_name;
+  }
+  return usr_name;
+}

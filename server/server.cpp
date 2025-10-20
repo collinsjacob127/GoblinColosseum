@@ -33,6 +33,7 @@
 
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
+constexpr size_t MAX_USERNAME_LEN = 25;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 1000;
 
@@ -44,9 +45,12 @@ struct PlayerEntry {
   struct sockaddr_in address; // IP addr & port num
   std::string ipv4_str = "";
   uint16_t port_num;
+  Timer p_timer;
+  Timer lobby_update_time; 
 
-  PlayerEntry() {}
+  PlayerEntry() { p_timer.start(); }
   PlayerEntry(int sock_desc, sockaddr_in addr) {
+    // Set address info for new client
     socket_descriptor = sock_desc;
     address = addr;
 
@@ -55,6 +59,9 @@ struct PlayerEntry {
     ipv4_str = std::string(ip_buffer);
 
     port_num = ntohs(address.sin_port);
+
+    // Start their timer
+    p_timer.start();
   }
 
   std::string getReprString() {
@@ -85,8 +92,11 @@ int bindAndListen(const char *service);
 
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 
+PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::string uname);
+
 int main() {
   Timer server_timer;
+  Timer reg_timer;
   server_timer.start();
 
   // all sockets -> all active
@@ -152,6 +162,7 @@ int main() {
 
         // Populate PlayerEntry
         PlayerEntry new_player(new_socket, new_address);
+        new_player.p_timer.start();
         // Insert to registry map
         registry.insert_or_assign(new_socket, new_player);
         printf("A client has connected via socket %d from %s:%u.\n", 
@@ -165,6 +176,9 @@ int main() {
 
         // Update max socket
         max_socket = std::max(new_socket, max_socket);
+
+        // Update the reg timer
+        reg_timer.start();
       } else {
         // Handling EXISTING connection
 
@@ -179,6 +193,17 @@ int main() {
 
         // Populate buffer with packet contents
         len = recv(s, buf, sizeof(buf), 0);
+
+        // Verify valid packet size
+        if (len > MAX_USERNAME_LEN) {
+          close(s);
+          FD_CLR(s, &all_sockets);
+          std::stringstream ss;
+          ss << "Recieved invalid username from: ";
+          ss << registry.at(s).getReprString();
+          perror(ss.str().c_str());
+        }
+
         if (len < 0) {
           /* Quit on error */
 
@@ -212,6 +237,8 @@ int main() {
           if (cur_client->user_name == "") {
             // No name -> Recieve username from client
             cur_client->user_name = buf;
+            // Now, send client the list of current connections
+
           } else {
             // Yes name -> Recieve username of peer client wishes to connect with
             PlayerEntry tmp = getEntryFromUserName(&registry, buf);
@@ -243,7 +270,11 @@ int main() {
 
             std::cout << "Sent: " << out_msg << "to client:" 
             << cur_client->getReprString() << std::endl;
+
+            // Register that match has been made for both peers and they
+            // can safely disconnect from server
             cur_client->match_made = true;
+            registry.at(tmp.socket_descriptor).match_made = true;
           }
 
         }
