@@ -79,4 +79,4 @@ void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt);
 /**
  * @brief Helper function to print a vector of strings
  */
-void printStringVec();
+void printStringVec(std::vector<std::string> vec);

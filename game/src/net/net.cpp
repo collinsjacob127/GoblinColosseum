@@ -115,12 +115,12 @@ NetEngine::~NetEngine() {
   disconnectPeer();
 }
 
-void NetEngine::connectToServer() {
+int NetEngine::connectToServer() {
   struct sockaddr_in serv_addr;
   // Creating socket file descriptor
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    std::cerr << "Socket creation error" << std::endl;
-    return;
+    std::cerr << "[Error] Socket creation error" << std::endl;
+    return -1;
   }
 
   serv_addr.sin_family = AF_INET;
@@ -128,17 +128,18 @@ void NetEngine::connectToServer() {
 
   // Convert IPv4 and IPv6 addresses from text to binary form
   if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
-    std::cerr << "Invalid address/ Address not supported" << std::endl;
-    return;
+    std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
+    return -1;
   }
 
   // Connect to the server
   if (connect(server_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-    std::cerr << "Connection Failed" << std::endl;
-    return;
+      std::cerr << "[Error] Connection Failed" << std::endl;
+    return -1;
   } else {
-    printf("Connected to server\n");
+    printf("[Log] Connected to server\n");
   }
+  return 0;
 }
 
 std::vector<std::string> NetEngine::recieveServerList() {
@@ -151,13 +152,16 @@ std::vector<std::string> NetEngine::recieveServerList() {
   while((n_bytes = read(server_sock, buffer, BUFFER_SIZE)) > 0) {
     std::string peer_username = buffer;
 
-    if (ENABLE_NETCODE_DEBUG)
-      std::cout << "Recieved username from server list: " << peer_username << std::endl;
+    std::cout << "[Log] Recieved username from server list: " 
+    << peer_username << std::endl;
 
     player_list.push_back(peer_username);
   }
 
-  if (n_bytes < 0) { perror("Error in recieving server's list"); }
+  if (n_bytes < 0) { 
+    perror("[Error] Error in recieving server's list"); 
+    return {};
+  }
   return player_list;
 }
 
@@ -177,7 +181,7 @@ int NetEngine::getJoinOrCreate() {
 int NetEngine::getJoinInfo(size_t n_lobbies) {
   int selection = -1;
   std::cout << "Select peer to join:";
-
+  //TODO: Select a peer from the list
 }
 
 std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
@@ -204,34 +208,50 @@ std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
     }
   }
 
-  if (n_bytes < 0) { perror("Error in recieving server's list"); }
+  if (n_bytes < 0) { perror("[Error] Error in recieving server's list"); }
+}
+
+int NetEngine::sendUserName() {
+  int n_bytes = send(server_sock, username.c_str(), username.size(), 0);
+  if (n_bytes < 0) {
+    perror("[Error] Username send failed\n");
+    return -1;
+  }
+  std::cout << "Username sent: " << username << std::endl;
+  return 0;
+}
+
+int NetEngine::sendJoin() {
+
+}
+
+int NetEngine::sendConnect() {
+
 }
 
 int NetEngine::testNetClient() {
   std::cout << "Running linux netcode" << std::endl;
   Timer timer;
   timer.start();
+  int result;
 
   /**
    * Connecting to server
    */
   char buffer[BUFFER_SIZE] = {0};
   // 1. Bind server connection to the returned socket
-  connectToServer();
-  if (server_sock < 0) {
-    perror("Server connect request failed");
+  result = connectToServer();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
     return -1;
   }
 
 
   // 2. Send your username to initialize server connection
-  int n_bytes = send(server_sock, username.c_str(), username.size(), 0);
-  if (n_bytes < 0) {
-    perror("Username send failed\n");
-    return -1;
+  result = -1;
+  while (result < 0) {
+    result = sendUserName();
   }
-  std::cout << "Username sent: " << username << std::endl;
-
 
   // 3. Declare joining or creating a game (JOIN vs CREATE)
   int join_or_create = getJoinOrCreate();
@@ -303,7 +323,7 @@ void NetEngine::getUserName() {
   std::cout << "Enter your username: " << std::endl;
   std::cin >> usr_name;
   while(usr_name.size() == 0 
-  || usr_name.size() > MAX_USERNAME_LEN-1 
+  || usr_name.size() > MAX_USERNAME_LEN 
   || usr_name == "REFRESH" 
   || usr_name == "JOIN"
   || usr_name == "CREATE") {
@@ -313,5 +333,18 @@ void NetEngine::getUserName() {
     usr_name = "";
     std::cin >> usr_name;
   }
-  username = usr_name;
+  setUserName(usr_name);
+}
+
+void NetEngine::setUserName(std::string user_name) {
+  if (user_name.size() < MAX_USERNAME_LEN) {
+    username = user_name;
+  } else {
+    std::stringstream ss;
+    ss << "[Error] ";
+    ss << "Net engine failed to set username (" << user_name << ") ";
+    ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_LEN << ")";
+    ss << std::endl;
+    perror(ss.str().c_str());
+  }
 }

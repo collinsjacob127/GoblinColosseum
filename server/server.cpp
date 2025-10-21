@@ -22,7 +22,7 @@
 #include <cstring>
 
 #include <netdb.h>
-#include <sys/select.h>
+#include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,6 +36,10 @@ constexpr char* SERVER_PORT = (char*)"53243";
 constexpr size_t MAX_USERNAME_LEN = 25;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 1000;
+
+struct ServerInfo {
+
+};
 
 struct PlayerEntry {
   uint32_t id = 0;            // Unique ID for this peer
@@ -90,9 +94,20 @@ struct PlayerEntry {
  */
 int bindAndListen(const char *service);
 
+/**
+ * @brief Close every socket in a file descriptor set.
+ */
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 
+/**
+ * @brief Given a username, return the corresponding registry entry.
+ */
 PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::string uname);
+
+/**
+ * @brief What the server repeatedly does while running
+ */
+void mainServerLoop();
 
 int main() {
   // Timer to track how long the server has been up
@@ -360,4 +375,162 @@ PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::stri
     }
   }
   return tmp;
+}
+
+void mainServerLoop(fd_set *all_sockets) {
+  call_set = all_sockets;
+  // Select can only handle 1024 fds; update to poll()
+  timeval timeout_dur;
+  timeout_dur.tv_sec = 0;
+  timeout_dur.tv_usec = 100'000;
+  int num_s = select(max_socket + 1, &call_set, NULL, NULL, &timeout_dur);
+  if (num_s < 0) {
+    perror("[Error] from select() call");
+    closeAllInSet(all_sockets, 3, max_socket);
+    exit(EXIT_FAILURE);
+  }
+
+  // Loop through all possible sockets (skipping std in/out/err)
+  for (int s = 3; s <= max_socket; ++s) {
+    // Skip unready sockets
+    if (!FD_ISSET(s, &call_set))
+      continue;
+
+    // New connection available
+    if (s == listen_socket) {
+      // Handling NEW connection
+
+      // Bind socket to local interface and passive open
+      int new_socket;
+      struct sockaddr_in new_address;
+      socklen_t addr_len = sizeof(new_address);
+      if ((new_socket = accept(s, (struct sockaddr*)&new_address, &addr_len)) < 0) {
+        perror("[Error] Invalid accept attempted, closing server and exiting...");
+        closeAllInSet(&all_sockets, 3, max_socket);
+        exit(EXIT_FAILURE);
+      }
+
+      // Populate PlayerEntry
+      PlayerEntry new_player(new_socket, new_address);
+      new_player.p_timer.start();
+      // Insert to registry map
+      registry.insert_or_assign(new_socket, new_player);
+      printf("A client has connected via socket %d from %s:%u.\n", 
+        new_socket, 
+        new_player.ipv4_str.c_str(),
+        new_player.port_num
+      );
+
+      // Add this socket to file descriptor set
+      FD_SET(new_socket, &all_sockets);
+
+      // Update max socket
+      max_socket = std::max(new_socket, max_socket);
+
+      // Update the reg timer
+      reg_timer.start();
+    } else {
+      // Handling EXISTING connection
+
+      // Remove closed connections from our client list
+      if (!FD_ISSET(s, &call_set)) {
+        printf("this shouldn't happen\n");
+        continue;
+      }
+
+      char buf[BUFFER_SIZE] = {0};
+      int len;
+
+      // Populate buffer with packet contents
+      len = recv(s, buf, sizeof(buf), 0);
+
+      // Verify valid packet size
+      if (len > MAX_USERNAME_LEN) {
+        close(s);
+        FD_CLR(s, &all_sockets);
+        std::stringstream ss;
+        ss << "[Error] ";
+        ss << "Recieved invalid username from: ";
+        ss << registry.at(s).getReprString();
+        perror(ss.str().c_str());
+      }
+
+      if (len < 0) {
+        /* Quit on error */
+
+        perror("Error occured in recv() call, closing and exiting...");
+        closeAllInSet(&all_sockets, 3, max_socket);
+        exit(EXIT_FAILURE);
+
+      } else if (len == 0) {
+        /* Recieved empty */
+
+        // Only close if a match has been made for this user
+        if (!registry.at(s).match_made) { continue; }
+
+        // Match has been made, user connection finished
+        close(s);
+        FD_CLR(s, &all_sockets);
+        printf("User %d @ %s:%u disconnected.\n", 
+          registry.at(s).id,
+          registry.at(s).ipv4_str.c_str(),
+          registry.at(s).port_num
+        );
+        registry.erase(s);
+
+      } else {
+        /* Recieved non-empty */
+
+        std::cout << "Received: " << buf << std::endl;
+        PlayerEntry *cur_client = &registry.at(s);
+
+        // Check if user has already provided their name
+        if (cur_client->user_name == "") {
+          // No name -> Recieve username from client
+          cur_client->user_name = buf;
+          // Now, send client the list of current connections
+
+        } else {
+          // Yes name -> Recieve username of peer client wishes to connect with
+          PlayerEntry tmp = getEntryFromUserName(&registry, buf);
+
+          // Check that user not requesting self
+          if (tmp.user_name == cur_client->user_name) {
+            std::stringstream ss;
+            ss << "Matchmaking error, user requested self:\n";
+            ss << cur_client->getReprString().c_str(); 
+            perror(ss.str().c_str());
+            continue;
+          }
+
+          // Check that user not requesting invalid 
+          if (tmp.user_name == "") {
+            std::stringstream ss;
+            ss << "Matchmaking error, non-existant peer requested by user:\n";
+            ss << cur_client->getReprString().c_str(); 
+            perror(ss.str().c_str());
+            continue;
+          }
+
+          // All good, send the peer's info
+          std::stringstream ss;
+          ss << tmp.ipv4_str << ":" << tmp.port_num;
+          std::string out_msg = ss.str();
+
+          send(s, out_msg.c_str(), out_msg.size(), 0);
+
+          std::cout << "Sent: " << out_msg << "to client:" 
+          << cur_client->getReprString() << std::endl;
+
+          // Register that match has been made for both peers and they
+          // can safely disconnect from server
+          cur_client->match_made = true;
+          registry.at(tmp.socket_descriptor).match_made = true;
+        }
+
+      }
+    }
+  }
+
+
 }
