@@ -7,6 +7,8 @@
 #include <chrono>      // Timer :)
 #include <iostream>    // User I/O
 #include <sstream>     // String formatting
+#include <string>
+#include <vector>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -67,3 +69,12 @@ void convertBoxEntityToFRect(const BoxEntity* box, SDL_FRect* frect);
 void rescaleBox(float pos_scale, float size_scale, BoxEntity* box);
 Coordinate getBoxCenterCoordinate(const BoxEntity* box);
 void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt);
+
+/**
+ * STRING UTILS
+ */
+
+/**
+ * @brief Helper function to print a vector of strings
+ */
+void printStringVec(std::vector<std::string>);

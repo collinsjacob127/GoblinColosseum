@@ -95,7 +95,9 @@ void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::string uname);
 
 int main() {
+  // Timer to track how long the server has been up
   Timer server_timer;
+  // Timer to track the last time the registry was updated
   Timer reg_timer;
   server_timer.start();
 

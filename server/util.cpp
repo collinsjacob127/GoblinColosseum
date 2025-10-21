@@ -91,3 +91,14 @@ void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt) {
   box->x = pnt.x + box->width / 2;
   box->y = pnt.y + box->height / 2;
 }
+
+/**
+ * STRING UTILS
+ */
+
+void printStringVec(std::vector<std::string> vec) {
+  for (size_t i = 0; i < vec.size(); ++i) {
+    std::cout << "  " << i << ": ";
+    std::cout << vec.at(i) << std::endl;
+  }
+}

@@ -7,6 +7,8 @@
 #include <chrono>      // Timer :)
 #include <iostream>    // User I/O
 #include <sstream>     // String formatting
+#include <string>
+#include <vector>
 
 /***************************
  ********* TIMER ***********
@@ -39,6 +41,10 @@ class Timer {
   bool has_started;
 };
 
+
+/**
+ * GAME COLLISION BOX & POSITION UTILS
+ */
 struct Coordinate {
   float x = 0.0;
   float y = 0.0;
@@ -64,3 +70,13 @@ bool checkBoxPointCollision(const Coordinate* coord, const BoxEntity* box);
 void rescaleBox(float pos_scale, float size_scale, BoxEntity* box);
 Coordinate getBoxCenterCoordinate(const BoxEntity* box);
 void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt);
+
+
+/**
+ * STRING UTILS
+ */
+
+/**
+ * @brief Helper function to print a vector of strings
+ */
+void printStringVec();

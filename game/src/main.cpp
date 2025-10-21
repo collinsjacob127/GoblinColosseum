@@ -39,12 +39,10 @@ int main(int argc, char* argv[]) {
    *  Fuck below 
    * 
    ***/
-  testNetClient();
+  NetEngine net_engine;
+  net_engine.getUserName();
+  net_engine.testNetClient();
   return 0;
-
-
-
-
 
   /**
    * 
