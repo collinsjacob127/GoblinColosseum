@@ -102,10 +102,9 @@ void setBoxCenterCoordinate(BoxEntity* box, Coordinate pnt) {
 /**
  * STRING UTILS
  */
-
 void printStringVec(std::vector<std::string> vec) {
   for (size_t i = 0; i < vec.size(); ++i) {
-    std::cout << "  " << i << ": ";
+    std::cout << "  [" << i << "] ";
     std::cout << vec.at(i) << std::endl;
   }
 }

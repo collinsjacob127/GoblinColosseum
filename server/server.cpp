@@ -137,7 +137,7 @@ int main() {
     timeout_dur.tv_usec = 100'000;
     int num_s = select(max_socket + 1, &call_set, NULL, NULL, &timeout_dur);
     if (num_s < 0) {
-      perror("ERROR from select() call");
+      perror("[Error] from select() call");
       closeAllInSet(&all_sockets, 3, max_socket);
       exit(EXIT_FAILURE);
     }
@@ -157,7 +157,7 @@ int main() {
         struct sockaddr_in new_address;
         socklen_t addr_len = sizeof(new_address);
         if ((new_socket = accept(s, (struct sockaddr*)&new_address, &addr_len)) < 0) {
-          perror("Invalid accept attempted, closing server and exiting...");
+          perror("[Error] Invalid accept attempted, closing server and exiting...");
           closeAllInSet(&all_sockets, 3, max_socket);
           exit(EXIT_FAILURE);
         }
@@ -201,6 +201,7 @@ int main() {
           close(s);
           FD_CLR(s, &all_sockets);
           std::stringstream ss;
+          ss << "[Error] ";
           ss << "Recieved invalid username from: ";
           ss << registry.at(s).getReprString();
           perror(ss.str().c_str());
