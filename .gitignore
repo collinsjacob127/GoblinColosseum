@@ -11,3 +11,5 @@
 *lin-build/
 *.psd
 
+# Ignore hidden files
+.*
