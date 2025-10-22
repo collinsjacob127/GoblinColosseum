@@ -1,6 +1,7 @@
 # Ignore executables
 *.x
 *.out
+*.o
 
 # Ignore vscode settings
 .vscode/
