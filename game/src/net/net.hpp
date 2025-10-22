@@ -6,7 +6,7 @@
 #pragma once
 
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <sstream>
 #include <memory>
 #include <cstring>
@@ -15,13 +15,19 @@
 #include "util.hpp"
 
 #define ENABLE_NETCODE_DEBUG true
+#define ENABLE_NETCODE_ERROR true
+#define ENABLE_NETCODE_LOG true
+
 
 // IPV4 addr of the server
-constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+// constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
+constexpr int SERVER_PORT = 53243;
 
-// Number of allowed characters in usernames
-// Max SIZE of usernames is then MAX_USERNAME_LEN + 1
-constexpr size_t MAX_USERNAME_LEN = 24;
+// Max SIZE of username
+// Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
+constexpr size_t MAX_USERNAME_SIZE = 25;
+constexpr int BUFFER_SIZE = 1024;
 
 /**
  * @brief Struct for packaging packets sent to server
@@ -39,12 +45,30 @@ struct ClientPacket {
   packet_type = 1 -> "JOIN" or "CREATE"
   packet_type = 2 -> "Example_Peer_Name"
   */
-  char contents[MAX_USERNAME_LEN+1];
+  char contents[MAX_USERNAME_SIZE];
+
+  /**
+   * @brief Build a client packet given the type
+   * and contents
+   * @param type Header to inform server what type of message is being sent
+   * @param val Contents of the message being sent
+   * @note Possible values for type:
+   * @note 0 -> sending own username
+   * @note 1 -> declaring join type (JOIN / CREATE)
+   * @note 2 -> sending join request username (peer's username)
+   */
+  ClientPacket(char type, std::string val);
+
+  /**
+   * @brief Function to move ClientPacket into a provided
+   * buffer and prepare the contents for network send
+   */
+  void buildSendPacket(char* buf);
 };
 
 struct P2PConnectInfo {
-  unsigned char ipv4_addr[4];
-  int16_t port = 0;
+  // unsigned char ipv4_addr[4];
+  // int16_t port = 0;
   char character_id = CHARACTER_ID_HUNKO;
 };
 
@@ -85,18 +109,22 @@ class NetEngine {
   /**
    * @brief Function to send a user's username to the server
    * @note Verifies that the name is valid
+   * @note If server sends back BAD, returns 3
    */
   int sendUserName();
 
   /**
    * @brief Function to send a JOIN message to the server
+   * @note This does not itself join a lobby, simply notifies
+   * the server that you wish to see the list of available lobbies
+   * to join.
    */
   int sendJoin();
 
   /**
-   * @brief Function to send a CONNECT message to the server
+   * @brief Function to send a CREATE message to the server
    */
-  int sendConnect();
+  int sendCreate();
 
   /**
    * @brief Function to retrieve the current list of users from the server
@@ -113,7 +141,13 @@ class NetEngine {
   /**
    * @brief Select which lobby to join via cin
    */
-  int getJoinInfo(size_t n_lobbies);
+  size_t selectLobby(size_t n_lobbies);
+
+  /**
+   * @brief Send to the server the username of the peer you wish to join
+   * @return 0 on success, -1 on failure
+   */
+  int sendJoinRequest(std::string peer_name);
 
   /**
    * @brief Read in the address of whatever peer you shall connect to for the game

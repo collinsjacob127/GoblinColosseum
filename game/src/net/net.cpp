@@ -6,9 +6,6 @@
 
 #include "net.hpp"
 
-constexpr int SERVER_PORT = 53243;
-constexpr int BUFFER_SIZE = 1024;
-
 //DELETE THIS
 #ifdef _WIN32
 
@@ -145,23 +142,54 @@ int NetEngine::connectToServer() {
 std::vector<std::string> NetEngine::recieveServerList() {
   // Initialize list and buffer
   std::vector<std::string> player_list;
-  char buffer[BUFFER_SIZE] = {0};
+  char buffer[BUFFER_SIZE];
 
+  // First, server sends a single character with how many lobbies there are
   int n_bytes = -1;
+  n_bytes = recv(server_sock, &buffer, sizeof(buffer), 0);
+  std::string n_lobby_str = buffer;
+  int n_lobbies;
+  if (n_bytes < 0) {
+    if (ENABLE_NETCODE_ERROR) {
+      std::stringstream ss;
+      ss << "[Error] Failed to receive number of lobbies being sent\n";
+      perror(ss.str().c_str());
+      return {};
+    }
+  } else {
+    n_lobbies = atoi(n_lobby_str.c_str());
+    if (ENABLE_NETCODE_DEBUG) {
+      std::cout << "[Debug] Original # lobbies recvd: " << n_lobbies << std::endl;
+      std::cout << "[Debug] NTOHS # lobbies recvd: " << ntohs(n_lobbies) << std::endl;
+    }
+    // n_lobbies = ntohs(n_lobbies);
+    if(ENABLE_NETCODE_LOG) {
+      std::cout << "[Log] Server says to expect " << n_lobbies << " lobby names\n";
+    }
+  }
+
+  if (n_lobbies <= 0) {
+    return {};
+  }
+
+  //TODO: delete this 
+  if (n_lobbies > 10) { return {}; }
+
   // Recieve each peer's username from the server.
-  while((n_bytes = read(server_sock, buffer, BUFFER_SIZE)) > 0) {
+  for (int i = 0; i < n_lobbies; ++i) {
+    n_bytes = recv(server_sock, buffer, MAX_USERNAME_SIZE, 0);
+    if (n_bytes < 0) { 
+      perror("[Error] Error in recieving server's list"); 
+      return {};
+    }
     std::string peer_username = buffer;
 
     std::cout << "[Log] Recieved username from server list: " 
-    << peer_username << std::endl;
+    << peer_username << " (" << n_bytes << "b)" << std::endl;
 
     player_list.push_back(peer_username);
   }
 
-  if (n_bytes < 0) { 
-    perror("[Error] Error in recieving server's list"); 
-    return {};
-  }
   return player_list;
 }
 
@@ -178,10 +206,36 @@ int NetEngine::getJoinOrCreate() {
   return selection;
 }
 
-int NetEngine::getJoinInfo(size_t n_lobbies) {
+size_t NetEngine::selectLobby(size_t max_idx) {
   int selection = -1;
-  std::cout << "Select peer to join:";
-  //TODO: Select a peer from the list
+  std::cout << "Select peer to join (" << 0 << " - " << max_idx << ")" << std::endl;
+  std::cin >> selection;
+  while (selection < 0 || selection > max_idx) {
+    std::cout << "Invalid selection, please try again.\n";
+    std::cin >> selection;
+  }
+  return 0;
+}
+
+int NetEngine::sendJoinRequest(std::string peer_name) {
+  // Verify peer name length
+  if (!(peer_name.size() < MAX_USERNAME_SIZE)) {
+    std::cerr << "[Error] Requesting to join peer with name too large: " 
+    << peer_name << std::endl;
+  }
+
+  // Initialize lobby request packet
+  ClientPacket pkt(0, peer_name.c_str());
+  // Send it over
+  int n_bytes = send(server_sock, peer_name.c_str(), peer_name.size(), 0);
+  // Verify good send
+  if (n_bytes < 0) {
+    perror("[Error] Lobby join request failed\n");
+    return -1;
+  }
+  // Log
+  std::cout << "[Log] Lobby join request sent: " << username << std::endl;
+  return 0;
 }
 
 std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
@@ -191,105 +245,199 @@ std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
   std::pair<std::string, std::string> addr_pair;
 
   // Recieve the address of connecting peer
-  while((n_bytes = read(server_sock, buffer, BUFFER_SIZE)) > 0) {
-    std::string raw_addr = buffer;
+  n_bytes = recv(server_sock, buffer, BUFFER_SIZE, 0);
+  if (n_bytes < 0) {
+    perror("[Error] Error in get peer addr info: ");
+    return {};
+  }
+  raw_addr = buffer;
 
-    if (ENABLE_NETCODE_DEBUG)
-      std::cout << "[Debug] Peer addr info received: " << raw_addr << std::endl;
-    
-    size_t colon_pos = raw_addr.find(':');
-    addr_pair.first = raw_addr.substr(0, colon_pos);
-    addr_pair.second = raw_addr.substr(colon_pos, raw_addr.size());
+  if (ENABLE_NETCODE_DEBUG)
+    std::cout << "[Debug] Peer addr info received: " << raw_addr << std::endl;
+  
+  // Parse ipv4 addr
+  size_t colon_pos = raw_addr.find(':');
+  addr_pair.first = raw_addr.substr(0, colon_pos);
+  addr_pair.second = raw_addr.substr(colon_pos, raw_addr.size());
 
-    if (ENABLE_NETCODE_DEBUG) {
-      std::cout << "[Debug] Addr parsed as: " 
-      << addr_pair.first << ":" 
-      << addr_pair.second << std::endl;
-    }
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Addr parsed as: " 
+    << addr_pair.first << ":" 
+    << addr_pair.second << std::endl;
   }
 
   if (n_bytes < 0) { perror("[Error] Error in recieving server's list"); }
+  return addr_pair;
 }
 
 int NetEngine::sendUserName() {
-  int n_bytes = send(server_sock, username.c_str(), username.size(), 0);
+  ClientPacket pkt(0, username);
+  char buf[sizeof(ClientPacket)];
+  pkt.buildSendPacket(buf);
+  int n_bytes = send(server_sock, buf, sizeof(buf), 0);
   if (n_bytes < 0) {
     perror("[Error] Username send failed\n");
     return -1;
   }
-  std::cout << "Username sent: " << username << std::endl;
+  if(ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Username packet sent: " << std::string(buf+1) << std::endl;
+  }
+  memset(buf, 0, sizeof(buf));
+  n_bytes = recv(server_sock, buf, MAX_USERNAME_SIZE, 0);
+  if (n_bytes < 0) {
+    perror("[Error] Server username response not received");
+    return 2;
+  } else {
+    std::string server_feedback = buf;
+    if (ENABLE_NETCODE_DEBUG) {
+      std::cout << "[Debug] Server responded to username request with " 
+      << server_feedback << std::endl;
+    }
+    if (server_feedback != "GOOD") {
+      std::cout << "[Log] Server notified username taken, please try again\n";
+      return 2;
+    }
+  }
   return 0;
 }
 
 int NetEngine::sendJoin() {
+  // Build packet with necessary info
+  ClientPacket pkt(1, "JOIN");
+  // Buffer for network packet
+  char buf[sizeof(ClientPacket)];
+  // Build network packet
+  pkt.buildSendPacket(buf);
+  // Send and verify bytes
+  size_t n_bytes;
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Preparing to send JOIN intent notification" << std::endl;
+  }
 
+  n_bytes = send(server_sock, buf, sizeof(buf), 0);
+  if (n_bytes < 0) {
+    perror("[Error] Failed to send join packet:");
+    return -1;
+  }
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] JOIN intent notification sent" << std::endl;
+  }
+  // If max attempts hit, return -1
+  return 0;
 }
 
-int NetEngine::sendConnect() {
+int NetEngine::sendCreate() {
+  // Build packet with necessary info
+  ClientPacket pkt(1, "CREATE");
+  // Buffer for network packet
+  char buf[sizeof(ClientPacket)];
+  // Build network packet
+  pkt.buildSendPacket(buf);
+  // Send and verify bytes
+  size_t n_bytes, n_attempts = 0, max_attempts = 3;
+  n_bytes = send(server_sock, buf, sizeof(buf), 0);
 
+  if (n_bytes < 0) {
+    std::cerr << "[Error] Failed to send create packet" << std::endl;
+    return -1;
+  }
+  if(ENABLE_NETCODE_DEBUG) { std::cout << "[Debug] CREATE packet sent\n"; }
+  // If max attempts hit, return -1
+  return 0; 
 }
 
 int NetEngine::testNetClient() {
-  std::cout << "Running linux netcode" << std::endl;
+  std::cout << "[Log] Running linux netcode" << std::endl;
   Timer timer;
   timer.start();
-  int result;
-
-  /**
-   * Connecting to server
-   */
+  int result, attempt_cnt, max_attempts = 3;
   char buffer[BUFFER_SIZE] = {0};
+
   // 1. Bind server connection to the returned socket
   result = connectToServer();
   if (server_sock < 0 || result < 0) {
     perror("[Error] Server connect request failed");
+    disconnectServer();
     return -1;
   }
 
 
   // 2. Send your username to initialize server connection
   result = -1;
-  while (result < 0) {
-    result = sendUserName();
+  result = sendUserName();
+  if (result == 2) {
+    disconnectServer();
+    return 2; // Retry username
   }
+
 
   // 3. Declare joining or creating a game (JOIN vs CREATE)
   int join_or_create = getJoinOrCreate();
-  std::string j_c_pkt = "";
-  if (join_or_create == 0) {
-    // Tell server you wish to JOIN a peer
-    j_c_pkt = "JOIN";
-    n_bytes = send(server_sock, j_c_pkt.c_str(), j_c_pkt.size(), 0);
-  } else if (join_or_create == 1) {
+
+  // 4 (CREATE). Send server notification that you wish to create a lobby
+  result = 0;
+  if (join_or_create == 1) {
     // Tell server you wish to CREATE a game
-    j_c_pkt = "CREATE";
-    n_bytes = send(server_sock, j_c_pkt.c_str(), j_c_pkt.size(), 0);
+    result = sendCreate();
   }
-  if (n_bytes < 0) {
-    std::cerr << j_c_pkt << " server request failed\n";
+  if (result < 0) {
+    std::cerr << "[Error] Failed to send lobby creation message." << std::endl;
+    disconnectServer();
     return -1;
   }
 
-  // JOIN ing
-  if (join_or_create == 0) {
-    // 4 (JOIN ONLY). Display list of users in server's registry
-    // (Recieve)
-    std::vector<std::string> player_list = recieveServerList();
-    std::cout << "Recieved current registry: " << std::endl;
-    printStringVec(player_list);
 
-    // Send name of user requested OR refresh
-    int selection = getJoinInfo(player_list.size());
+  // 4 (JOIN). Send join request and recieve list of users in server's registry
+  if (join_or_create == 0) {
+    std::vector<std::string> player_list = {};
+
+    // Link this to button instead of looping until one is found
+    if (ENABLE_NETCODE_DEBUG) {
+      std::cout << "[Debug] Preparing to request lobby list from server" << std::endl;
+    }
+
+    // Notify of intent to join
+    result = sendJoin();
+    if (result < 0) {
+      std::cerr << "[Error] Failed to send join intent." << std::endl;
+      disconnectServer();
+      return -1;
+    } 
+
+    // Recieve list of open lobbies
+    player_list = recieveServerList();
+
+    // Select a lobby if there are any
+    if (player_list.size() > 0) {
+      std::cout << "[Log] Recieved lobby list: " << std::endl;
+      printStringVec(player_list);
+      // Send name of user requested OR refresh
+      size_t selection = selectLobby(player_list.size()-1);
+    } else {
+      std::cout << "[Log] No lobbies found." << std::endl;
+    }
+  }
+
+  if (attempt_cnt >= max_attempts) {
+    std::cerr << "[Error] Hit maximum # lobby requests. Closing connection.\n";
+    disconnectServer();
   } 
-  
+
+
+  //TODO: TCP Holepunch
+  // disconnectServer();
+  // return -1;
+  // Remove above
+
   // 5. Wait to recieve address of connecting peer
   std::pair<std::string, std::string> addr_strs = getPeerAddrInfo();
   std::string peer_ipv4 = addr_strs.first;
   std::string peer_port = addr_strs.second;
 
+  std::cout << "Recieved ipv4: " << peer_ipv4 << ":" << peer_port << std::endl;
 
   // Close the server connection
-  close(server_sock);
+  disconnectServer();
 
   // Connect to peer
 
@@ -318,12 +466,36 @@ void NetEngine::disconnectPeer() {
 
 #endif
 
+ClientPacket::ClientPacket(char type, std::string val) {
+  // Set first header value (no need to modify)
+  packet_type = type;
+
+  // Set contents (string copy and guarantee null terminator)
+  strncpy(contents, val.c_str(), MAX_USERNAME_SIZE-1);
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+
+  // Log it
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Log] ClientPacket initialized with " 
+    << (int)type << " as type and "
+    << contents << " as contents" << std::endl;
+  }
+}
+
+void ClientPacket::buildSendPacket(char* buf) {
+  // Copy packet_type into first byte of network packet
+  memcpy(buf, &packet_type, sizeof(packet_type));
+  // Copy contents into the rest
+  memcpy(buf + sizeof(packet_type), contents, sizeof(contents));
+}
+
 void NetEngine::getUserName() {
   std::string usr_name;
   std::cout << "Enter your username: " << std::endl;
   std::cin >> usr_name;
+  // If bad input, repeat request until good
   while(usr_name.size() == 0 
-  || usr_name.size() > MAX_USERNAME_LEN 
+  || usr_name.size() > MAX_USERNAME_SIZE-1
   || usr_name == "REFRESH" 
   || usr_name == "JOIN"
   || usr_name == "CREATE") {
@@ -333,17 +505,18 @@ void NetEngine::getUserName() {
     usr_name = "";
     std::cin >> usr_name;
   }
+  // Set the username in NetEngine
   setUserName(usr_name);
 }
 
 void NetEngine::setUserName(std::string user_name) {
-  if (user_name.size() < MAX_USERNAME_LEN) {
+  if (user_name.size() < MAX_USERNAME_SIZE) {
     username = user_name;
   } else {
     std::stringstream ss;
     ss << "[Error] ";
     ss << "Net engine failed to set username (" << user_name << ") ";
-    ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_LEN << ")";
+    ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_SIZE-1 << ")";
     ss << std::endl;
     perror(ss.str().c_str());
   }

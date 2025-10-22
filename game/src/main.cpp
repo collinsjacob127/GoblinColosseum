@@ -6,6 +6,7 @@
 
 #include <iostream>  // cout
 #include <thread> // sleep(0) on windows
+#include <csignal>
 
 // #include <cstdlib>  // read environment variables
 #include <SDL3/SDL.h>
@@ -33,15 +34,30 @@
 int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
 
+// Global so cleanup can be guaranteed
+NetEngine net_engine;
+void handleSigint(int signal_num) {
+  std::cout << "Recieved SIGINT.\n";
+  std::cout << "Calling NetEngine destructor...\n";
+  net_engine.~NetEngine();
+  std::cout << "Finished cleaning up NetEngine.\n";
+  exit(0);
+  // renderer.~RenderEngine();
+}
+
 int main(int argc, char* argv[]) {
+  std::signal(SIGINT, handleSigint);
   /****
    * 
    *  Fuck below 
    * 
    ***/
-  NetEngine net_engine;
-  net_engine.getUserName();
-  net_engine.testNetClient();
+   
+  int return_val = 2;
+  while (return_val == 2) {
+    net_engine.getUserName();
+    return_val = net_engine.testNetClient();
+  }
   return 0;
 
   /**
