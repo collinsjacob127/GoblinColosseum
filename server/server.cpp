@@ -160,7 +160,7 @@ int main() {
     std::cout << "[Debug] Initial registry size: " << registry.size() << std::endl;
   }
   if (ENABLE_SERVER_LOG) {
-    printf("Server has started!\n");
+    printf("[Log] Server has started!\n");
   }
 
   bool continue_server = true;
@@ -220,7 +220,7 @@ int main() {
 
         // Remove closed connections from our client list
         if (!FD_ISSET(s, &call_set)) {
-          printf("this shouldn't happen\n");
+          printf("[WTF] this shouldn't happen\n");
           continue;
         }
 
@@ -444,7 +444,7 @@ int main() {
 
   // Close the server's socket
   closeAllInSet(&all_sockets, 3, max_socket);
-  printf("Server closing...\n");
+  printf("[Log] Server closing...\n");
   return 0;
 }
 

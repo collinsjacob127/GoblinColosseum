@@ -249,8 +249,13 @@ std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
   if ((n_bytes = recv(server_sock, buffer, BUFFER_SIZE-1, 0)) < 0) {
     perror("[Error] Error in get peer addr info: ");
     return {};
+  } else {
+    buffer[n_bytes] = '\0';
+    if(ENABLE_NETCODE_DEBUG) {
+      std::cout << "[Debug] Bytes recieved for peer addr: "
+      << n_bytes << std::endl;
+    }
   }
-  buffer[n_bytes] = '\0';
 
   raw_addr = buffer;
   colon_pos = raw_addr.find(':');
