@@ -79,7 +79,7 @@ int testNetClient() {
     iResult = recv(connectSocket, buffer, BUFFER_SIZE, 0);
     if ( iResult > 0 ) {
       printf("Bytes received: %d\n", iResult);
-      std::cout << "Recieved: " << buffer << std::endl;
+      std::cout << "Received: " << buffer << std::endl;
     } else if ( iResult == 0 )
       printf("Connection closed\n");
     else
@@ -139,16 +139,16 @@ int NetEngine::connectToServer() {
   return 0;
 }
 
-std::vector<std::string> NetEngine::recieveServerList() {
+std::vector<std::string> NetEngine::receiveServerList() {
   // Initialize list and buffer
   std::vector<std::string> player_list;
   char buffer[BUFFER_SIZE];
+  std::string n_lobby_str;
+  int n_lobbies;
 
   // First, server sends a single character with how many lobbies there are
-  int n_bytes = -1;
+  int n_bytes = 0;
   n_bytes = recv(server_sock, &buffer, sizeof(buffer), 0);
-  std::string n_lobby_str = buffer;
-  int n_lobbies;
   if (n_bytes < 0) {
     if (ENABLE_NETCODE_ERROR) {
       std::stringstream ss;
@@ -157,9 +157,11 @@ std::vector<std::string> NetEngine::recieveServerList() {
       return {};
     }
   } else {
+    n_lobby_str = buffer;
     n_lobbies = atoi(n_lobby_str.c_str());
     if (ENABLE_NETCODE_DEBUG) {
       std::cout << "[Debug] Original # lobbies recvd: " << n_lobbies << std::endl;
+      std::cout << "[Debug] NTOHS # lobbies recvd: " << ntohs(n_lobbies) << std::endl;
       std::cout << "[Debug] NTOHS # lobbies recvd: " << ntohs(n_lobbies) << std::endl;
     }
     // n_lobbies = ntohs(n_lobbies);
@@ -172,19 +174,17 @@ std::vector<std::string> NetEngine::recieveServerList() {
     return {};
   }
 
-  //TODO: delete this 
-  if (n_lobbies > 10) { return {}; }
-
-  // Recieve each peer's username from the server.
+  // Receive each peer's username from the server.
   for (int i = 0; i < n_lobbies; ++i) {
+    n_bytes = 0;
     n_bytes = recv(server_sock, buffer, MAX_USERNAME_SIZE, 0);
     if (n_bytes < 0) { 
-      perror("[Error] Error in recieving server's list"); 
+      perror("[Error] Error in receiving server's list"); 
       return {};
     }
     std::string peer_username = buffer;
 
-    std::cout << "[Log] Recieved username from server list: " 
+    std::cout << "[Log] Received username from server list: " 
     << peer_username << " (" << n_bytes << "b)" << std::endl;
 
     player_list.push_back(peer_username);
@@ -239,24 +239,31 @@ int NetEngine::sendJoinRequest(std::string peer_name) {
 }
 
 std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
-  char buffer[BUFFER_SIZE] = {0};
-  int n_bytes = -1;
+  char buffer[BUFFER_SIZE];
+  int n_bytes = 0;
   std::string raw_addr = "";
+  size_t colon_pos = std::string::npos;
   std::pair<std::string, std::string> addr_pair;
 
-  // Recieve the address of connecting peer
-  n_bytes = recv(server_sock, buffer, BUFFER_SIZE, 0);
-  if (n_bytes < 0) {
+  // Receive the address of connecting peer
+  if ((n_bytes = recv(server_sock, buffer, BUFFER_SIZE-1, 0)) < 0) {
     perror("[Error] Error in get peer addr info: ");
     return {};
   }
+  buffer[n_bytes] = '\0';
+
   raw_addr = buffer;
+  colon_pos = raw_addr.find(':');
+  if (colon_pos == std::string::npos) {
+    perror("Received bad addr");
+    return {};
+  }
 
   if (ENABLE_NETCODE_DEBUG)
-    std::cout << "[Debug] Peer addr info received: " << raw_addr << std::endl;
+    std::cout << "[Debug] Peer addr info ("
+    << n_bytes << "b) received: " << raw_addr << std::endl;
   
   // Parse ipv4 addr
-  size_t colon_pos = raw_addr.find(':');
   addr_pair.first = raw_addr.substr(0, colon_pos);
   addr_pair.second = raw_addr.substr(colon_pos, raw_addr.size());
 
@@ -266,7 +273,7 @@ std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
     << addr_pair.second << std::endl;
   }
 
-  if (n_bytes < 0) { perror("[Error] Error in recieving server's list"); }
+  if (n_bytes < 0) { perror("[Error] Error in receiving server's list"); }
   return addr_pair;
 }
 
@@ -387,7 +394,7 @@ int NetEngine::testNetClient() {
   }
 
 
-  // 4 (JOIN). Send join request and recieve list of users in server's registry
+  // 4 (JOIN). Send join request and receive list of users in server's registry
   if (join_or_create == 0) {
     std::vector<std::string> player_list = {};
 
@@ -404,37 +411,28 @@ int NetEngine::testNetClient() {
       return -1;
     } 
 
-    // Recieve list of open lobbies
-    player_list = recieveServerList();
+    // Receive list of open lobbies
+    player_list = receiveServerList();
 
     // Select a lobby if there are any
     if (player_list.size() > 0) {
-      std::cout << "[Log] Recieved lobby list: " << std::endl;
+      std::cout << "[Log] Received lobby list: " << std::endl;
       printStringVec(player_list);
       // Send name of user requested OR refresh
       size_t selection = selectLobby(player_list.size()-1);
     } else {
       std::cout << "[Log] No lobbies found." << std::endl;
+      disconnectServer();
+      return -1;
     }
   }
 
-  if (attempt_cnt >= max_attempts) {
-    std::cerr << "[Error] Hit maximum # lobby requests. Closing connection.\n";
-    disconnectServer();
-  } 
-
-
-  //TODO: TCP Holepunch
-  // disconnectServer();
-  // return -1;
-  // Remove above
-
-  // 5. Wait to recieve address of connecting peer
-  std::pair<std::string, std::string> addr_strs = getPeerAddrInfo();
+  // 5. Wait to receive address of connecting peer
+  std::pair<std::string, std::string> addr_strs = getPeerAddrInfo(); // blocking
   std::string peer_ipv4 = addr_strs.first;
   std::string peer_port = addr_strs.second;
 
-  std::cout << "Recieved ipv4: " << peer_ipv4 << ":" << peer_port << std::endl;
+  std::cout << "Received ipv4: " << peer_ipv4 << ":" << peer_port << std::endl;
 
   // Close the server connection
   disconnectServer();

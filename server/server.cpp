@@ -234,7 +234,7 @@ int main() {
         if (len > (int) MAX_PACKET_SIZE) {
           std::stringstream ss;
           ss << "[Error] ";
-          ss << "Recieved invalid packet from: ";
+          ss << "Received invalid packet from: ";
           ss << registry.at(s).getReprString();
           perror(ss.str().c_str());
           disconnectPlayer(&registry, s, &all_sockets);
@@ -248,7 +248,7 @@ int main() {
           perror(ss.str().c_str());
           disconnectPlayer(&registry, s, &all_sockets);
         } else if (len == 0) {
-          /* Recieved empty */
+          /* Received empty */
 
           // Only close if a match has been made for this user
           if (!registry.at(s).match_made) { continue; }
@@ -256,7 +256,7 @@ int main() {
           // Match has been made, user connection finished
           disconnectPlayer(&registry, s, &all_sockets);
         } else {
-          /* Recieved non-empty */
+          /* Received non-empty */
 
           if (ENABLE_SERVER_DEBUG) {
             std::cout << "[Debug] Len of Received: " << len << std::endl;
@@ -272,7 +272,7 @@ int main() {
             case 0: 
             {
               // CLIENT INITIALIZING WITH THEIR USERNAME
-              std::cout << "[Log] Recieved username: " << str_contents << std::endl;
+              std::cout << "[Log] Received username: " << str_contents << std::endl;
               // Check unique
               PlayerEntry tmp = getEntryFromUserName(&registry, str_contents);
               std::string out_msg;
@@ -285,7 +285,8 @@ int main() {
                 send(s, out_msg.c_str(), sizeof(out_msg), 0);
                 // Begone
                 disconnectPlayer(&registry, s, &all_sockets);
-                continue;
+                // continue;
+                break;
               }
               // Set username
               cur_client->user_name = str_contents;
@@ -294,7 +295,7 @@ int main() {
             case 1: 
             {
               // CLIENT REQUESTING JOIN OR CREATE
-              std::cout << "[Log] Recieved join/create notification: " << str_contents << std::endl;
+              std::cout << "[Log] Received join/create notification: " << str_contents << std::endl;
               if (cur_client->user_name == "") {
                 // Gotta send your own name first, bub
                 continue;
@@ -311,19 +312,23 @@ int main() {
                   disconnectPlayer(&registry, s, &all_sockets);
                   continue;
                 }
+
+                // Gather current list of players with open lobbies
                 std::vector<std::string> open_lobbies = getLobbyList(&registry);
                 std::stringstream ss;
                 ss << open_lobbies.size();
-                std::string n_lobby_str;
-                if (ENABLE_SERVER_LOG) {
-                  std::cout << "[Log] Sending " << n_lobby_str << " lobbies to "
-                  << cur_client->user_name << std::endl;
-                }
+                std::string n_lobby_str = ss.str();
                 // Send the lobby count first
                 int n_bytes = send(s, n_lobby_str.c_str(), sizeof(n_lobby_str), 0);
+                if (ENABLE_SERVER_LOG) {
+                  std::cout << "[Log] Sent lobby count of " << n_lobby_str
+                  << " (" << sizeof(n_lobby_str) << "b) to "
+                  << cur_client->user_name << std::endl;
+                }
                 if (n_bytes < 0) {
                   perror("[Error] Failed to send client lobby count");
-                  continue;
+                  disconnectPlayer(&registry, s, &all_sockets);
+                  break;
                 }
 
                 // Iterate through the list of lobbies and send them all
@@ -335,15 +340,20 @@ int main() {
                   n_bytes = send(s, lobby_uname.c_str(), sizeof(lobby_uname), 0);
                   if (n_bytes < 0) {
                     perror("[Error] Error occured while sending lobby list");
+                    disconnectPlayer(&registry, s, &all_sockets);
                     break;
                   }
                 }
               } else if (str_contents == "CREATE") {
                 // If creating -> make them a lobby
                 cur_client->open_lobby = true;
+                if (ENABLE_SERVER_LOG) {
+                  std::cout << "[Log] " << cur_client->getReprString() 
+                  << " marked with open_lobby\n";
+                }
               } else {
                 if (ENABLE_SERVER_ERROR) {
-                  std::cerr << "[Error] Invalid JOIN/CREATE message recieved" << std::endl;
+                  std::cerr << "[Error] Invalid JOIN/CREATE message received" << std::endl;
                 }
               }
               break;
@@ -356,15 +366,17 @@ int main() {
                 if(ENABLE_SERVER_ERROR) {
                   std::cerr << "[Error] Client trying to request multiple matches\n";
                 }
-                continue;
+                // continue;
+                break;
               }
 
-              std::cout << "[Log] Recieved lobby join request: " << str_contents << std::endl;
+              std::cout << "[Log] Received lobby join request: " << str_contents << std::endl;
               PlayerEntry peer = getEntryFromUserName(&registry, contents);
 
               if (cur_client->user_name == "") {
                 // Gotta send your own name first, bub
-                continue;
+                // continue;
+                break;
               }
               if (peer.match_made) {
                 if(ENABLE_SERVER_ERROR) {
@@ -372,7 +384,8 @@ int main() {
                 }
                 // Match already made, yikes
                 disconnectPlayer(&registry, s, &all_sockets);
-                continue;
+                // continue;
+                break;
               }
 
               // All good in the hood, send their data to eachother
@@ -387,7 +400,7 @@ int main() {
                 }
               } else {
                 if (ENABLE_SERVER_LOG) {
-                  std::cout << "[Log] Sent peer addr to client\n";
+                  std::cout << "[Log] Sent peer addr to client: " << peer_addr << std::endl;
                 }
               }
 
@@ -416,7 +429,7 @@ int main() {
             default: 
             {
               // INVALID HEADER
-              std::cerr << "Invalid packet type recieved ("
+              std::cerr << "Invalid packet type received ("
               << pkt_type << "). Aborting." << std::endl;
               closeAllInSet(&all_sockets, 3, max_socket);
               return -1;

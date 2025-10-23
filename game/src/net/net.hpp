@@ -1,6 +1,7 @@
 /**
  * Header for network functionality. 
  * Overloaded in header.cpp with platform-specific implementations.
+ * Bro is the goat: https://beej.us/guide/bgnet/html/index-wide.html
  */
 
 #pragma once
@@ -129,7 +130,7 @@ class NetEngine {
   /**
    * @brief Function to retrieve the current list of users from the server
    */
-  std::vector<std::string> recieveServerList();
+  std::vector<std::string> receiveServerList();
 
   /**
    * @brief Function to determine whether the user wishes to
