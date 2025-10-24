@@ -36,7 +36,7 @@ int startLocalGame(RenderEngine* renderer);
 
 // Global so cleanup can be guaranteed
 NetEngine net_engine;
-void handleSigint(int signal_num) {
+void handleUnexpectedClosure(int signal_num) {
   std::cout << "Recieved SIGINT.\n";
   std::cout << "Calling NetEngine destructor...\n";
   net_engine.~NetEngine();
@@ -46,7 +46,9 @@ void handleSigint(int signal_num) {
 }
 
 int main(int argc, char* argv[]) {
-  std::signal(SIGINT, handleSigint);
+  std::signal(SIGINT, handleUnexpectedClosure);
+  std::signal(SIGABRT, handleUnexpectedClosure);
+  std::signal(SIGTERM, handleUnexpectedClosure);
   /****
    * 
    *  Fuck below 

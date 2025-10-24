@@ -39,8 +39,8 @@
 
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
-constexpr size_t MAX_USERNAME_LEN = 25;
-constexpr size_t MAX_PACKET_SIZE = 26;
+constexpr ssize_t MAX_USERNAME_LEN = 25;
+constexpr ssize_t MAX_PACKET_SIZE = 26;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 64;
 
@@ -129,6 +129,12 @@ std::vector<std::string> getLobbyList(std::map<int, PlayerEntry> *registry);
  */
 void disconnectPlayer(std::map<int, PlayerEntry> *registry, int fd, fd_set *sock_set);
 
+/**
+ * @brief Function to send a packet to given client with contents "GOOD" or "BAD".
+ * @return returns bytes sent or -1 on error.
+ */
+ssize_t sendConfirmationResponse(int fd, bool is_good);
+
 void handleSigint(int signal_num);
 
 int main() {
@@ -155,7 +161,6 @@ int main() {
 
   // Maps fd -> Player Entry
   std::map<int, PlayerEntry> registry;
-  std::map<std::string, PlayerEntry> lobbies;
   if (ENABLE_SERVER_DEBUG) {
     std::cout << "[Debug] Initial registry size: " << registry.size() << std::endl;
   }
@@ -225,19 +230,20 @@ int main() {
         }
 
         char buf[BUFFER_SIZE] = {0};
-        int len;
+        ssize_t len;
 
         // Populate buffer with packet contents
         len = recv(s, buf, sizeof(buf), 0);
 
         // Verify valid packet size
-        if (len > (int) MAX_PACKET_SIZE) {
+        if (len > MAX_PACKET_SIZE) {
           std::stringstream ss;
           ss << "[Error] ";
           ss << "Received invalid packet from: ";
           ss << registry.at(s).getReprString();
           perror(ss.str().c_str());
           disconnectPlayer(&registry, s, &all_sockets);
+          continue;
         }
 
         if (len < 0) {
@@ -294,107 +300,80 @@ int main() {
             }
             case 1: 
             {
-              // CLIENT REQUESTING JOIN OR CREATE
-              std::cout << "[Log] Received join/create notification: " << str_contents << std::endl;
+              // CLIENT REQUESTING TO CREATE LOBBY
+              std::cout << "[Log] Received create notification: " << str_contents << std::endl;
+              ssize_t n_bytes;
               if (cur_client->user_name == "") {
                 // Gotta send your own name first, bub
+                // Send failure packet
+                if ((n_bytes = sendConfirmationResponse(s, false)) < 0) {
+                  perror("[Error] Failed to send BAD response\n");
+                }
+                disconnectPlayer(&registry, s, &all_sockets);
                 continue;
               }
 
-              if (str_contents == "JOIN") {
-                // If joining -> send them list of current lobbies
-                // Ensure valid state
-                if (cur_client->open_lobby) {
-                  // This mf breaking the rules
-                  if (ENABLE_SERVER_ERROR) {
-                    std::cerr << "[Error] Client JOIN with open_lobby flag. Closing them." << std::endl;
-                  }
-                  disconnectPlayer(&registry, s, &all_sockets);
-                  continue;
-                }
+              // If creating -> make them a lobby
+              cur_client->open_lobby = true;
+              if (ENABLE_SERVER_LOG) {
+                std::cout << "[Log] User " << cur_client->user_name << " marked with open_lobby\n";
+              }
 
-                // Gather current list of players with open lobbies
-                std::vector<std::string> open_lobbies = getLobbyList(&registry);
-                std::stringstream ss;
-                ss << open_lobbies.size();
-                std::string n_lobby_str = ss.str();
-                // Send the lobby count first
-                int n_bytes = send(s, n_lobby_str.c_str(), sizeof(n_lobby_str), 0);
-                if (ENABLE_SERVER_LOG) {
-                  std::cout << "[Log] Sent lobby count of " << n_lobby_str
-                  << " (" << sizeof(n_lobby_str) << "b) to "
-                  << cur_client->user_name << std::endl;
-                }
-                if (n_bytes < 0) {
-                  perror("[Error] Failed to send client lobby count");
-                  disconnectPlayer(&registry, s, &all_sockets);
-                  break;
-                }
-
-                // Iterate through the list of lobbies and send them all
-                for (size_t i = 0; i < open_lobbies.size(); i++) {
-                  if (ENABLE_SERVER_DEBUG) {
-                    std::cout << "[Debug] Sending lobby " << open_lobbies.at(i) << std::endl;
-                  }
-                  std::string lobby_uname = open_lobbies.at(i);
-                  n_bytes = send(s, lobby_uname.c_str(), sizeof(lobby_uname), 0);
-                  if (n_bytes < 0) {
-                    perror("[Error] Error occured while sending lobby list");
-                    disconnectPlayer(&registry, s, &all_sockets);
-                    break;
-                  }
-                }
-              } else if (str_contents == "CREATE") {
-                // If creating -> make them a lobby
-                cur_client->open_lobby = true;
-                if (ENABLE_SERVER_LOG) {
-                  std::cout << "[Log] " << cur_client->getReprString() 
-                  << " marked with open_lobby\n";
-                }
+              // Send success packet
+              if ((n_bytes = sendConfirmationResponse(s, true)) < 0) {
+                disconnectPlayer(&registry, s, &all_sockets);
               } else {
-                if (ENABLE_SERVER_ERROR) {
-                  std::cerr << "[Error] Invalid JOIN/CREATE message received" << std::endl;
+                if (ENABLE_SERVER_LOG) {
+                  std::cout << "[Log] GOOD response successfully sent. \n";
                 }
               }
+
               break;
             }
-            case 2: 
+            case 2:
             {
-              // CLIENT REQUESTING TO JOIN PEER'S LOBBY
-              if (cur_client->match_made) {
-                // What, how
-                if(ENABLE_SERVER_ERROR) {
-                  std::cerr << "[Error] Client trying to request multiple matches\n";
-                }
-                // continue;
-                break;
-              }
+              // Requesting list of lobbies
 
-              std::cout << "[Log] Received lobby join request: " << str_contents << std::endl;
+              break;
+            }
+            case 3: 
+            {
+              // Requesting IP info of peer
+              std::cout << "[Log] Received peer addr request: " << str_contents << std::endl;
               PlayerEntry peer = getEntryFromUserName(&registry, contents);
+              ssize_t n_bytes;
 
-              if (cur_client->user_name == "") {
-                // Gotta send your own name first, bub
-                // continue;
+              if (cur_client->user_name == "" || peer.user_name == "") {
+                // Gotta send your own name first, bub OR bad user request
+                char tmp[6] = {0};
+                if ((n_bytes = send(s, tmp, 6, 0)) < 0) {
+                  perror("[Error] Failed to send addr request failure notif\n");
+                }
                 break;
               }
+
               if (peer.match_made) {
                 if(ENABLE_SERVER_ERROR) {
                   std::cerr << "[Error] Client trying to request match with busy peer\n";
                 }
                 // Match already made, yikes
+                sendConfirmationResponse(s, false);
                 disconnectPlayer(&registry, s, &all_sockets);
                 // continue;
                 break;
               }
 
               // All good in the hood, send their data to eachother
+              int s2 = peer.socket_descriptor;
+              // Get addr and port of peer
+              uint32_t peer_addr = htonl(peer.address.sin_addr.s_addr);
+              uint16_t peer_port = htons(peer.port_num);
+              unsigned char out_buf[6];
+              // Copy into output buffer
+              memcpy(out_buf, &peer_addr, 4);
+              memcpy(out_buf+4, &peer_port, 2);
               // Send peer addr to client
-              std::stringstream ss;
-              ss << peer.ipv4_str << ":" << peer.port_num;
-              std::string peer_addr = ss.str();
-              int n_bytes = send(s, peer_addr.c_str(), peer_addr.size(), 0);
-              if (n_bytes < 0) {
+              if ((n_bytes = send(s, out_buf, 6, 0)) < 0) {
                 if (ENABLE_SERVER_ERROR) {
                   perror("[Error] Failed to send peer addr to client");
                 }
@@ -405,11 +384,12 @@ int main() {
               }
 
               // Send client addr to peer
-              std::stringstream ss2;
-              ss2 << cur_client->ipv4_str << ":" << cur_client->port_num;
-              std::string client_addr = ss2.str();
-              n_bytes = send(s, client_addr.c_str(), client_addr.size(), 0);
-              if (n_bytes < 0) {
+              uint32_t cli_addr = htonl(cur_client->address.sin_addr.s_addr);
+              uint16_t cli_port = htons(cur_client->port_num);
+              // Copy into output buffer
+              memcpy(out_buf, &cli_addr, 4);
+              memcpy(out_buf+4, &cli_port, 2);
+              if ((n_bytes = send(s2, out_buf, 6, 0)) < 0) {
                 if (ENABLE_SERVER_ERROR) {
                   perror("[Error] Failed to send client addr to peer");
                 }
@@ -420,7 +400,6 @@ int main() {
               }
 
               // Remove their entries
-              int s2 = peer.socket_descriptor;
               disconnectPlayer(&registry, s, &all_sockets);
               disconnectPlayer(&registry, s2, &all_sockets);
 
@@ -554,4 +533,26 @@ void handleSigint(int signal_num) {
   FD_ZERO(&all_sockets);
   FD_ZERO(&call_set);
   std::cout << "[Log] Server shutting down safely.\n";
+}
+
+ssize_t sendConfirmationResponse(int fd, bool is_good) {
+  std::string response;
+  if (is_good) {
+    response = "GOOD";
+  } else {
+    response = "BAD";
+  }
+
+  ssize_t n_bytes;
+  if ((n_bytes = send(fd, response.c_str(), sizeof(response), 0)) < 0) {
+    if (ENABLE_SERVER_LOG) {
+      std::cout << "[Log] Creation confirmation response successfuly sent (" 
+      << response.c_str() << ")" << std::endl;
+    }
+  } else {
+    if (ENABLE_SERVER_ERROR) {
+      perror("[Error] Failed to send creation confirmation response");
+    }
+  }
+  return n_bytes;
 }
