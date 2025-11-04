@@ -43,15 +43,20 @@ struct AddrInfoPkt {
 
 /**
  * @brief Struct for packaging packets sent to server
+ * @note [ [Packet type - 1B] [Session ID - 8B] [Contents - 25B] ] Total - 36B
  */
 struct ClientPacket {
+
   /* Packet types:
-   * @note 0 -> Sending own username (Entering server). Expects server response "GOOD"
-   * @note 1 -> (CREATE) Requesting to create a lobby. Expects server sesponse "GOOD"
+   * @note 0 -> Sending own username (Entering server). Server responds with unique session ID
+   * @note 1 -> (CREATE) Requesting to create a lobby. 
    * @note 2 -> (LIST) Requesting list of available peers. 
-   * @note 3 -> Requesting ip addr of peer. 
+   * @note 3 -> (JOIN) Requesting ip addr of peer. 
   */
-  char packet_type = 0;
+  uint8_t packet_type = 0;
+
+  // Random number assigned by server. Used to self-identify when making requests.
+  uint64_t session_id = 0;
 
   /* Contents types (c-string):
    * @note 0 -> Own username
