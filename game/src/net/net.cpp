@@ -6,94 +6,11 @@
 
 #include "net.hpp"
 
-//DELETE THIS
 #ifdef _WIN32
-
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
-
-#pragma comment(lib, "Ws2_32.lib")
-
-
 int testNetClient() {
-  std::cout << "Running windows netcode" << std::endl;
-  Timer timer;
-  timer.start();
-
-  // Do boilerplate winsock stuff 
-  WSADATA wsaData;
-  int iResult;
-  WSAStartup(MAKEWORD(2, 2), &wsaData);
-  char buffer[BUFFER_SIZE] = {0};
-
-  SOCKET connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  sockaddr_in serverAddr;
-  serverAddr.sin_family = AF_INET;
-  inet_pton(AF_INET, SERVER_ADDR, &serverAddr.sin_addr); // Connect to localhost
-  serverAddr.sin_port = htons(SERVER_PORT); // Example port
-
-  connect(connectSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
-  // ... send and receive data with connectSocket ...
-  if (connectSocket == INVALID_SOCKET) {
-    printf("Unable to connect to server!\n");
-    WSACleanup();
-    return 1;
-  }
-
-  // Send test packet thrice
-  for (int i = 0; i < 3; ++i) {
-    // Send one per 2 second
-    if (timer.duration() < (double)i * 2) {
-      --i;
-      continue;
-    }
-
-    std::stringstream ss;
-    ss << "Hello #" << i << " from Windows client!" << std::endl;
-    std::string hello = ss.str();
-
-    iResult = send( connectSocket, hello.c_str(), hello.size(), 0 );
-    if (iResult == SOCKET_ERROR) {
-      printf("send failed with error: %d\n", WSAGetLastError());
-      closesocket(connectSocket);
-      WSACleanup();
-      return 1;
-    }
-    printf("Bytes Sent: %ld\n", iResult);
-  }
-
-
-  // shutdown the connection since no more data will be sent
-  iResult = shutdown(connectSocket, SD_SEND);
-  if (iResult == SOCKET_ERROR) {
-    printf("shutdown failed with error: %d\n", WSAGetLastError());
-    closesocket(connectSocket);
-    WSACleanup();
-    return 1;
-  }
-
-// Receive until the peer closes the connection
-  do {
-
-    iResult = recv(connectSocket, buffer, BUFFER_SIZE, 0);
-    if ( iResult > 0 ) {
-      printf("Bytes received: %d\n", iResult);
-      std::cout << "Received: " << buffer << std::endl;
-    } else if ( iResult == 0 )
-      printf("Connection closed\n");
-    else
-      printf("recv failed with error: %d\n", WSAGetLastError());
-
-  } while( iResult > 0 );
-
-  closesocket(connectSocket);
-  WSACleanup();
-  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-  << timer.duration() << "s\n";
+  std::cout << "No windows netcode right now." << std::endl;
   return 0;
 }
-
 #else
 
 #include <unistd.h>
@@ -102,17 +19,57 @@ int testNetClient() {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+int NetEngine::testNetClient() {
+  std::cout << "[Log] Running linux netcode" << std::endl;
+  Timer timer;
+  timer.start();
+  int result, attempt_cnt, max_attempts = 3;
+  ServerPacket in_pkt;
+
+  // 1. Bind server connection to the returned socket
+  result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return -1;
+  }
+  ClientPacket out_pkt(0, 69, 420, username);
+  sendClientPacket(out_pkt);
+
+  // 2. Send your username to initialize server connection
+  // result = -1;
+  // result = sendUserName();
+  // if (result == 1) {
+  //   serverDisconnect();
+  //   return 1; // Retry username
+  // }
+
+  // Close the server connection
+  serverDisconnect();
+
+  // Connect to peer
+
+  // Test peer connection
+
+  // Close peer connection
+
+  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
+  << timer.duration() << "s\n";
+
+  return 0;
+}
+
 NetEngine::NetEngine() {
   server_sock = -1;
   peer_sock = -1;
 }
 
 NetEngine::~NetEngine() {
-  disconnectServer();
-  disconnectPeer();
+  serverDisconnect();
+  peerDisconnect();
 }
 
-int NetEngine::connectToServer() {
+int NetEngine::serverConnect() {
   struct sockaddr_in serv_addr;
   // Creating socket file descriptor
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -139,344 +96,46 @@ int NetEngine::connectToServer() {
   return 0;
 }
 
-int NetEngine::sendUserName() {
-  ssize_t n_bytes;
-  ClientPacket pkt(0, username);
-  if ((n_bytes = pkt.sendPacket(server_sock)) < 0) {
-    perror("[Error] Username send failed\n");
-    return -1;
-  } else if (ENABLE_NETCODE_DEBUG) {
-    std::cout << "[Debug] Username sent ("
-    << username << " - " << n_bytes << "b)\n";
-  }
-  
-  if ((n_bytes = verifyGoodResponse()) < 0) {
-    if (ENABLE_NETCODE_LOG) {
-      std::cout << "[Log] Username send failed." << std::endl;
+ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
+  unsigned char buf[BUFFER_SIZE];
+
+  // Populate buffer with packet contents (prepped for netsend)
+  ssize_t pkt_size = out_pkt.buildPacket(buf);
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = send(server_sock, buf, pkt_size-total_bytes_sent, 0);
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::stringstream ss;
+        ss << "[Error] Failed to send packet: ";
+        ss << out_pkt.getStringFromBuffer(buf, pkt_size);
+        perror(ss.str().c_str());
+      }
+      return bytes_sent;
     }
   }
 
-  return n_bytes;
+  return total_bytes_sent;
 }
 
-int NetEngine::getJoinOrCreate() {
-  int selection = -1;
-  std::cout << "Select JOIN or CREATE:" << std::endl;
-  std::cout << "[0] JOIN" << std::endl;
-  std::cout << "[1] CREATE" << std::endl;
-  std::cin >> selection;
-  while (selection != 0 && selection != 1) {
-    std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
-    std::cin >> selection;
-  }
-  return selection;
+ServerPacket NetEngine::recvServerPacket() {
+  return ServerPacket();
 }
 
-int NetEngine::sendCreate() {
-  // Build packet with necessary info
-  ClientPacket pkt(1, "CREATE");
-  ssize_t n_bytes;
-  if ((n_bytes = pkt.sendPacket(server_sock))< 0) {
-    std::cerr << "[Error] Failed to send create packet" << std::endl;
-    return -1;
-  }
-
-  if(ENABLE_NETCODE_DEBUG) { std::cout << "[Debug] CREATE packet sent\n"; }
-
-  if ((n_bytes = verifyGoodResponse()) < 0) {
-    if (ENABLE_NETCODE_LOG) {
-      std::cout << "[Log] CREATE request failed." << std::endl;
-    }
-    return n_bytes;
-  } else {
-    if (ENABLE_NETCODE_LOG) {
-      std::cout << "[Log] CREATE request succeeded." << std::endl;
-    }
-  }
-
-  return 0; 
-}
-
-std::vector<std::string> NetEngine::receiveServerList() {
-  // Build packet with necessary info
-  ClientPacket pkt(2, "LIST");
-  // Send and verify bytes
-  if (ENABLE_NETCODE_DEBUG) {
-    std::cout << "[Debug] Preparing to request LIST" << std::endl;
-  }
-  // Send network packet
-  ssize_t n_bytes;
-  if ((n_bytes  = pkt.sendPacket(server_sock)) < 0) {
-    perror("[Error] Failed to send LIST request:");
-    return {};
-  } else if (ENABLE_NETCODE_LOG) {
-    std::cout << "[Log] LIST request sent" << std::endl;
-  }
-
-  // Initialize list and buffer
-  std::vector<std::string> player_list;
-  char buffer[BUFFER_SIZE];
-  std::string n_lobby_str;
-  int n_lobbies;
-
-  // First, server sends a single character with how many lobbies there are
-  if ((n_bytes = recv(server_sock, &buffer, sizeof(buffer), 0)) < 0) {
-    if (ENABLE_NETCODE_ERROR) {
-      std::stringstream ss;
-      ss << "[Error] Failed to receive number of lobbies being sent\n";
-      perror(ss.str().c_str());
-      return {};
-    }
-  } else {
-    n_lobby_str = buffer;
-    n_lobbies = atoi(n_lobby_str.c_str());
-    if (ENABLE_NETCODE_DEBUG) {
-      std::cout << "[Debug] Original # lobbies recvd: " << n_lobbies << std::endl;
-      std::cout << "[Debug] NTOHS # lobbies recvd: " << ntohs(n_lobbies) << std::endl;
-      std::cout << "[Debug] NTOHS # lobbies recvd: " << ntohs(n_lobbies) << std::endl;
-    }
-    // n_lobbies = ntohs(n_lobbies);
-    if(ENABLE_NETCODE_LOG) {
-      std::cout << "[Log] Server says to expect " << n_lobbies << " lobby names\n";
-    }
-  }
-
-  if (n_lobbies <= 0) {
-    return {};
-  }
-
-  // Receive each peer's username from the server.
-  for (int i = 0; i < n_lobbies; ++i) {
-    n_bytes = 0;
-    n_bytes = recv(server_sock, buffer, MAX_USERNAME_SIZE, 0);
-    if (n_bytes < 0) { 
-      perror("[Error] Error in receiving server's list"); 
-      return {};
-    }
-    std::string peer_username = buffer;
-
-    std::cout << "[Log] Received username from server list: " 
-    << peer_username << " (" << n_bytes << "b)" << std::endl;
-
-    player_list.push_back(peer_username);
-  }
-
-  return player_list;
-}
-
-size_t NetEngine::selectLobby(size_t max_idx) {
-  int selection = -1;
-  std::cout << "Select peer to join (" << 0 << " - " << max_idx << ")" << std::endl;
-  std::cin >> selection;
-  while (selection < 0 || selection > max_idx) {
-    std::cout << "Invalid selection, please try again.\n";
-    std::cin >> selection;
-  }
-  return 0;
-}
-
-int NetEngine::sendJoinRequest(std::string peer_name) {
-  // Verify peer name length
-  if (!(peer_name.size() < MAX_USERNAME_SIZE)) {
-    std::cerr << "[Error] Requesting to join peer with name too large: " 
-    << peer_name << std::endl;
-  }
-
-  // Initialize lobby request packet
-  ClientPacket pkt(0, peer_name.c_str());
-  // Send it over
-  ssize_t n_bytes = pkt.sendPacket(server_sock);
-  // Verify good send
-  if (n_bytes < 0) {
-    perror("[Error] Lobby join request failed\n");
-    return -1;
-  }
-  // Log
-  std::cout << "[Log] Lobby join request sent: " << username << std::endl;
-  return 0;
-}
-
-std::pair<std::string, std::string> NetEngine::getPeerAddrInfo() {
-  std::pair<std::string, std::string> addr_pair;
-  unsigned char buffer[6]; // ipv4=4 + port=2
-  int n_bytes = 0;
-
-  // Sending packet with header 3 - request for peer addr
-  ClientPacket out_pkt(3, "");
-  if ((n_bytes = out_pkt.sendPacket(server_sock)) < 0) {
-    perror("\n[Error] Failed to send request for peer addr\n");
-    return {};
-  }
-
-  // Receive the address of connecting peer
-  if ((n_bytes = recv(server_sock, buffer, 6, 0)) < 0) {
-    perror("[Error] Error in get peer addr info: ");
-    return {};
-  } else {
-    if(ENABLE_NETCODE_DEBUG) {
-      std::cout << "[Debug] Bytes recieved for peer addr: "
-      << n_bytes << std::endl;
-    }
-  }
-
-  if (n_bytes != 6) {
-    if (ENABLE_NETCODE_ERROR) {
-      std::cerr << "[Error] Invalid packet size returned on peer addr request\n";
-    }
-    return {};
-  }
-
-  uint32_t peer_addr = ntohl(*buffer);
-  uint16_t peer_port = ntohs(*(buffer + 4));
-
-  if (ENABLE_NETCODE_DEBUG) {
-    std::cout << "[Debug] Addr parsed as: " 
-    << peer_addr << ":" 
-    << peer_port << std::endl;
-  }
-
-  std::stringstream ss_addr;
-  std::cout << "[         ] IPV4: " << (uint8_t) *(&peer_addr) << std::endl;
-  ss_addr << (uint8_t) *(&peer_addr);
-  for (size_t i = 1; i < 4; ++i) {
-    std::cout << "[         ] IPV4: " << (uint8_t) *(&peer_addr + i) << std::endl;
-    ss_addr << "." << (uint8_t) *(&peer_addr + i);
-  }
-  addr_pair.first = ss_addr.str();
-  std::stringstream ss_port;
-  ss_port << peer_port;
-  addr_pair.second = ss_port.str();
-
-  if (ENABLE_NETCODE_DEBUG) {
-    std::cout << "[Debug] Addr parsed as: " 
-    << addr_pair.first << ":" 
-    << addr_pair.second << std::endl;
-  }
-
-  return addr_pair;
-}
-
-ssize_t NetEngine::verifyGoodResponse() {
-  char serv_cstr[MAX_USERNAME_SIZE];
-  ssize_t n_bytes = recv(server_sock, serv_cstr, MAX_USERNAME_SIZE-1, 0);
-  if (n_bytes < 0) {
-    perror("[Error] Server response not received");
-    return -1;
-  } else {
-  serv_cstr[n_bytes] = '\0';
-    std::string server_feedback = serv_cstr;
-    if (ENABLE_NETCODE_DEBUG) {
-      std::cout << "[Debug] Server responded with " 
-      << server_feedback << std::endl;
-    }
-    if (server_feedback != "GOOD") {
-      std::cout << "[Log] Server notified BAD, please try again\n";
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int NetEngine::testNetClient() {
-  std::cout << "[Log] Running linux netcode" << std::endl;
-  Timer timer;
-  timer.start();
-  int result, attempt_cnt, max_attempts = 3;
-  char buffer[BUFFER_SIZE] = {0};
-
-  // 1. Bind server connection to the returned socket
-  result = connectToServer();
-  if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
-    disconnectServer();
-    return -1;
-  }
-
-
-  // 2. Send your username to initialize server connection
-  result = -1;
-  result = sendUserName();
-  if (result == 1) {
-    disconnectServer();
-    return 1; // Retry username
-  }
-
-
-  // 3. Would you like to view lobbies or create a lobby
-  int join_or_create = getJoinOrCreate();
-
-
-  // 4 (CREATE). Send server notification that you wish to create a lobby
-  result = 0;
-  if (join_or_create == 1) {
-    // Tell server you wish to CREATE a game
-    if ((result = sendCreate()) < 0) {
-      std::cerr << "[Error] Failed to send lobby creation message." << std::endl;
-      disconnectServer();
-      return -1;
-    };
-  }
-
-  // 4 (LIST) Request list of current lobbies from server
-  if (join_or_create == 0) {
-    std::vector<std::string> player_list = {};
-
-    // Link this to button instead of looping until one is found
-    if (ENABLE_NETCODE_DEBUG) {
-      std::cout << "[Debug] Preparing to request lobby list from server" << std::endl;
-    }
-
-    // Receive list of open lobbies
-    player_list = receiveServerList();
-
-    // Select a lobby if there are any
-    if (player_list.size() > 0) {
-      std::cout << "[Log] Received lobby list: " << std::endl;
-      printStringVec(player_list);
-      // Send name of user requested OR refresh
-      size_t selection = selectLobby(player_list.size()-1);
-    } else {
-      std::cout << "[Log] No lobbies found." << std::endl;
-      disconnectServer();
-      return -1;
-    }
-  }
-
-  // 5. Wait to receive address of connecting peer
-  std::pair<std::string, std::string> addr_strs;
-  while ((addr_strs = getPeerAddrInfo()).second == "0") {
-    std::cout << "[Log] Peer not yet assigned for connection, waiting...\n";
-    sleep(2);
-  }
-  std::string peer_ipv4 = addr_strs.first;
-  std::string peer_port = addr_strs.second;
-
-  if (ENABLE_NETCODE_LOG) {
-    std::cout << "[Log] Received ipv4: " << peer_ipv4 << ":" << peer_port << std::endl;
-  }
-
-  // Close the server connection
-  disconnectServer();
-
-  // Connect to peer
-
-  // Test peer connection
-
-  // Close peer connection
-
-  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-  << timer.duration() << "s\n";
-
-  return 0;
-}
-
-void NetEngine::disconnectServer() {
+void NetEngine::serverDisconnect() {
   if (server_sock > 0) {
     close(server_sock);
     server_sock = -1;
+    if(ENABLE_NETCODE_LOG) {
+      std::cout << "[Log] Disconnected from server.\n";
+    }
   }
 }
-void NetEngine::disconnectPeer() {
+
+void NetEngine::peerDisconnect() {
   if (peer_sock > 0) {
     close(peer_sock);
     peer_sock = -1;
@@ -485,9 +144,11 @@ void NetEngine::disconnectPeer() {
 
 #endif
 
-ClientPacket::ClientPacket(char type, std::string val) {
+ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
   // Set first header value (no need to modify)
   packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
 
   // Set contents (string copy and guarantee null terminator)
   strncpy(contents, val.c_str(), MAX_USERNAME_SIZE-1);
@@ -501,28 +162,77 @@ ClientPacket::ClientPacket(char type, std::string val) {
   }
 }
 
-ssize_t ClientPacket::sendPacket(int fd) {
-  contents[MAX_USERNAME_SIZE-1] = '\0';
-  // Initialize buffer for packet to send
-  char buf[sizeof(ClientPacket)];
-  if (ENABLE_CLIENTPACKET_PRESEND_INSPECTION) {
-    std::cout << "[PACKET PRE-SEND] type = " << packet_type << std::endl;
-    std::cout << "[PACKET PRE-SEND] contents = " << packet_type << std::endl;
-    std::cout << "[PACKET PRE-SEND] # bytes = " << sizeof(buf) << std::endl;
+ssize_t ClientPacket::buildPacket(unsigned char* buf) {
+  // Calculate buffer size
+  size_t pkt_size = 
+  (
+    sizeof(packet_type) + 
+    sizeof(session_id) +
+    sizeof(lobby_id) +
+    sizeof(contents)
+  );
+
+  if (ENABLE_CLIENTPACKET_PRESEND_INSPECTION){
+    std::cout << "[Debug] Output buffer size: " << pkt_size << std::endl;
+    std::cout << "[Debug] type size: " << sizeof(packet_type) << std::endl;
+    std::cout << "[Debug] session size: " << sizeof(session_id) << std::endl;
+    std::cout << "[Debug] lobby size: " << sizeof(lobby_id) << std::endl;
+    std::cout << "[Debug] contents size: " << sizeof(contents) << std::endl;
+
+    std::cout << "[Debug] type: " << (int)packet_type << std::endl;
+    std::cout << "[Debug] session: " << session_id << std::endl;
+    std::cout << "[Debug] lobby: " << lobby_id << std::endl;
+    std::cout << "[Debug] contents: " << contents << std::endl;
   }
-  // Copy packet_type into first byte of network packet
-  memcpy(buf, &packet_type, sizeof(packet_type));
-  // Copy contents into the rest
-  memcpy(buf + sizeof(packet_type), contents, sizeof(contents));
-  // Send to server
-  ssize_t n_bytes;
-  return send(fd, buf, sizeof(buf), 0);
+
+  // Keep track of where in the buffer we're currently copying
+  size_t cur_index = 0;
+  
+  // Copy the type into the buffer
+  memcpy(buf + cur_index, &packet_type, sizeof(packet_type));
+  cur_index += sizeof(packet_type);
+
+  // Copy the session id into the buffer
+  packi64(buf+cur_index, session_id);
+  cur_index += sizeof(session_id);
+
+  // Copy the lobby id into the buffer
+  packi64(buf+cur_index, lobby_id);
+  cur_index += sizeof(lobby_id);
+
+  // Copy the contents into the buffer
+  contents[MAX_USERNAME_SIZE-1] = '\0'; // Guarantee safe cstr
+  memcpy(buf + cur_index, contents, sizeof(contents));
+
+  if (ENABLE_CLIENTPACKET_PRESEND_INSPECTION){
+    std::cout << getStringFromBuffer(buf, pkt_size);
+  }
+
+  return pkt_size;
 }
 
-void NetEngine::getUserName() {
+std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
+  std::stringstream ss;
+  ss << "[Debug] packed type: " << (int)buf[0] << std::endl;
+  ss << "[Debug] packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
+  ss << "[Debug] packed lobby: " << unpacku64(buf+sizeof(packet_type)+sizeof(session_id)) << std::endl;
+  char tmp_buf[BUFFER_SIZE];
+
+  memcpy(
+    tmp_buf, 
+    buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    sizeof(contents)
+  );
+
+  tmp_buf[BUFFER_SIZE-1] = '\0';
+  ss << "[Debug] packed contents: " << tmp_buf << std::endl;
+  return ss.str();
+}
+
+void NetEngine::getLocalUserName() {
   std::string usr_name;
   std::cout << "Enter your username: " << std::endl;
-  std::cin >> usr_name;
+  std::getline(std::cin, usr_name);
   // If bad input, repeat request until good
   while(usr_name.size() == 0 
   || usr_name.size() > MAX_USERNAME_SIZE-1
@@ -530,15 +240,16 @@ void NetEngine::getUserName() {
   || usr_name == "CREATE") {
     std::cout << "Error] Invalid username: " << usr_name << std::endl;
     std::cout << "Error] Username must be 1-24 characters (" 
-    << usr_name.size() << " is invalid." << std::endl;
+    << usr_name.size() << " is invalid.)" << std::endl;
     usr_name = "";
-    std::cin >> usr_name;
+    std::getline(std::cin, usr_name);
   }
+  // std::cout << "Username \"" << usr_name << "\" Received!\n";
   // Set the username in NetEngine
-  setUserName(usr_name);
+  setLocalUserName(usr_name);
 }
 
-void NetEngine::setUserName(std::string user_name) {
+void NetEngine::setLocalUserName(std::string user_name) {
   if (user_name.size() < MAX_USERNAME_SIZE) {
     username = user_name;
   } else {
@@ -551,13 +262,28 @@ void NetEngine::setUserName(std::string user_name) {
   }
 }
 
-// void AddrInfoPkt::setFromRaw(unsigned char *buf) {
-//   size_t i;
-//   // Set ipv4
-//   for (i = 0; i < 4; ++i) {
-//     (&ipv4_addr)[i] = buf[i];
-//   }
-//   // Set port
-//   (&port_num)[0] = buf[++i];
-//   (&port_num)[1] = buf[++i];
-// }
+/**
+ * NET UTILS
+ */
+void packi64(unsigned char *buf, uint64_t i)
+{
+    *buf++ = i>>56; *buf++ = i>>48;
+    *buf++ = i>>40; *buf++ = i>>32;
+    *buf++ = i>>24; *buf++ = i>>16;
+    *buf++ = i>>8;  *buf++ = i;
+}
+
+/**
+ * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
+ */
+uint64_t unpacku64(unsigned char *buf)
+{
+    return ((uint64_t)buf[0]<<56) |
+           ((uint64_t)buf[1]<<48) |
+           ((uint64_t)buf[2]<<40) |
+           ((uint64_t)buf[3]<<32) |
+           ((uint64_t)buf[4]<<24) |
+           ((uint64_t)buf[5]<<16) |
+           ((uint64_t)buf[6]<<8)  |
+           buf[7];
+}

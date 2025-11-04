@@ -36,14 +36,7 @@ int startLocalGame(RenderEngine* renderer);
 
 // Global so cleanup can be guaranteed
 NetEngine net_engine;
-void handleUnexpectedClosure(int signal_num) {
-  std::cout << "Recieved SIGINT.\n";
-  std::cout << "Calling NetEngine destructor...\n";
-  net_engine.~NetEngine();
-  std::cout << "Finished cleaning up NetEngine.\n";
-  exit(0);
-  // renderer.~RenderEngine();
-}
+void handleUnexpectedClosure(int signal_num);
 
 int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
@@ -57,7 +50,7 @@ int main(int argc, char* argv[]) {
    
   int return_val = 2;
   while (return_val == 2) {
-    net_engine.getUserName();
+    net_engine.getLocalUserName();
     return_val = net_engine.testNetClient();
   }
   return 0;
@@ -247,4 +240,13 @@ int startLocalGame(RenderEngine* renderer) {
   // delete p2_inputs;
 
   return 1;
+}
+
+void handleUnexpectedClosure(int signal_num) {
+  std::cout << "Recieved SIGINT.\n";
+  std::cout << "Calling NetEngine destructor...\n";
+  net_engine.~NetEngine();
+  std::cout << "Finished cleaning up NetEngine.\n";
+  exit(0);
+  // renderer.~RenderEngine();
 }

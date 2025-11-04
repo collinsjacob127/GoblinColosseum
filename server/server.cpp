@@ -54,7 +54,7 @@ int listen_socket;
 int min_fd = 3, max_socket;
 
 struct PlayerEntry {
-  uint32_t id = 0;            // Unique ID for this peer
+  uint64_t id = 0;            // Unique ID for this peer
   std::string user_name = "";
   bool match_made = false;
   bool open_lobby = false;

@@ -1,7 +1,14 @@
 /**
+ * Author: Jacob Collins
+ * 
+ * Description:
  * Header for network functionality. 
- * Overloaded in header.cpp with platform-specific implementations.
+ * Some networking is overloaded in net.cpp with platform-specific implementations.
  * Bro is the goat: https://beej.us/guide/bgnet/html/index-wide.html
+ * 
+ * High-level description:
+ * - Each send/recv is done as a pair in a single connection instance.
+ * - ClientPacket structs are sent to the server and ServerPacket structs are received.
  */
 
 #pragma once
@@ -32,33 +39,35 @@ constexpr size_t MAX_USERNAME_SIZE = 25;
 constexpr int BUFFER_SIZE = 1024;
 
 /**
-  * Struct for holding ipv4 and port values
- */
-struct AddrInfoPkt {
-  uint32_t ipv4_addr = 0;
-  uint16_t port_num = 0; 
-
-  // void setFromRaw(unsigned char *buf);
-};
-
-/**
  * @brief Struct for packaging packets sent to server
- * @note [ [Packet type - 1B] [Session ID - 8B] [Contents - 25B] ] Total - 36B
+ * @note [ [Packet type - 1B] [Session ID - 8B] [Lobby ID - 8B] [Contents - 25B] ] Total - 44B
+ * @note Packet types:
+ * @note 0 -> Sending own username (Entering server). 
+ *            Server responds with unique session ID
+ * 
+ * @note 1 -> (CREATE) Requesting to create a lobby. 
+ *            Server responds with lobby ID.
+ * 
+ * @note 2 -> (LIST <X>) Requesting list of available peers. 
+ *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
+ * 
+ * @note 3 -> (JOIN) Send username of peer to join
+ *            Server responds with lobby ID.
+ * 
+ * @note 4 -> (LOBBY <ID>) Send current lobby ID.
+ *            Server responds with IP Info of connected peer, if any
+ *            If no connection, responds with 0.0.0.0:0
  */
 struct ClientPacket {
-
-  /* Packet types:
-   * @note 0 -> Sending own username (Entering server). Server responds with unique session ID
-   * @note 1 -> (CREATE) Requesting to create a lobby. 
-   * @note 2 -> (LIST) Requesting list of available peers. 
-   * @note 3 -> (JOIN) Requesting ip addr of peer. 
-  */
   uint8_t packet_type = 0;
 
   // Random number assigned by server. Used to self-identify when making requests.
   uint64_t session_id = 0;
+  // Lobby number assigned by server.
+  uint64_t lobby_id = 0;
 
-  /* Contents types (c-string):
+  /**
+   * Contents types (c-string):
    * @note 0 -> Own username
    * @note 1 -> "CREATE"
    * @note 2 -> "LIST"
@@ -77,24 +86,35 @@ struct ClientPacket {
    * @note 2 -> (LIST) Requesting list of available peers. 
    * @note 3 -> Requesting ip addr of peer. 
    */
-  ClientPacket(char type, std::string val);
+  ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
 
   /**
    * @brief Function to move ClientPacket into a provided
    * buffer and prepare the contents for network send
    */
-  ssize_t sendPacket(int fd);
+  ssize_t buildPacket(unsigned char* buf);
+
+  std::string getStringFromBuffer(unsigned char* buf, ssize_t n_bytes);
 };
 
-struct P2PConnectInfo {
-  // unsigned char ipv4_addr[4];
-  // int16_t port = 0;
-  char character_id = CHARACTER_ID_HUNKO;
+/**
+ * @brief Struct describing structure of packets received from the server.
+ */
+struct ServerPacket {
+  uint8_t type = 0;
+  uint64_t session_id = 0;
+  uint64_t lobby_id = 0;
+  char contents[BUFFER_SIZE];
 };
 
+/**
+ * @brief Driver class for all client-side network activity.
+ */
 class NetEngine {
  public:
-  std::string username;
+  std::string username = "";
+  uint64_t session_id = 0;
+  uint64_t lobby_id = 0;
   int server_sock;
   int peer_sock;
 
@@ -105,13 +125,20 @@ class NetEngine {
    * @brief Function to get a user's name from cin.
    * @note Verifies that the name is valid and sets the username
    */
-  void getUserName();
+  void getLocalUserName();
 
   /**
    * @brief Function to set the value of the username
    * @note Verifies that the name is valid
    */
-  void setUserName(std::string user_name);
+  void setLocalUserName(std::string user_name);
+
+  /**
+   * @brief Function to determine whether the user wishes to
+   *        create a game or join an existing lobby
+   * @return 0 for JOIN or 1 for CREATE
+   */
+  int getLocalJoinOrCreate();
 
   /**
    * @brief Function to test client-side network functionality
@@ -124,7 +151,22 @@ class NetEngine {
   /**
    * @brief Function to connect to the game's server
    */
-  int connectToServer();
+  int serverConnect();
+
+  /**
+   * @brief Function to parse and send a ClientPacket to the server
+   */
+  ssize_t sendClientPacket(ClientPacket);
+
+  /**
+   * @brief Function to recv and parse a ServerPacket from the server
+   */
+  ServerPacket recvServerPacket();
+
+  /**
+   * @brief Function to disconnect from the server
+   */
+  void serverDisconnect();
 
   /**
    * @brief Function to send a user's username to the server
@@ -132,13 +174,6 @@ class NetEngine {
    * @note If server sends back BAD, returns 1
    */
   int sendUserName();
-
-  /**
-   * @brief Function to determine whether the user wishes to
-   *        create a game or join an existing lobby
-   * @return 0 for JOIN or 1 for CREATE
-   */
-  int getJoinOrCreate();
 
   /**
    * @brief Function to send a CREATE message to the server
@@ -172,6 +207,19 @@ class NetEngine {
    */
   ssize_t verifyGoodResponse();
 
-  void disconnectServer();
-  void disconnectPeer();
+  void peerDisconnect();
 };
+
+/**
+ * Net UTILS (Provided by beej - https://beej.us/guide/bgnet/html/index-wide.html#sonofdataencap)
+ */
+
+/**
+ * @brief store a 64-bit int into a char buffer (like htonl())
+ */
+void packi64(unsigned char *buf, uint64_t i);
+
+/**
+ * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
+ */
+uint64_t unpacku64(unsigned char *buf);
