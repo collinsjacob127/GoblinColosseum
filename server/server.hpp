@@ -31,14 +31,15 @@
 #define ENABLE_SERVER_DEBUG true
 #define ENABLE_SERVER_ERROR true
 #define ENABLE_CLIENTPACKET_INSPECTION true
+#define ENABLE_AWAITING_NEW_PACKETS_NOTIF true
 
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr ssize_t MAX_USERNAME_SIZE = 25;
 constexpr ssize_t MAX_PACKET_SIZE = 26;
+constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 64;
-
 
 struct ClientPacket {
   uint8_t packet_type = 0;
@@ -106,7 +107,7 @@ struct PlayerEntry {
   Timer p_timer;
   Timer lobby_update_time; 
 
-  PlayerEntry() { p_timer.start(); }
+  PlayerEntry() {}
   PlayerEntry(int sock_desc, sockaddr_in addr) {
     // Set address info for new client
     socket_descriptor = sock_desc;
@@ -117,9 +118,18 @@ struct PlayerEntry {
     ipv4_str = std::string(ip_buffer);
 
     port_num = ntohs(address.sin_port);
+  }
 
-    // Start their timer
-    p_timer.start();
+  void setNetInfo(int sock_desc, sockaddr_in addr) {
+    // Set address info for new client
+    socket_descriptor = sock_desc;
+    address = addr;
+
+    char ip_buffer[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
+    ipv4_str = std::string(ip_buffer);
+
+    port_num = ntohs(address.sin_port);
   }
 
   std::string getReprString() {
@@ -149,6 +159,12 @@ struct PlayerEntry {
 int bindAndListen(const char *service);
 
 /**
+ * @brief Function to populate a buffer with `n_bytes` bytes of data
+ * from socket `s`.
+ */
+ClientPacket recvClientPacket(ssize_t n_bytes, int s);
+
+/**
  * @brief Close every socket in a file descriptor set.
  */
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
@@ -156,19 +172,26 @@ void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
 /**
  * @brief Given a username, return the corresponding registry entry.
  */
-PlayerEntry getEntryFromUserName(std::map<int, PlayerEntry> *registry, std::string uname);
+PlayerEntry getEntryFromUserName(std::string uname);
 
 /**
  * @brief Player uname requests the list of open lobbies.
  * If they are marked as open_lobby, get rid of that 'cause they shouldn't be.
  * Don't return themselves.
  */
-std::vector<std::string> getLobbyList(std::map<int, PlayerEntry> *registry);
+std::vector<std::string> getLobbyList();
 
 /**
- * @brief Function to disconnect a client from the registry etc.
+ * @brief Function to remove a player from the registry.
+ * @note This does not disconnect a client from the server.
  */
-void disconnectPlayer(std::map<int, PlayerEntry> *registry, int fd, fd_set *sock_set);
+void removePlayer(int fd);
+
+/**
+ * @brief Function to disconnect a client from the server.
+ * @note This does NOT remove a player from the registry.
+ */
+void disconnectClient(int fd);
 
 /**
  * @brief Function to send a packet to given client with contents "GOOD" or "BAD".
@@ -178,4 +201,13 @@ ssize_t sendConfirmationResponse(int fd, bool is_good);
 
 void handleSigint(int signal_num);
 
+/**
+ * NET UTILS - courtesy of l'beej
+ */
 
+void packi64(unsigned char *buf, uint64_t i);
+
+/**
+ * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
+ */
+uint64_t unpacku64(unsigned char *buf);

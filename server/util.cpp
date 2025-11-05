@@ -9,6 +9,7 @@
  ***************************/
 Timer::Timer() {
   has_started = false;
+  start();
 }
 
 void Timer::start() {
