@@ -36,45 +36,24 @@
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr ssize_t MAX_USERNAME_SIZE = 25;
-constexpr ssize_t MAX_PACKET_SIZE = 26;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
+constexpr ssize_t SERVER_CONTENTS_SIZE = 25;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 64;
 
-struct ClientPacket {
-  uint8_t packet_type = 0;
+class MatchmakingPacket {
+ public:
+  ssize_t pkt_size;
+  ssize_t contents_size;
 
+  uint8_t packet_type = 0;
   // Random number assigned by server. Used to self-identify when making requests.
   uint64_t session_id = 0;
   // Lobby number assigned by server.
   uint64_t lobby_id = 0;
 
-  /**
-   * Contents types (c-string):
-   * @note 0 -> Own username
-   * @note 1 -> "CREATE"
-   * @note 2 -> "LIST"
-   * @note 3 -> Peer username (?)
-  */
-  char contents[MAX_USERNAME_SIZE];
-
-  /**
-   * @brief Build a client packet given the type
-   * and contents
-   * @param type Header to inform server what type of message is being sent
-   * @param val Contents of the message being sent
-   * @note Possible values for type:
-   * @note 0 -> Sending own username (Entering server). Expects server response "GOOD"
-   * @note 1 -> (CREATE) Requesting to create a lobby. Expects server sesponse "GOOD"
-   * @note 2 -> (LIST) Requesting list of available peers. 
-   * @note 3 -> Requesting ip addr of peer. 
-   */
-  ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
-
-  /**
-   * @brief Build a ClientPacket from a received buffer.
-   */
-  ClientPacket(unsigned char* buf, ssize_t n_bytes);
+  char contents[BUFFER_SIZE];
 
   /**
    * @brief Function to move ClientPacket into a provided
@@ -93,6 +72,48 @@ struct ClientPacket {
    * of this struct.
    */
   std::string getStringFromSelf();
+};
+
+/**
+ * @brief Struct for packaging packets sent to server
+ * @note [ [Packet type - 1B] [Session ID - 8B] [Lobby ID - 8B] [Contents - 25B] ] Total - 44B
+ * @note Packet types:
+ * @note 0 -> Sending own username (Entering server). 
+ *            Server responds with unique session ID
+ * 
+ * @note 1 -> (CREATE) Requesting to create a lobby. 
+ *            Server responds with lobby ID.
+ * 
+ * @note 2 -> (LIST <X>) Requesting list of available peers. 
+ *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
+ * 
+ * @note 3 -> (JOIN) Send username of peer to join
+ *            Server responds with lobby ID.
+ * 
+ * @note 4 -> (LOBBY <ID>) Send current lobby ID.
+ *            Server responds with IP Info of connected peer, if any
+ *            If no connection, responds with 0.0.0.0:0
+ */
+class ClientPacket : public MatchmakingPacket {
+ public:
+
+  /**
+   * @brief Build a client packet given the type
+   * and contents
+   * @param type Header to inform server what type of message is being sent
+   * @param val Contents of the message being sent
+   * @note Possible values for type:
+   * @note 0 -> Sending own username (Entering server). Expects server response "GOOD"
+   * @note 1 -> (CREATE) Requesting to create a lobby. Expects server sesponse "GOOD"
+   * @note 2 -> (LIST) Requesting list of available peers. 
+   * @note 3 -> Requesting ip addr of peer. 
+   */
+  ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
+
+  /**
+   * @brief Build a ClientPacket from a received buffer.
+   */
+  ClientPacket(unsigned char* buf, ssize_t n_bytes);
 };
 
 struct PlayerEntry {

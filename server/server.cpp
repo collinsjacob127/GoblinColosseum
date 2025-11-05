@@ -34,7 +34,6 @@ int main() {
   // Timer to track how long the server has been up
   Timer server_timer;
 
-
   // Socket where server accept() new connections thru
   FD_ZERO(&all_sockets);
   listen_socket = bindAndListen(SERVER_PORT);
@@ -171,31 +170,6 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
   return out_pkt;
 }
 
-// ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
-//   unsigned char buf[BUFFER_SIZE];
-
-//   // Populate buffer with packet contents (prepped for netsend)
-//   ssize_t pkt_size = out_pkt.buildPacket(buf);
-
-//   ClientPacket test_pkt(buf, pkt_size);
-//   std::cout << "Test packet contents:\n" << test_pkt.getStringFromSelf();
-
-//   // Ensure full packet is sent
-//   ssize_t bytes_sent = 0, total_bytes_sent = 0;
-//   while (total_bytes_sent < pkt_size) {
-//     bytes_sent = send(s, buf, pkt_size-total_bytes_sent, 0);
-//     total_bytes_sent += bytes_sent;
-//     if (bytes_sent < 0) {
-//       if (ENABLE_SERVER_ERROR) {
-//         perror("[Error] Failed to send packet");
-//         std::cout << out_pkt.getStringFromPacket(buf, pkt_size);
-//       }
-//       return bytes_sent;
-//     }
-//   }
-//   return total_bytes_sent;
-// }
-
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd) {
   for (int i = min_fd; i <= max_fd; ++i) {
     // Ignore unset fds
@@ -258,7 +232,7 @@ void disconnectClient(int fd) {
 }
 
 void handleSigint(int signal_num) {
-  std::cout << "\n[Log] Caught SIGINT - Disconnecting all clients and shutting down server.\n";
+  std::cout << "\n[Log] Server Interrupted - Disconnecting all clients and shutting down server.\n";
   closeAllInSet(&all_sockets, min_fd, max_socket);
   FD_ZERO(&all_sockets);
   FD_ZERO(&call_set);
@@ -290,55 +264,17 @@ ssize_t sendConfirmationResponse(int fd, bool is_good) {
 
 
 /**
- * CLIENTPACKET DEFINITIONS
+ * DEFAULT PACKET DEFINITIONS
  */
 
-ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
-  // Set first header value (no need to modify)
-  packet_type = type;
-  session_id = sid;
-  lobby_id = lid;
-
-  // Set contents (string copy and guarantee null terminator)
-  strncpy(contents, val.c_str(), MAX_USERNAME_SIZE-1);
-  contents[MAX_USERNAME_SIZE-1] = '\0';
-
-  // Log it
-  if (ENABLE_SERVER_DEBUG) {
-    std::cout << "[Log] ClientPacket initialized with " 
-    << (int)type << " as type and "
-    << contents << " as contents" << std::endl;
-  }
-}
-
-ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
-  // Copy to a local buffer to make sure all is well
-  unsigned char tmp_buf[n_bytes];
-  memcpy(tmp_buf, buf, n_bytes);
-
-  packet_type = (uint8_t)tmp_buf[0];
-  session_id = unpacku64(tmp_buf+sizeof(packet_type));
-  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
-
-  // Set contents
-  memcpy(
-    contents, 
-    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
-    sizeof(contents)
-  );
-  // Guarantee null term
-  contents[MAX_USERNAME_SIZE-1] = '\0';
-}
-
-ssize_t ClientPacket::buildPacket(unsigned char* buf) {
+ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
   // Calculate buffer size
-  size_t pkt_size = 
-  (
-    sizeof(packet_type) + 
-    sizeof(session_id) +
-    sizeof(lobby_id) +
-    sizeof(contents)
-  );
+  // (
+  //   sizeof(packet_type) + 
+  //   sizeof(session_id) +
+  //   sizeof(lobby_id) +
+  //   sizeof(contents)
+  // );
 
   // Keep track of where in the buffer we're currently copying
   size_t cur_index = 0;
@@ -356,8 +292,8 @@ ssize_t ClientPacket::buildPacket(unsigned char* buf) {
   cur_index += sizeof(lobby_id);
 
   // Copy the contents into the buffer
-  contents[MAX_USERNAME_SIZE-1] = '\0'; // Guarantee safe cstr
-  memcpy(buf + cur_index, contents, sizeof(contents));
+  contents[contents_size-1] = '\0'; // Guarantee safe cstr
+  memcpy(buf + cur_index, contents, contents_size);
 
   if (ENABLE_CLIENTPACKET_INSPECTION){
     std::cout << getStringFromBuffer(buf, pkt_size);
@@ -366,7 +302,7 @@ ssize_t ClientPacket::buildPacket(unsigned char* buf) {
   return pkt_size;
 }
 
-std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
+std::string MatchmakingPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
   std::stringstream ss;
   ss << " [Contents] packed type: " << (int)buf[0] << std::endl;
   ss << " [Contents] packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
@@ -376,7 +312,7 @@ std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_byte
   memcpy(
     tmp_buf, 
     buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
-    sizeof(contents)
+    contents_size
   );
 
   tmp_buf[BUFFER_SIZE-1] = '\0';
@@ -384,13 +320,60 @@ std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_byte
   return ss.str();
 }
 
-std::string ClientPacket::getStringFromSelf() {
+std::string MatchmakingPacket::getStringFromSelf() {
   std::stringstream ss;
   ss << " [Contents] type: " << (int)packet_type << std::endl;
   ss << " [Contents] session: " << session_id << std::endl;
   ss << " [Contents] lobby: " << lobby_id << std::endl;
   ss << " [Contents] contents: " << contents << std::endl;
   return ss.str();
+}
+
+
+/**
+ * CLIENT PACKET DEFINITIONS
+ */
+
+ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
+  pkt_size = CLIENT_PACKET_N_BYTES;
+  contents_size = CLIENT_CONTENTS_SIZE;
+  // Set first header value (no need to modify)
+  packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
+
+  // Set contents (string copy and guarantee null terminator)
+  strncpy(contents, val.c_str(), contents_size);
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+
+  // Log it
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Log] ClientPacket initialized with " 
+    << (int)type << " as type and "
+    << contents << " as contents" << std::endl;
+  }
+}
+
+ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
+  pkt_size = CLIENT_PACKET_N_BYTES;
+  contents_size = CLIENT_CONTENTS_SIZE;
+
+  // Copy to a local buffer to make sure all is well
+  unsigned char tmp_buf[n_bytes];
+  memcpy(tmp_buf, buf, n_bytes);
+
+  packet_type = (uint8_t)tmp_buf[0];
+  session_id = unpacku64(tmp_buf+sizeof(packet_type));
+  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
+
+  // Set contents
+  memcpy(
+    contents, 
+    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    contents_size
+  );
+  // Guarantee null term
+  contents[MAX_USERNAME_SIZE-1] = '\0';
 }
 
 /**

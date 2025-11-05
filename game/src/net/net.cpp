@@ -108,64 +108,17 @@ void NetEngine::peerDisconnect() {
 #endif
 
 /**
- * CLIENTPACKET DEFINITIONS
+ * DEFAULT PACKET DEFINITIONS
  */
 
-ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
-  // Set first header value (no need to modify)
-  packet_type = type;
-  session_id = sid;
-  lobby_id = lid;
-
-  // Set contents (string copy and guarantee null terminator)
-  strncpy(contents, val.c_str(), MAX_USERNAME_SIZE-1);
-  contents[MAX_USERNAME_SIZE-1] = '\0';
-
-  // Log it
-  if (ENABLE_NETCODE_DEBUG) {
-    std::cout << "[Log] ClientPacket initialized with " 
-    << (int)type << " as type and "
-    << contents << " as contents" << std::endl;
-  }
-}
-
-ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
-  // Copy to a local buffer to make sure all is well
-  unsigned char tmp_buf[n_bytes];
-  memcpy(tmp_buf, buf, n_bytes);
-
-  packet_type = (uint8_t)tmp_buf[0];
-  session_id = unpacku64(tmp_buf+sizeof(packet_type));
-  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
-
-  // Set contents
-  memcpy(
-    contents, 
-    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
-    sizeof(contents)
-  );
-  // Guarantee null term
-  contents[MAX_USERNAME_SIZE-1] = '\0';
-}
-
-ssize_t ClientPacket::buildPacket(unsigned char* buf) {
+ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
   // Calculate buffer size
-  size_t pkt_size = 
-  (
-    sizeof(packet_type) + 
-    sizeof(session_id) +
-    sizeof(lobby_id) +
-    sizeof(contents)
-  );
-
-  if (ENABLE_CLIENTPACKET_PRESEND_INSPECTION){
-    std::cout << "[Debug] Output buffer size: " << pkt_size << std::endl;
-    std::cout << "[Debug] type size: " << sizeof(packet_type) << std::endl;
-    std::cout << "[Debug] session size: " << sizeof(session_id) << std::endl;
-    std::cout << "[Debug] lobby size: " << sizeof(lobby_id) << std::endl;
-    std::cout << "[Debug] contents size: " << sizeof(contents) << std::endl;
-    std::cout << getStringFromSelf();
-  }
+  // (
+  //   sizeof(packet_type) + 
+  //   sizeof(session_id) +
+  //   sizeof(lobby_id) +
+  //   sizeof(contents)
+  // );
 
   // Keep track of where in the buffer we're currently copying
   size_t cur_index = 0;
@@ -183,41 +136,88 @@ ssize_t ClientPacket::buildPacket(unsigned char* buf) {
   cur_index += sizeof(lobby_id);
 
   // Copy the contents into the buffer
-  contents[MAX_USERNAME_SIZE-1] = '\0'; // Guarantee safe cstr
-  memcpy(buf + cur_index, contents, sizeof(contents));
+  contents[contents_size-1] = '\0'; // Guarantee safe cstr
+  memcpy(buf + cur_index, contents, contents_size);
 
-  if (ENABLE_CLIENTPACKET_PRESEND_INSPECTION){
+  if (ENABLE_CLIENTPACKET_INSPECTION){
     std::cout << getStringFromBuffer(buf, pkt_size);
   }
 
   return pkt_size;
 }
 
-std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
+std::string MatchmakingPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
   std::stringstream ss;
-  ss << "[Debug] packed type: " << (int)buf[0] << std::endl;
-  ss << "[Debug] packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
-  ss << "[Debug] packed lobby: " << unpacku64(buf+sizeof(packet_type)+sizeof(session_id)) << std::endl;
+  ss << " [Contents] packed type: " << (int)buf[0] << std::endl;
+  ss << " [Contents] packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
+  ss << " [Contents] packed lobby: " << unpacku64(buf+sizeof(packet_type)+sizeof(session_id)) << std::endl;
   char tmp_buf[BUFFER_SIZE];
 
   memcpy(
     tmp_buf, 
     buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
-    sizeof(contents)
+    contents_size
   );
 
   tmp_buf[BUFFER_SIZE-1] = '\0';
-  ss << "[Debug] packed contents: " << tmp_buf << std::endl;
+  ss << " [Contents] packed contents: " << tmp_buf << std::endl;
   return ss.str();
 }
 
-std::string ClientPacket::getStringFromSelf() {
+std::string MatchmakingPacket::getStringFromSelf() {
   std::stringstream ss;
-  ss << "[Debug] type: " << (int)packet_type << std::endl;
-  ss << "[Debug] session: " << session_id << std::endl;
-  ss << "[Debug] lobby: " << lobby_id << std::endl;
-  ss << "[Debug] contents: " << contents << std::endl;
+  ss << " [Contents] type: " << (int)packet_type << std::endl;
+  ss << " [Contents] session: " << session_id << std::endl;
+  ss << " [Contents] lobby: " << lobby_id << std::endl;
+  ss << " [Contents] contents: " << contents << std::endl;
   return ss.str();
+}
+
+
+/**
+ * CLIENT PACKET DEFINITIONS
+ */
+
+ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
+  pkt_size = CLIENT_PACKET_N_BYTES;
+  contents_size = CLIENT_CONTENTS_SIZE;
+  // Set first header value (no need to modify)
+  packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
+
+  // Set contents (string copy and guarantee null terminator)
+  strncpy(contents, val.c_str(), contents_size);
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+
+  // Log it
+  if (ENABLE_NETCODE_LOG) {
+    std::cout << "[Log] ClientPacket initialized with " 
+    << (int)type << " as type and "
+    << contents << " as contents" << std::endl;
+  }
+}
+
+ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
+  pkt_size = CLIENT_PACKET_N_BYTES;
+  contents_size = CLIENT_CONTENTS_SIZE;
+
+  // Copy to a local buffer to make sure all is well
+  unsigned char tmp_buf[n_bytes];
+  memcpy(tmp_buf, buf, n_bytes);
+
+  packet_type = (uint8_t)tmp_buf[0];
+  session_id = unpacku64(tmp_buf+sizeof(packet_type));
+  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
+
+  // Set contents
+  memcpy(
+    contents, 
+    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    contents_size
+  );
+  // Guarantee null term
+  contents[MAX_USERNAME_SIZE-1] = '\0';
 }
 
 /**

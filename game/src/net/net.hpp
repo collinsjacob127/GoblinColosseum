@@ -25,7 +25,7 @@
 #define ENABLE_NETCODE_DEBUG true
 #define ENABLE_NETCODE_ERROR true
 #define ENABLE_NETCODE_LOG true
-#define ENABLE_CLIENTPACKET_PRESEND_INSPECTION true
+#define ENABLE_CLIENTPACKET_INSPECTION true
 
 
 // IPV4 addr of the server
@@ -36,7 +36,42 @@ constexpr int SERVER_PORT = 53243;
 // Max SIZE of username
 // Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
 constexpr size_t MAX_USERNAME_SIZE = 25;
+constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
+constexpr ssize_t SERVER_CONTENTS_SIZE = 25;
 constexpr int BUFFER_SIZE = 1024;
+
+class MatchmakingPacket {
+ public:
+  ssize_t pkt_size;
+  ssize_t contents_size;
+
+  uint8_t packet_type = 0;
+  // Random number assigned by server. Used to self-identify when making requests.
+  uint64_t session_id = 0;
+  // Lobby number assigned by server.
+  uint64_t lobby_id = 0;
+
+  char contents[BUFFER_SIZE];
+
+  /**
+   * @brief Function to move ClientPacket into a provided
+   * buffer and prepare the contents for network send
+   */
+  ssize_t buildPacket(unsigned char* buf);
+
+  /**
+   * @brief Function to get a string representing the contents of a
+   * buffer presumably filled by this struct's method
+   */
+  std::string getStringFromBuffer(unsigned char* buf, ssize_t n_bytes);
+
+  /**
+   * @brief Function to get a string representing the contents
+   * of this struct.
+   */
+  std::string getStringFromSelf();
+};
 
 /**
  * @brief Struct for packaging packets sent to server
@@ -58,22 +93,8 @@ constexpr int BUFFER_SIZE = 1024;
  *            Server responds with IP Info of connected peer, if any
  *            If no connection, responds with 0.0.0.0:0
  */
-struct ClientPacket {
-  uint8_t packet_type = 0;
-
-  // Random number assigned by server. Used to self-identify when making requests.
-  uint64_t session_id = 0;
-  // Lobby number assigned by server.
-  uint64_t lobby_id = 0;
-
-  /**
-   * Contents types (c-string):
-   * @note 0 -> Own username
-   * @note 1 -> "CREATE"
-   * @note 2 -> "LIST"
-   * @note 3 -> Peer username (?)
-  */
-  char contents[MAX_USERNAME_SIZE];
+class ClientPacket : public MatchmakingPacket {
+ public:
 
   /**
    * @brief Build a client packet given the type
@@ -92,24 +113,6 @@ struct ClientPacket {
    * @brief Build a ClientPacket from a received buffer.
    */
   ClientPacket(unsigned char* buf, ssize_t n_bytes);
-
-  /**
-   * @brief Function to move ClientPacket into a provided
-   * buffer and prepare the contents for network send
-   */
-  ssize_t buildPacket(unsigned char* buf);
-
-  /**
-   * @brief Function to get a string representing the contents of a
-   * buffer presumably filled by this struct's method
-   */
-  std::string getStringFromBuffer(unsigned char* buf, ssize_t n_bytes);
-
-  /**
-   * @brief Function to get a string representing the contents
-   * of this struct.
-   */
-  std::string getStringFromSelf();
 };
 
 /**
