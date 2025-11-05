@@ -4,8 +4,10 @@ add_library(net "")
 
 target_sources(net
     PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/packets.cpp
         ${CMAKE_CURRENT_LIST_DIR}/net.cpp
     PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/packets.hpp
         ${CMAKE_CURRENT_LIST_DIR}/net.hpp
     )
 

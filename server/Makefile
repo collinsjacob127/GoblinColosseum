@@ -1,7 +1,7 @@
 # Author: Jacob Collins
 
 TARGETS = server.x
-OBJECTS = util.o
+OBJECTS = util.o packets.o
 
 OBJ_HEADERS = ${OBJECTS:.o=.hpp}
 OBJ_SOURCE = ${OBJECTS:.o=.cpp}
@@ -19,12 +19,14 @@ CXX = g++
 .PHONY: all
 all: $(TARGETS)
 
-$(OBJECTS): $(OBJ_SOURCE) $(OBJ_HEADERS) 
+*.o: $(OBJ_SOURCE) $(OBJ_HEADERS) 
 	$(CXX) -c $<
 
 $(TARGETS): $(TARGET_SOURCE) $(OBJECTS)
 	$(CXX) $(CFLAGS) $(TARGET_SOURCE) -lm $(LDLIBS) -o $(TARGETS) $(OBJECTS)
+	rm -f *.o
 
 .PHONY: clean
 clean:
 	rm -f *.x *.o
+

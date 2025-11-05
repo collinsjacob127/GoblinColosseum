@@ -2,6 +2,7 @@
 *.x
 *.out
 *.o
+server/*.o
 
 # Ignore vscode settings
 .vscode/
