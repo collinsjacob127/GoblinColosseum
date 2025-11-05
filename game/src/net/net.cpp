@@ -19,6 +19,9 @@ int testNetClient() {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+/**
+ * NET ENGINE DEFINITIONS
+ */
 
 NetEngine::NetEngine() {
   server_sock = -1;
@@ -84,8 +87,31 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
   return total_bytes_sent;
 }
 
-ServerPacket NetEngine::recvServerPacket() {
-  return ServerPacket();
+ServerPacket NetEngine::recvServerPacket(int s) {
+  unsigned char buf[BUFFER_SIZE];
+
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Beginning full recv\n";
+  }
+
+  // Ensure full packet is read
+  ssize_t bytes_in = 0, total_bytes_in = 0;
+  while (total_bytes_in < SERVER_PACKET_N_BYTES) {
+    bytes_in = recv(s, buf, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    total_bytes_in += bytes_in;
+    if (bytes_in < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::stringstream ss;
+        ss << "[Error] Failed to receive packet from %d" << s << std::endl;
+        perror(ss.str().c_str());
+      }
+      return ServerPacket(0, 0, 0, "");
+    }
+  }
+
+  // Convert to ClientPacket
+  ServerPacket out_pkt(buf, SERVER_PACKET_N_BYTES);
+  return out_pkt;
 }
 
 void NetEngine::serverDisconnect() {
@@ -220,6 +246,54 @@ ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
   contents[MAX_USERNAME_SIZE-1] = '\0';
 }
 
+
+/**
+ * SERVER PACKET DEFINITIONS
+ */
+
+ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
+  pkt_size = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+  contents_size = SERVER_CONTENTS_SIZE;
+  // Set first header value (no need to modify)
+  packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
+
+  // Set contents (string copy and guarantee null terminator)
+  strncpy(contents, val.c_str(), contents_size);
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+
+  // Log it
+  if (ENABLE_NETCODE_LOG) {
+    std::cout << "[Log] ClientPacket initialized with " 
+    << (int)type << " as type and "
+    << contents << " as contents" << std::endl;
+  }
+}
+
+ServerPacket::ServerPacket(unsigned char* buf, ssize_t n_bytes) {
+  pkt_size = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+  contents_size = SERVER_CONTENTS_SIZE;
+
+  // Copy to a local buffer to make sure all is well
+  unsigned char tmp_buf[n_bytes];
+  memcpy(tmp_buf, buf, n_bytes);
+
+  packet_type = (uint8_t)tmp_buf[0];
+  session_id = unpacku64(tmp_buf+sizeof(packet_type));
+  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
+
+  // Set contents
+  memcpy(
+    contents, 
+    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    contents_size
+  );
+  // Guarantee null term
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+}
+
+
 /**
  * NET UTILS - courtesy of l'beej
  */
@@ -293,9 +367,16 @@ ssize_t NetEngine::initializeServerCommunication() {
     serverDisconnect();
     return -1;
   }
-  ClientPacket out_pkt(0, 69, 420, username);
+  ClientPacket out_pkt(0, 0, 0, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
-  // TODO: Receive session ID
+  
+  ServerPacket in_pkt = recvServerPacket(server_sock);
+  if (in_pkt.session_id == 0) {
+    serverDisconnect();
+    return -1;
+  }
+  std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+
   serverDisconnect();
   return bytes_sent;
 }
@@ -304,7 +385,6 @@ int NetEngine::testNetClient() {
   std::cout << "[Log] Running linux netcode" << std::endl;
   Timer timer;
   timer.start();
-  ServerPacket in_pkt;
   ssize_t result;
 
   // Send username and get session ID

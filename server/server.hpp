@@ -16,6 +16,7 @@
 #include <memory>
 #include <cstring>
 #include <netdb.h>
+#include <random>
 // #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/types.h>
@@ -36,9 +37,13 @@
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr ssize_t MAX_USERNAME_SIZE = 25;
-constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
+constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+
 constexpr ssize_t SERVER_CONTENTS_SIZE = 25;
+constexpr ssize_t SERVER_PACKET_N_BYTES = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 64;
 
@@ -100,13 +105,6 @@ class ClientPacket : public MatchmakingPacket {
   /**
    * @brief Build a client packet given the type
    * and contents
-   * @param type Header to inform server what type of message is being sent
-   * @param val Contents of the message being sent
-   * @note Possible values for type:
-   * @note 0 -> Sending own username (Entering server). Expects server response "GOOD"
-   * @note 1 -> (CREATE) Requesting to create a lobby. Expects server sesponse "GOOD"
-   * @note 2 -> (LIST) Requesting list of available peers. 
-   * @note 3 -> Requesting ip addr of peer. 
    */
   ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
 
@@ -114,6 +112,13 @@ class ClientPacket : public MatchmakingPacket {
    * @brief Build a ClientPacket from a received buffer.
    */
   ClientPacket(unsigned char* buf, ssize_t n_bytes);
+};
+
+class ServerPacket : public MatchmakingPacket {
+ public:
+
+  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
+  ServerPacket(unsigned char* buf, ssize_t n_bytes);
 };
 
 struct PlayerEntry {
@@ -129,16 +134,9 @@ struct PlayerEntry {
   Timer lobby_update_time; 
 
   PlayerEntry() {}
-  PlayerEntry(int sock_desc, sockaddr_in addr) {
-    // Set address info for new client
-    socket_descriptor = sock_desc;
-    address = addr;
-
-    char ip_buffer[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(address.sin_addr), ip_buffer, sizeof(ip_buffer));
-    ipv4_str = std::string(ip_buffer);
-
-    port_num = ntohs(address.sin_port);
+  PlayerEntry(uint64_t session_id, std::string u_name) {
+    id = session_id;
+    user_name = u_name;
   }
 
   void setNetInfo(int sock_desc, sockaddr_in addr) {
@@ -170,6 +168,11 @@ struct PlayerEntry {
   }
 };
 
+
+/**
+ * BASIC SERVER FUNCTIONALITY
+ */
+
 /**
  * @brief Create, bind and passive open a socket on a local interface for the provided
  * service. Argument matches the second argument to getaddrinfo(3).
@@ -185,10 +188,33 @@ int bindAndListen(const char *service);
  */
 ClientPacket recvClientPacket(ssize_t n_bytes, int s);
 
+ssize_t sendServerPacket(ServerPacket, int s);
+
 /**
- * @brief Close every socket in a file descriptor set.
+ * COMMUNICATION HANDLING
  */
-void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
+
+int initializePlayer(ClientPacket in_pkt, int client_sock);
+
+int createLobby(ClientPacket in_pkt, int client_sock);
+
+int sendLobbies(ClientPacket in_pkt, int client_sock);
+
+int sendPeerInfo(ClientPacket in_pkt, int client_sock);
+
+/**
+ * REGISTRY HELPERS
+ */
+
+/**
+ * @brief Get a unique SESSION id 
+ */
+uint64_t generateSessionId();
+
+/**
+ * @brief Get a unique SESSION id 
+ */
+uint64_t generateLobbyId();
 
 /**
  * @brief Given a username, return the corresponding registry entry.
@@ -202,6 +228,18 @@ PlayerEntry getEntryFromUserName(std::string uname);
  */
 std::vector<std::string> getLobbyList();
 
+
+/**
+ * SAFETY FEATURES
+ */
+
+void handleSigint(int signal_num);
+
+/**
+ * @brief Close every socket in a file descriptor set.
+ */
+void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd);
+
 /**
  * @brief Function to remove a player from the registry.
  * @note This does not disconnect a client from the server.
@@ -214,13 +252,6 @@ void removePlayer(int fd);
  */
 void disconnectClient(int fd);
 
-/**
- * @brief Function to send a packet to given client with contents "GOOD" or "BAD".
- * @return returns bytes sent or -1 on error.
- */
-ssize_t sendConfirmationResponse(int fd, bool is_good);
-
-void handleSigint(int signal_num);
 
 /**
  * NET UTILS - courtesy of l'beej

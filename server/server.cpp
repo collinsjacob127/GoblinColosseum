@@ -31,6 +31,10 @@ int main() {
   std::signal(SIGABRT, handleSigint);
   std::signal(SIGTERM, handleSigint);
 
+  for (int i = 0; i < 10; ++i) {
+    std::cout << "Random number: " << generateSessionId() << std::endl;
+  }
+
   // Timer to track how long the server has been up
   Timer server_timer;
 
@@ -86,7 +90,30 @@ int main() {
     }
 
     // Respond to the packet
-    // ...
+    int response = -1;
+    switch (in_pkt.packet_type) {
+      case (0): {
+        response = initializePlayer(in_pkt, client_sock);
+      }
+      case (1): {
+        response = createLobby(in_pkt, client_sock);
+      }
+      case (2): {
+        response = sendLobbies(in_pkt, client_sock);
+      }
+      case (3): {
+        response = sendPeerInfo(in_pkt, client_sock);
+      }
+      default: {
+        if (ENABLE_SERVER_ERROR) {
+          std::cout << "[Error] Invalid packet type received.\n";
+        }
+      }
+    }
+
+    if (response < 0 && ENABLE_SERVER_ERROR) {
+      std::cerr << "[Error] Server response failed.\n";
+    }
 
     // Close the connection
     close(client_sock);
@@ -170,6 +197,91 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
   return out_pkt;
 }
 
+ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
+  unsigned char buf[BUFFER_SIZE];
+
+  // Populate buffer with packet contents (prepped for netsend)
+  ssize_t pkt_size = out_pkt.buildPacket(buf);
+
+  ClientPacket test_pkt(buf, pkt_size);
+  std::cout << "Test packet contents:\n" << test_pkt.getStringFromSelf();
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = send(s, buf, pkt_size-total_bytes_sent, 0);
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent < 0) {
+      if (ENABLE_SERVER_ERROR) {
+        std::stringstream ss;
+        ss << "[Error] Failed to send packet: ";
+        ss << out_pkt.getStringFromBuffer(buf, pkt_size);
+        perror(ss.str().c_str());
+      }
+      return bytes_sent;
+    }
+  }
+  return total_bytes_sent;
+}
+
+int initializePlayer(ClientPacket in_pkt, int client_sock) {
+  uint64_t session_id = generateSessionId();
+  ServerPacket out_pkt(in_pkt.packet_type, session_id, 0, "Session ID Sent");
+  if (sendServerPacket(out_pkt, client_sock) < 0) {
+    return -1; 
+  }
+  PlayerEntry new_player(session_id, in_pkt.contents);
+  registry.insert_or_assign(session_id, new_player);
+  return 1;
+}
+
+int createLobby(ClientPacket in_pkt, int client_sock) {
+  // Get and verify current user
+  PlayerEntry *cur_player;
+  if (registry.find(in_pkt.session_id) != registry.end()) {
+    cur_player = &registry.at(in_pkt.session_id);
+  } else {
+    return -1;
+  }
+  // Get & Set Session & Lobby IDs
+  uint64_t session_id = cur_player->id;
+  uint64_t lobby_id = generateLobbyId();
+  ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby created");
+  // Send lobby ID to player
+  if (sendServerPacket(out_pkt, client_sock) < 0) {
+    return -1; 
+  }
+  // TODO: Set Lobby ID and mark as open lobby
+
+  return 1;
+}
+
+int sendLobbies(ClientPacket in_pkt, int client_sock) {
+  return -1;
+}
+
+int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
+  return -1;
+}
+
+uint64_t generateSessionId() {
+  // Initialize randomization
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<uint64_t> dist(1000, std::numeric_limits<std::uint64_t>::max()-1);
+  uint64_t rand_n = dist(gen);
+
+  // Guarantee unique session ID
+  while (registry.find(rand_n) != registry.end()) {
+    rand_n = dist(gen);
+  }
+  return rand_n;
+}
+
+uint64_t generateLobbyId() {
+  return 0;
+}
+
 void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd) {
   for (int i = min_fd; i <= max_fd; ++i) {
     // Ignore unset fds
@@ -240,42 +352,11 @@ void handleSigint(int signal_num) {
   exit(EXIT_SUCCESS);
 }
 
-ssize_t sendConfirmationResponse(int fd, bool is_good) {
-  std::string response;
-  if (is_good) {
-    response = "GOOD";
-  } else {
-    response = "BAD";
-  }
-
-  ssize_t n_bytes;
-  if ((n_bytes = send(fd, response.c_str(), sizeof(response), 0)) < 0) {
-    if (ENABLE_SERVER_LOG) {
-      std::cout << "[Log] Creation confirmation response successfuly sent (" 
-      << response.c_str() << ")" << std::endl;
-    }
-  } else {
-    if (ENABLE_SERVER_ERROR) {
-      perror("[Error] Failed to send creation confirmation response");
-    }
-  }
-  return n_bytes;
-}
-
-
 /**
  * DEFAULT PACKET DEFINITIONS
  */
 
 ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
-  // Calculate buffer size
-  // (
-  //   sizeof(packet_type) + 
-  //   sizeof(session_id) +
-  //   sizeof(lobby_id) +
-  //   sizeof(contents)
-  // );
-
   // Keep track of where in the buffer we're currently copying
   size_t cur_index = 0;
   
@@ -357,6 +438,52 @@ ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string
 ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
   pkt_size = CLIENT_PACKET_N_BYTES;
   contents_size = CLIENT_CONTENTS_SIZE;
+
+  // Copy to a local buffer to make sure all is well
+  unsigned char tmp_buf[n_bytes];
+  memcpy(tmp_buf, buf, n_bytes);
+
+  packet_type = (uint8_t)tmp_buf[0];
+  session_id = unpacku64(tmp_buf+sizeof(packet_type));
+  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
+
+  // Set contents
+  memcpy(
+    contents, 
+    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    contents_size
+  );
+  // Guarantee null term
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+}
+
+/**
+ * SERVER PACKET DEFINITIONS
+ */
+
+ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
+  pkt_size = SERVER_PACKET_N_BYTES;
+  contents_size = SERVER_CONTENTS_SIZE;
+  // Set first header value (no need to modify)
+  packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
+
+  // Set contents (string copy and guarantee null terminator)
+  strncpy(contents, val.c_str(), contents_size);
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+
+  // Log it
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Log] ClientPacket initialized with " 
+    << (int)type << " as type and "
+    << contents << " as contents" << std::endl;
+  }
+}
+
+ServerPacket::ServerPacket(unsigned char* buf, ssize_t n_bytes) {
+  pkt_size = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+  contents_size = SERVER_CONTENTS_SIZE;
 
   // Copy to a local buffer to make sure all is well
   unsigned char tmp_buf[n_bytes];

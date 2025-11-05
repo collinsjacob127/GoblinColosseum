@@ -36,11 +36,35 @@ constexpr int SERVER_PORT = 53243;
 // Max SIZE of username
 // Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
 constexpr size_t MAX_USERNAME_SIZE = 25;
-constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
+constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
+
 constexpr ssize_t SERVER_CONTENTS_SIZE = 25;
+constexpr ssize_t SERVER_PACKET_N_BYTES = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+
 constexpr int BUFFER_SIZE = 1024;
 
+/**
+ * @brief Struct for packaging packets sent to server
+ * @note [ [Packet type - 1B] [Session ID - 8B] [Lobby ID - 8B] [Contents - 25B] ] Total - 44B
+ * @note Packet types:
+ * @note 0 -> Sending own username (Entering server). 
+ *            Server responds with unique session ID
+ * 
+ * @note 1 -> (CREATE) Requesting to create a lobby. 
+ *            Server responds with lobby ID.
+ * 
+ * @note 2 -> (LIST <X>) Requesting list of available peers. 
+ *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
+ * 
+ * @note 3 -> (JOIN) Send username of peer to join
+ *            Server responds with lobby ID.
+ * 
+ * @note 4 -> (LOBBY <ID>) Send current lobby ID.
+ *            Server responds with IP Info of connected peer, if any
+ *            If no connection, responds with 0.0.0.0:0
+ */
 class MatchmakingPacket {
  public:
   ssize_t pkt_size;
@@ -73,26 +97,6 @@ class MatchmakingPacket {
   std::string getStringFromSelf();
 };
 
-/**
- * @brief Struct for packaging packets sent to server
- * @note [ [Packet type - 1B] [Session ID - 8B] [Lobby ID - 8B] [Contents - 25B] ] Total - 44B
- * @note Packet types:
- * @note 0 -> Sending own username (Entering server). 
- *            Server responds with unique session ID
- * 
- * @note 1 -> (CREATE) Requesting to create a lobby. 
- *            Server responds with lobby ID.
- * 
- * @note 2 -> (LIST <X>) Requesting list of available peers. 
- *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
- * 
- * @note 3 -> (JOIN) Send username of peer to join
- *            Server responds with lobby ID.
- * 
- * @note 4 -> (LOBBY <ID>) Send current lobby ID.
- *            Server responds with IP Info of connected peer, if any
- *            If no connection, responds with 0.0.0.0:0
- */
 class ClientPacket : public MatchmakingPacket {
  public:
 
@@ -115,14 +119,11 @@ class ClientPacket : public MatchmakingPacket {
   ClientPacket(unsigned char* buf, ssize_t n_bytes);
 };
 
-/**
- * @brief Struct describing structure of packets received from the server.
- */
-struct ServerPacket {
-  uint8_t type = 0;
-  uint64_t session_id = 0;
-  uint64_t lobby_id = 0;
-  char contents[BUFFER_SIZE];
+class ServerPacket : public MatchmakingPacket {
+ public:
+
+  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
+  ServerPacket(unsigned char* buf, ssize_t n_bytes);
 };
 
 /**
@@ -184,8 +185,10 @@ class NetEngine {
 
   /**
    * @brief Function to recv and parse a ServerPacket from the server
+   * @param s socket descriptor
+   * @return Valid packet on success, packet with all 0s and empty string on failure.
    */
-  ServerPacket recvServerPacket();
+  ServerPacket recvServerPacket(int s);
 
   /**
    * @brief Function to disconnect from the server
