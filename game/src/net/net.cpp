@@ -221,7 +221,7 @@ std::string ClientPacket::getStringFromSelf() {
 }
 
 /**
- * NET UTILS
+ * NET UTILS - courtesy of l'beej
  */
 
 void packi64(unsigned char *buf, uint64_t i)
