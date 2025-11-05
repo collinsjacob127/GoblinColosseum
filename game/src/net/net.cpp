@@ -19,45 +19,6 @@ int testNetClient() {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int NetEngine::testNetClient() {
-  std::cout << "[Log] Running linux netcode" << std::endl;
-  Timer timer;
-  timer.start();
-  int result, attempt_cnt, max_attempts = 3;
-  ServerPacket in_pkt;
-
-  // 1. Bind server connection to the returned socket
-  result = serverConnect();
-  if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
-    serverDisconnect();
-    return -1;
-  }
-  ClientPacket out_pkt(0, 69, 420, username);
-  sendClientPacket(out_pkt);
-
-  // 2. Send your username to initialize server connection
-  // result = -1;
-  // result = sendUserName();
-  // if (result == 1) {
-  //   serverDisconnect();
-  //   return 1; // Retry username
-  // }
-
-  // Close the server connection
-  serverDisconnect();
-
-  // Connect to peer
-
-  // Test peer connection
-
-  // Close peer connection
-
-  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-  << timer.duration() << "s\n";
-
-  return 0;
-}
 
 NetEngine::NetEngine() {
   server_sock = -1;
@@ -102,6 +63,9 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
   // Populate buffer with packet contents (prepped for netsend)
   ssize_t pkt_size = out_pkt.buildPacket(buf);
 
+  ClientPacket test_pkt(buf, pkt_size);
+  std::cout << "Test packet contents:\n" << test_pkt.getStringFromSelf();
+
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
   while (total_bytes_sent < pkt_size) {
@@ -117,7 +81,6 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
       return bytes_sent;
     }
   }
-
   return total_bytes_sent;
 }
 
@@ -144,6 +107,10 @@ void NetEngine::peerDisconnect() {
 
 #endif
 
+/**
+ * CLIENTPACKET DEFINITIONS
+ */
+
 ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
   // Set first header value (no need to modify)
   packet_type = type;
@@ -162,6 +129,25 @@ ClientPacket::ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string
   }
 }
 
+ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
+  // Copy to a local buffer to make sure all is well
+  unsigned char tmp_buf[n_bytes];
+  memcpy(tmp_buf, buf, n_bytes);
+
+  packet_type = (uint8_t)tmp_buf[0];
+  session_id = unpacku64(tmp_buf+sizeof(packet_type));
+  lobby_id = unpacku64(tmp_buf+sizeof(packet_type)+sizeof(session_id));
+
+  // Set contents
+  memcpy(
+    contents, 
+    tmp_buf+sizeof(packet_type)+sizeof(session_id)+sizeof(lobby_id), 
+    sizeof(contents)
+  );
+  // Guarantee null term
+  contents[MAX_USERNAME_SIZE-1] = '\0';
+}
+
 ssize_t ClientPacket::buildPacket(unsigned char* buf) {
   // Calculate buffer size
   size_t pkt_size = 
@@ -178,11 +164,7 @@ ssize_t ClientPacket::buildPacket(unsigned char* buf) {
     std::cout << "[Debug] session size: " << sizeof(session_id) << std::endl;
     std::cout << "[Debug] lobby size: " << sizeof(lobby_id) << std::endl;
     std::cout << "[Debug] contents size: " << sizeof(contents) << std::endl;
-
-    std::cout << "[Debug] type: " << (int)packet_type << std::endl;
-    std::cout << "[Debug] session: " << session_id << std::endl;
-    std::cout << "[Debug] lobby: " << lobby_id << std::endl;
-    std::cout << "[Debug] contents: " << contents << std::endl;
+    std::cout << getStringFromSelf();
   }
 
   // Keep track of where in the buffer we're currently copying
@@ -229,6 +211,47 @@ std::string ClientPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_byte
   return ss.str();
 }
 
+std::string ClientPacket::getStringFromSelf() {
+  std::stringstream ss;
+  ss << "[Debug] type: " << (int)packet_type << std::endl;
+  ss << "[Debug] session: " << session_id << std::endl;
+  ss << "[Debug] lobby: " << lobby_id << std::endl;
+  ss << "[Debug] contents: " << contents << std::endl;
+  return ss.str();
+}
+
+/**
+ * NET UTILS
+ */
+
+void packi64(unsigned char *buf, uint64_t i)
+{
+    *buf++ = i>>56; *buf++ = i>>48;
+    *buf++ = i>>40; *buf++ = i>>32;
+    *buf++ = i>>24; *buf++ = i>>16;
+    *buf++ = i>>8;  *buf++ = i;
+}
+
+/**
+ * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
+ */
+uint64_t unpacku64(unsigned char *buf)
+{
+    return ((uint64_t)buf[0]<<56) |
+           ((uint64_t)buf[1]<<48) |
+           ((uint64_t)buf[2]<<40) |
+           ((uint64_t)buf[3]<<32) |
+           ((uint64_t)buf[4]<<24) |
+           ((uint64_t)buf[5]<<16) |
+           ((uint64_t)buf[6]<<8)  |
+           buf[7];
+}
+
+
+/**
+ * NET ENGINE STATIC DEFINITIONS (Not OS-Specific)
+ */
+
 void NetEngine::getLocalUserName() {
   std::string usr_name;
   std::cout << "Enter your username: " << std::endl;
@@ -262,28 +285,41 @@ void NetEngine::setLocalUserName(std::string user_name) {
   }
 }
 
-/**
- * NET UTILS
- */
-void packi64(unsigned char *buf, uint64_t i)
-{
-    *buf++ = i>>56; *buf++ = i>>48;
-    *buf++ = i>>40; *buf++ = i>>32;
-    *buf++ = i>>24; *buf++ = i>>16;
-    *buf++ = i>>8;  *buf++ = i;
+ssize_t NetEngine::initializeServerCommunication() {
+  // 1. Bind server connection to the returned socket
+  int result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return -1;
+  }
+  ClientPacket out_pkt(0, 69, 420, username);
+  ssize_t bytes_sent = sendClientPacket(out_pkt);
+  // TODO: Receive session ID
+  serverDisconnect();
+  return bytes_sent;
 }
 
-/**
- * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
- */
-uint64_t unpacku64(unsigned char *buf)
-{
-    return ((uint64_t)buf[0]<<56) |
-           ((uint64_t)buf[1]<<48) |
-           ((uint64_t)buf[2]<<40) |
-           ((uint64_t)buf[3]<<32) |
-           ((uint64_t)buf[4]<<24) |
-           ((uint64_t)buf[5]<<16) |
-           ((uint64_t)buf[6]<<8)  |
-           buf[7];
+int NetEngine::testNetClient() {
+  std::cout << "[Log] Running linux netcode" << std::endl;
+  Timer timer;
+  timer.start();
+  ServerPacket in_pkt;
+  ssize_t result;
+
+  // Send username and get session ID
+  result = initializeServerCommunication();
+
+  // Join or create
+
+  // Connect to peer
+
+  // Test peer connection
+
+  // Close peer connection
+
+  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
+  << timer.duration() << "s\n";
+
+  return 0;
 }

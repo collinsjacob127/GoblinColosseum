@@ -89,12 +89,27 @@ struct ClientPacket {
   ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
 
   /**
+   * @brief Build a ClientPacket from a received buffer.
+   */
+  ClientPacket(unsigned char* buf, ssize_t n_bytes);
+
+  /**
    * @brief Function to move ClientPacket into a provided
    * buffer and prepare the contents for network send
    */
   ssize_t buildPacket(unsigned char* buf);
 
+  /**
+   * @brief Function to get a string representing the contents of a
+   * buffer presumably filled by this struct's method
+   */
   std::string getStringFromBuffer(unsigned char* buf, ssize_t n_bytes);
+
+  /**
+   * @brief Function to get a string representing the contents
+   * of this struct.
+   */
+  std::string getStringFromSelf();
 };
 
 /**
@@ -115,8 +130,8 @@ class NetEngine {
   std::string username = "";
   uint64_t session_id = 0;
   uint64_t lobby_id = 0;
-  int server_sock;
-  int peer_sock;
+  int server_sock = -1;
+  int peer_sock = -1;
 
   NetEngine();
   ~NetEngine();
@@ -145,6 +160,12 @@ class NetEngine {
    * @note It is assumed that the username has already been set
    */
   int testNetClient();
+
+  /**
+   * @brief Function to inform the server of your username and get
+   * a new session ID.
+   */
+  ssize_t initializeServerCommunication();
 
  private:
 

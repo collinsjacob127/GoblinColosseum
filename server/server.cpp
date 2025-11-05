@@ -39,7 +39,7 @@
 
 // constexpr int SERVER_PORT = 0;
 constexpr char* SERVER_PORT = (char*)"53243";
-constexpr ssize_t MAX_USERNAME_LEN = 25;
+constexpr ssize_t MAX_USERNAME_SIZE = 25;
 constexpr ssize_t MAX_PACKET_SIZE = 26;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PENDING = 64;
@@ -52,6 +52,45 @@ constexpr int MAX_PENDING = 64;
 fd_set all_sockets, call_set;
 int listen_socket;
 int min_fd = 3, max_socket;
+
+struct ClientPacket {
+  uint8_t packet_type = 0;
+
+  // Random number assigned by server. Used to self-identify when making requests.
+  uint64_t session_id = 0;
+  // Lobby number assigned by server.
+  uint64_t lobby_id = 0;
+
+  /**
+   * Contents types (c-string):
+   * @note 0 -> Own username
+   * @note 1 -> "CREATE"
+   * @note 2 -> "LIST"
+   * @note 3 -> Peer username (?)
+  */
+  char contents[MAX_USERNAME_SIZE];
+
+  /**
+   * @brief Build a client packet given the type
+   * and contents
+   * @param type Header to inform server what type of message is being sent
+   * @param val Contents of the message being sent
+   * @note Possible values for type:
+   * @note 0 -> Sending own username (Entering server). Expects server response "GOOD"
+   * @note 1 -> (CREATE) Requesting to create a lobby. Expects server sesponse "GOOD"
+   * @note 2 -> (LIST) Requesting list of available peers. 
+   * @note 3 -> Requesting ip addr of peer. 
+   */
+  ClientPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
+
+  /**
+   * @brief Function to move ClientPacket into a provided
+   * buffer and prepare the contents for network send
+   */
+  ssize_t buildPacket(unsigned char* buf);
+
+  std::string getStringFromBuffer(unsigned char* buf, ssize_t n_bytes);
+};
 
 struct PlayerEntry {
   uint64_t id = 0;            // Unique ID for this peer
@@ -270,8 +309,8 @@ int main() {
           PlayerEntry *cur_client = &registry.at(s);
 
           char pkt_type = buf[0];
-          char contents[MAX_USERNAME_LEN];
-          strncpy(contents, buf+1, MAX_USERNAME_LEN);
+          char contents[MAX_USERNAME_SIZE];
+          strncpy(contents, buf+1, MAX_USERNAME_SIZE);
           std::string str_contents = contents;
 
           switch (pkt_type) {
