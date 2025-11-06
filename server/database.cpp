@@ -182,9 +182,13 @@ ssize_t Registry::clearMap(TYPE_PLAYER_MAP* map) {
 
   // Iterate through the map
   for (it = map->begin(); it != map->end(); ++it) {
+    // Make sure ptr in value mapping is not null
+    if (!it->second) { continue; }
+
     // Get a pointer to the mapped player
     PlayerEntry* tmp = &(*it->second);
-    // Check if pointer still valid
+
+    // Make doubly sure pointer is valid
     if (tmp) {
       // Free PlayerEntry
       delete tmp;
@@ -192,6 +196,7 @@ ssize_t Registry::clearMap(TYPE_PLAYER_MAP* map) {
       n_removed++;
     }
   }
+
   return n_removed;
 }
 
