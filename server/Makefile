@@ -9,7 +9,7 @@ OBJ_SOURCE = ${OBJECTS:.o=.cpp}
 TARGET_SOURCE = ${TARGETS:.x=.cpp}
 TARGET_HEADERS = ${TARGETS:.x=.hpp}
 
-CFLAGS = -Wall -g
+CFLAGS = -Wall -Wextra -g
 CXXFLAGS = -Wall
 
 LDLIBS = 

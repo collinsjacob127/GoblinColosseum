@@ -295,7 +295,8 @@ void disconnectClient(int fd) {
 }
 
 void handleSigint(int signal_num) {
-  std::cout << "\n[Log] Server Interrupted - Disconnecting all clients and shutting down server.\n";
+  fprintf(stderr, "\n\n[Log] Server Interrupted (Received signal %d)\n", signal_num);
+  std::cout << "[Log] Disconnecting all clients and shutting down server.\n";
   // Close all sockets
   closeAllConnections();
 

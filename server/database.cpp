@@ -184,8 +184,9 @@ ssize_t Registry::clearMap(TYPE_PLAYER_MAP* map) {
   ssize_t n_removed = 0;
   TYPE_PLAYER_MAP::iterator it;
   for (it = map->begin(); it != map->end(); it++) {
-    if ((PlayerEntry*)it->second != nullptr) {
-      free(it->second);
+    PlayerEntry* tmp = &(*it->second);
+    if (tmp != nullptr) {
+      delete tmp;
       n_removed++;
     }
   }
