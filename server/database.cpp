@@ -64,13 +64,9 @@ Registry::~Registry() {
   if (ENABLE_REGISTRY_LOG)
     std::cout << "[Registry] Deleted " << n_removed << " entries from session map\n";
 
-  n_removed = clearMap(&player_map);
-  if (ENABLE_REGISTRY_LOG)
-    std::cout << "[Registry] Deleted " << n_removed << " entries from player map\n";
-
-  n_removed = clearMap(&lobby_map);
-  if (ENABLE_REGISTRY_LOG)
-    std::cout << "[Registry] Deleted " << n_removed << " entries from lobby map\n";
+  session_map.clear();
+  player_map.clear();
+  lobby_map.clear();
 }
 
 uint64_t Registry::addPlayer() {
@@ -183,10 +179,16 @@ TYPE_PLAYER_MAP* Registry::getMapOfType(TYPE_ID_SPECIFIER id_type) {
 ssize_t Registry::clearMap(TYPE_PLAYER_MAP* map) {
   ssize_t n_removed = 0;
   TYPE_PLAYER_MAP::iterator it;
-  for (it = map->begin(); it != map->end(); it++) {
+
+  // Iterate through the map
+  for (it = map->begin(); it != map->end(); ++it) {
+    // Get a pointer to the mapped player
     PlayerEntry* tmp = &(*it->second);
-    if (tmp != nullptr) {
+    // Check if pointer still valid
+    if (tmp) {
+      // Free PlayerEntry
       delete tmp;
+      // Increment number of removals
       n_removed++;
     }
   }

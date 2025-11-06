@@ -49,7 +49,8 @@ int main() {
     if (server_timer.duration() > 120.0) { continue_server = false; }
 
     if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
-      std::cout << "\n[Server Awaiting New Messages]\n";
+      std::cout << "\n[Server Awaiting New Messages] "
+      << "The registry has " << registry.size() << " entries.\n";
     }
 
     // Bind socket to local interface and passive open
@@ -301,5 +302,7 @@ void handleSigint(int signal_num) {
   closeAllConnections();
 
   std::cout << "[Log] Server shutting down safely.\n";
+  std::cout << "[Log] Removing " << registry.size()
+  << " entries from lobby.\n";
   exit(EXIT_SUCCESS);
 }

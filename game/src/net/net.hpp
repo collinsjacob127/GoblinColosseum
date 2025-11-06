@@ -26,6 +26,7 @@
 #define ENABLE_NETCODE_DEBUG true
 #define ENABLE_NETCODE_ERROR true
 #define ENABLE_NETCODE_LOG true
+#define ENABLE_PACKET_INSPECTION true
 
 
 // IPV4 addr of the server
@@ -79,8 +80,21 @@ class NetEngine {
   /**
    * @brief Function to inform the server of your username and get
    * a new session ID.
+   * @return Bytes sent, or -1 on failure.
    */
   ssize_t initializeServerCommunication();
+
+  /**
+   * @brief Function to request the creation of a lobby
+   * @return Bytes sent, or -1 on failure
+   */
+  ssize_t createLobby();
+
+  /**
+   * @brief Function to get a list of open lobbies from the server.
+   * @return Bytes sent, or -1 on failure
+   */
+  ssize_t getLobbies(size_t min_idx, size_t max_idx);
 
  private:
 
@@ -91,6 +105,7 @@ class NetEngine {
 
   /**
    * @brief Function to parse and send a ClientPacket to the server
+   * @brief Returns bytes sent or -1 on error
    */
   ssize_t sendClientPacket(ClientPacket);
 
@@ -107,57 +122,7 @@ class NetEngine {
   void serverDisconnect();
 
   /**
-   * @brief Function to send a user's username to the server
-   * @note Verifies that the name is valid
-   * @note If server sends back BAD, returns 1
+   * @brief Function to disconnect from a peer
    */
-  int sendUserName();
-
-  /**
-   * @brief Function to send a CREATE message to the server
-   */
-  int sendCreate();
-
-  /**
-   * @brief Function to retrieve the current list of users from the server
-   */
-  std::vector<std::string> receiveServerList();
-
-  /**
-   * @brief Select which lobby to join via cin
-   */
-  size_t selectLobby(size_t n_lobbies);
-
-  /**
-   * @brief Send to the server the username of the peer you wish to join
-   * @return 0 on success, -1 on failure
-   */
-  int sendJoinRequest(std::string peer_name);
-
-  /**
-   * @brief Read in the address of whatever peer you shall connect to for the game
-   */
-  std::pair<std::string, std::string> getPeerAddrInfo();
-
-  /**
-   * @brief Recieve from the server and parse the results
-   * @return -1 on failure, 0 on success, 1 on server response != "GOOD"
-   */
-  ssize_t verifyGoodResponse();
-
   void peerDisconnect();
 };
-
-/**
- * Net UTILS (Provided by beej - https://beej.us/guide/bgnet/html/index-wide.html#sonofdataencap)
- */
-
-/**
- * @brief store a 64-bit int into a char buffer (like htonl())
- */
-void packi64(unsigned char *buf, uint64_t i);
-
-/**
- * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
- */
-uint64_t unpacku64(unsigned char *buf);

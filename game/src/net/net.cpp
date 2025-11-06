@@ -20,7 +20,7 @@ int testNetClient() {
 #include <arpa/inet.h>
 
 /**
- * NET ENGINE DEFINITIONS
+ * NET ENGINE UNIX DEFINITIONS
  */
 
 NetEngine::NetEngine() {
@@ -170,6 +170,19 @@ void NetEngine::setLocalUserName(std::string user_name) {
   }
 }
 
+int NetEngine::getLocalJoinOrCreate() {
+  int selection = -1;
+  std::cout << "Select JOIN or CREATE:" << std::endl;
+  std::cout << "[0] JOIN" << std::endl;
+  std::cout << "[1] CREATE" << std::endl;
+  std::cin >> selection;
+  while (selection != 0 && selection != 1) {
+    std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
+    std::cin >> selection;
+  }
+  return selection;
+}
+
 ssize_t NetEngine::initializeServerCommunication() {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
@@ -180,16 +193,58 @@ ssize_t NetEngine::initializeServerCommunication() {
   }
   ClientPacket out_pkt(0, 0, 0, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
+  if (bytes_sent < 0) {
+    perror("[Error] Failed to send lobby creation pkt to server");
+    serverDisconnect();
+    return -1;
+  }
   
   ServerPacket in_pkt = recvServerPacket(server_sock);
   if (in_pkt.session_id == 0) {
     serverDisconnect();
     return -1;
   }
-  std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+  if (ENABLE_PACKET_INSPECTION)
+    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+
+  session_id = in_pkt.session_id;
 
   serverDisconnect();
   return bytes_sent;
+}
+
+ssize_t NetEngine::createLobby() {
+  // 1. Bind server connection to the returned socket
+  int result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return -1;
+  }
+  ClientPacket out_pkt(1, session_id, 0, username);
+  ssize_t bytes_sent = sendClientPacket(out_pkt);
+  if (bytes_sent < 0) {
+    perror("[Error] Failed to send lobby creation pkt to server");
+    serverDisconnect();
+    return -1;
+  }
+  
+  ServerPacket in_pkt = recvServerPacket(server_sock);
+  if (in_pkt.lobby_id == 0) {
+    serverDisconnect();
+    return -1;
+  }
+  if (ENABLE_PACKET_INSPECTION)
+    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+
+  lobby_id = in_pkt.lobby_id;
+
+  serverDisconnect();
+  return bytes_sent;
+}
+
+ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
+  return -1;
 }
 
 int NetEngine::testNetClient() {
@@ -200,8 +255,26 @@ int NetEngine::testNetClient() {
 
   // Send username and get session ID
   result = initializeServerCommunication();
+  if (result < 0) {
+    std::cout << "[Error] Failed to initialize server connection\n";
+  }
 
-  // Join or create
+  // Get user selection
+  int is_create = getLocalJoinOrCreate();
+
+  if (is_create) {
+    // Create a lobby
+    result = createLobby();
+    if (result < 0) {
+      std::cout << "[Error] Failed to create server\n";
+    }
+  } else {
+    // Receive list of first 10 lobbies
+    result = getLobbies(0, 10);
+    if (result < 0) {
+      std::cout << "[Error] Failed to get lobby list\n";
+    }
+  }
 
   // Connect to peer
 
