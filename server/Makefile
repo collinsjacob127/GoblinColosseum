@@ -1,7 +1,7 @@
 # Author: Jacob Collins
 
 TARGETS = server.x
-OBJECTS = util.o packets.o
+OBJECTS = util.o packets.o database.o
 
 OBJ_HEADERS = ${OBJECTS:.o=.hpp}
 OBJ_SOURCE = ${OBJECTS:.o=.cpp}

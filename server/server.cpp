@@ -18,13 +18,9 @@
  * GLOBALS for server; Necessary for cleaning up from SIGINT
  */
 // all sockets -> all active
-// call_set -> oft overwritten, only used for select()
-static fd_set all_sockets, call_set;
-static int listen_socket;
-static int min_fd = 3, max_socket;
+int listen_socket, client_socket;
 
-// Maps session_id -> PlayerEntry
-static std::map<uint64_t, PlayerEntry> registry;
+static Registry registry;
 
 int main() {
   // Safely clean up the server if shit breaks.
@@ -36,17 +32,11 @@ int main() {
   Timer server_timer;
 
   // Socket where server accept() new connections thru
-  FD_ZERO(&all_sockets);
   listen_socket = bindAndListen(SERVER_PORT);
-  int opt = 1;
-  if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("setsockopt");
-    close(listen_socket);
-    exit(EXIT_FAILURE);
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Debug] Server listening on port " 
+    << SERVER_PORT << " via socket " << listen_socket << std::endl;
   }
-  FD_SET(listen_socket, &all_sockets);
-  // always equal to the max fd from which the program can accept() new conns
-  max_socket = listen_socket;
 
   if (ENABLE_SERVER_DEBUG) { std::cout << "[Debug] Initial registry size: " << registry.size() << std::endl; }
   if (ENABLE_SERVER_LOG) { printf("[Log] Server has started!\n"); }
@@ -62,26 +52,23 @@ int main() {
       std::cout << "\n[Server Awaiting New Messages]\n";
     }
 
-    int client_sock = -1;
     // Bind socket to local interface and passive open
     struct sockaddr_in new_address;
     socklen_t addr_len = sizeof(new_address);
-    if ((client_sock = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
+    if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
       // Accept failed
       perror("[Error] Invalid accept attempted, closing server and exiting");
-      closeAllInSet(&all_sockets, 3, max_socket);
+      closeAllInSet();
       exit(EXIT_FAILURE);
     } else {
       // Accept succeeded
-      FD_SET(client_sock, &all_sockets);
-      max_socket = std::max(max_socket, client_sock);
       if (ENABLE_SERVER_DEBUG) {
-        std::cout << "[Debug] Client connected via socket " << client_sock << std::endl; 
+        std::cout << "[Debug] Client connected via socket " << client_socket << std::endl; 
       }
     }
 
     // Receive client's packet
-    ClientPacket in_pkt = recvClientPacket(CLIENT_PACKET_N_BYTES, client_sock);
+    ClientPacket in_pkt = recvClientPacket(CLIENT_PACKET_N_BYTES, client_socket);
     if (ENABLE_SERVER_DEBUG) {
       std::cout << "[Debug] Packet received: \n" << in_pkt.getStringFromSelf();
     }
@@ -90,19 +77,19 @@ int main() {
     int response = -1;
     switch (in_pkt.packet_type) {
       case (0): {
-        response = initializePlayer(in_pkt, client_sock);
+        response = initializePlayer(in_pkt, client_socket);
         break;
       }
       case (1): {
-        response = createLobby(in_pkt, client_sock);
+        response = createLobby(in_pkt, client_socket);
         break;
       }
       case (2): {
-        response = sendLobbies(in_pkt, client_sock);
+        response = sendLobbies(in_pkt, client_socket);
         break;
       }
       case (3): {
-        response = sendPeerInfo(in_pkt, client_sock);
+        response = sendPeerInfo(in_pkt, client_socket);
         break;
       }
       default: {
@@ -117,58 +104,13 @@ int main() {
     }
 
     // Close the connection
-    close(client_sock);
-    FD_CLR(client_sock, &all_sockets);
+    close(client_socket);
   }
 
   // Close the server's socket
-  closeAllInSet(&all_sockets, 3, max_socket);
+  closeAllInSet();
   printf("[Log] Server closing...\n");
   return 0;
-}
-
-int bindAndListen(const char *service) {
-  struct addrinfo hints;
-  struct addrinfo *rp, *result;
-  int s;
-
-  /* Build address data structure */
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-  hints.ai_protocol = 0;
-
-  /* Get local address info */
-  if ((s = getaddrinfo(NULL, service, &hints, &result)) != 0) {
-    fprintf(stderr, "stream-talk-server: getaddrinfo: %s\n", gai_strerror(s));
-    return -1;
-  }
-
-  /* Iterate through the address list and try to perform passive open */
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-    if ((s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1) {
-      continue;
-    }
-
-    if (!bind(s, rp->ai_addr, rp->ai_addrlen)) {
-      break;
-    }
-
-    close(s);
-  }
-  if (rp == NULL) {
-    perror("stream-talk-server: bind");
-    return -1;
-  }
-  if (listen(s, MAX_PENDING) == -1) {
-    perror("stream-talk-server: listen");
-    close(s);
-    return -1;
-  }
-  freeaddrinfo(result);
-
-  return s;
 }
 
 ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
@@ -226,33 +168,58 @@ ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
 }
 
 int initializePlayer(ClientPacket in_pkt, int client_sock) {
-  uint64_t session_id = generateSessionId();
+  // Verify good username
+  std::string user_name = in_pkt.contents;
+  bool bad_username = false;
+  if (user_name.length() == 0 || user_name.length() >= MAX_USERNAME_SIZE) {
+    bad_username = true;
+  }
+
+  // Add player to registry and get session ID
+  uint64_t session_id = registry.addPlayer();
+
+  // Send session ID back to player
   ServerPacket out_pkt(in_pkt.packet_type, session_id, 0, "Session ID Sent");
-  if (sendServerPacket(out_pkt, client_sock) < 0) {
+  if (sendServerPacket(out_pkt, client_sock) < 0 || bad_username) {
+    // Failed to send, remove them from the session
+    registry.clearId(session_id, SESSION_ID_SPECIFIER);
     return -1; 
   }
-  PlayerEntry new_player(session_id, in_pkt.contents);
-  registry.insert_or_assign(session_id, new_player);
+
+  // Set username
+  PlayerEntry *new_player = registry.getPlayer(session_id, SESSION_ID_SPECIFIER);
+  new_player->user_name = in_pkt.contents;
+
+  // Start their timer
+  new_player->p_timer.start();
+
   return 1;
 }
 
 int createLobby(ClientPacket in_pkt, int client_sock) {
-  // Get and verify current user
   PlayerEntry *cur_player;
-  if (registry.find(in_pkt.session_id) != registry.end()) {
-    cur_player = &registry.at(in_pkt.session_id);
-  } else {
-    return -1;
+  uint64_t session_id = in_pkt.session_id, lobby_id;
+
+  // Get and verify current user
+  if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
+    // User does not exist
+    ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Player DNE");
+    sendServerPacket(out_pkt, client_sock);
+    return -1; // Player doesn't exist in registry
   }
-  // Get & Set Session & Lobby IDs
-  uint64_t session_id = cur_player->id;
-  uint64_t lobby_id = generateLobbyId();
-  ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby created");
+
+  // Set new lobby ID
+  lobby_id = registry.setNewId(cur_player, LOBBY_ID_SPECIFIER);
+
   // Send lobby ID to player
+  ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby created");
   if (sendServerPacket(out_pkt, client_sock) < 0) {
+    registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     return -1; 
   }
-  // TODO: Set Lobby ID and mark as open lobby
+
+  // Start the lobby update timer
+  cur_player->lobby_update_time.start();
 
   return 1;
 }
@@ -265,82 +232,72 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   return -1;
 }
 
-uint64_t generateSessionId() {
-  uint64_t rand_n = id_generator.getRandomId();
+int bindAndListen(const char *service) {
+  struct addrinfo hints;
+  struct addrinfo *rp, *result;
+  int s;
 
-  // Guarantee unique session ID
-  while (registry.find(rand_n) != registry.end()) {
-    rand_n = id_generator.getRandomId();
+  /* Build address data structure */
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+  hints.ai_protocol = 0;
+
+  /* Get local address info */
+  if ((s = getaddrinfo(NULL, service, &hints, &result)) != 0) {
+    fprintf(stderr, "stream-talk-server: getaddrinfo: %s\n", gai_strerror(s));
+    return -1;
   }
 
-  return rand_n;
-}
-
-uint64_t generateLobbyId() {
-  return 0;
-}
-
-void closeAllInSet(fd_set *socket_list, int min_fd, int max_fd) {
-  for (int i = min_fd; i <= max_fd; ++i) {
-    // Ignore unset fds
-    if (!FD_ISSET(i, socket_list))
+  /* Iterate through the address list and try to perform passive open */
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+    if ((s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1) {
       continue;
-    
-    close(i);
-  }
-}
-
-PlayerEntry getEntryFromUserName(std::string uname) {
-  PlayerEntry tmp;
-  std::map<uint64_t, PlayerEntry>::iterator it;
-  // Iterate through registry
-  for (it = registry.begin(); it != registry.end(); it++) {
-    // Check if user has matching name
-    if (it->second.user_name == uname) {
-      tmp = it->second;
     }
-  }
-  return tmp;
-}
 
-std::vector<std::string> getLobbyList() {
-  std::vector<std::string> lobby_list;
-  std::map<uint64_t, PlayerEntry>::iterator it;
-  // Iterate through registry
-  for (it = registry.begin(); it != registry.end(); it++) {
-    // Check if user has open lobby
-    if (it->second.open_lobby) {
-      lobby_list.push_back(it->second.user_name);
+    int opt = 1;
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+      perror("setsockopt");
+      close(listen_socket);
+      exit(EXIT_FAILURE);
     }
+
+    if (!bind(s, rp->ai_addr, rp->ai_addrlen)) {
+      break;
+    }
+
+    close(s);
   }
-  return lobby_list;
+  if (rp == NULL) {
+    perror("stream-talk-server: bind");
+    return -1;
+  }
+  if (listen(s, MAX_PENDING) == -1) {
+    perror("stream-talk-server: listen");
+    close(s);
+    return -1;
+  }
+  freeaddrinfo(result);
+
+  return s;
 }
 
-void removePlayer(uint64_t session_id) {
-  printf("[Log] User %s (%lu) @ %s:%u has been removed from the registry.\n", 
-    registry.at(session_id).user_name.c_str(),
-    registry.at(session_id).id,
-    registry.at(session_id).ipv4_str.c_str(),
-    registry.at(session_id).port_num
-  );
-  std::map<uint64_t, PlayerEntry>::iterator it = registry.find(session_id);
-  registry.erase(it);
-  if (ENABLE_SERVER_DEBUG) {
-    std::cout << "[Debug] Server registry now has " << registry.size() << " entries\n";
-  }
+void closeAllInSet() {
+  close(listen_socket);
+  close(client_socket);
 }
 
 void disconnectClient(int fd) {
   close(fd);
-  FD_CLR(fd, &all_sockets);
   printf("[Log] User on port %d disconnected.\n", fd);
 }
 
 void handleSigint(int signal_num) {
   std::cout << "\n[Log] Server Interrupted - Disconnecting all clients and shutting down server.\n";
-  closeAllInSet(&all_sockets, min_fd, max_socket);
-  FD_ZERO(&all_sockets);
-  FD_ZERO(&call_set);
+  // Close all sockets
+  closeAllInSet();
+
   std::cout << "[Log] Server shutting down safely.\n";
   exit(EXIT_SUCCESS);
 }

@@ -4,6 +4,8 @@
  * Description: Header file for packet classes.
  */
 
+#pragma once
+
 #include <iostream> // output
 #include <string.h> // strings
 #include <sstream> // string streams
