@@ -79,7 +79,7 @@ void handleSigint(int signal_num);
 /**
  * @brief Close every socket in a file descriptor set.
  */
-void closeAllInSet();
+void closeAllConnections();
 
 /**
  * @brief Function to disconnect a client from the server.

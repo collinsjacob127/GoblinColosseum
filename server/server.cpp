@@ -58,7 +58,7 @@ int main() {
     if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
       // Accept failed
       perror("[Error] Invalid accept attempted, closing server and exiting");
-      closeAllInSet();
+      closeAllConnections();
       exit(EXIT_FAILURE);
     } else {
       // Accept succeeded
@@ -108,7 +108,7 @@ int main() {
   }
 
   // Close the server's socket
-  closeAllInSet();
+  closeAllConnections();
   printf("[Log] Server closing...\n");
   return 0;
 }
@@ -257,6 +257,7 @@ int bindAndListen(const char *service) {
     }
 
     int opt = 1;
+    // Enable safe reuse of server port
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
       perror("setsockopt");
       close(listen_socket);
@@ -283,7 +284,7 @@ int bindAndListen(const char *service) {
   return s;
 }
 
-void closeAllInSet() {
+void closeAllConnections() {
   close(listen_socket);
   close(client_socket);
 }
@@ -296,7 +297,7 @@ void disconnectClient(int fd) {
 void handleSigint(int signal_num) {
   std::cout << "\n[Log] Server Interrupted - Disconnecting all clients and shutting down server.\n";
   // Close all sockets
-  closeAllInSet();
+  closeAllConnections();
 
   std::cout << "[Log] Server shutting down safely.\n";
   exit(EXIT_SUCCESS);
