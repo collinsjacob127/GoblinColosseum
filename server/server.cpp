@@ -235,11 +235,12 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
   // Generate lobby list
   std::vector<TYPE_LOBBY_INFO> lobby_list = registry.getLobbyList(min_idx, max_idx);
 
-  if (ENABLE_SERVER_DEBUG) {
-    std::cout << "[Debug] Building lobby list packet\n";
-  }
-  // Populate packet buffer
-  char list_buf[SERVER_CONTENTS_SIZE];
+  if (ENABLE_SERVER_DEBUG) { std::cout << "[Debug] Building lobby list packet\n"; }
+
+  // Initialize buffer for lobby names
+  char list_buf[SERVER_CONTENTS_SIZE] = "";
+
+  // Populate each CLIENT_CONTENTS_SIZE segment with current lobby name
   for (size_t i = 0; i < lobby_list.size(); ++i) {
     const char *cur_lobby_name = lobby_list.at(i).first.c_str();
     strncpy(list_buf + (CLIENT_CONTENTS_SIZE * i), cur_lobby_name, (size_t)CLIENT_CONTENTS_SIZE);
