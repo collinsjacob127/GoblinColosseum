@@ -66,9 +66,6 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
   // Populate buffer with packet contents (prepped for netsend)
   ssize_t pkt_size = out_pkt.buildPacket(buf);
 
-  ClientPacket test_pkt(buf, pkt_size);
-  std::cout << "Test packet contents:\n" << test_pkt.getStringFromSelf();
-
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
   while (total_bytes_sent < pkt_size) {
@@ -274,6 +271,69 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   return bytes_sent;
 }
 
+ssize_t NetEngine::joinLobby() {
+  int result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return -1;
+  }
+
+  ClientPacket out_pkt(3, session_id, lobby_id, username);
+  ssize_t bytes_sent = sendClientPacket(out_pkt);
+  if (bytes_sent < 0) {
+    perror("[Error] Failed to send lobby join pkt to server");
+    serverDisconnect();
+    return -1;
+  }
+  
+  ServerPacket in_pkt = recvServerPacket(server_sock);
+  if (in_pkt.lobby_id == 0) {
+    serverDisconnect();
+    return -1;
+  }
+  if (ENABLE_PACKET_INSPECTION)
+    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+
+  lobby_id = in_pkt.lobby_id;
+
+  serverDisconnect();
+  return bytes_sent;
+}
+
+clientAddrInfo NetEngine::getPeerAddr() {
+  // Clear peer addr
+  peer_addr.addr = 0; peer_addr.port = 0;
+
+  // Connect to server
+  int result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return clientAddrInfo();
+  }
+
+  // Request peer addr
+  ClientPacket out_pkt(4, session_id, lobby_id, username);
+  ssize_t bytes_sent = sendClientPacket(out_pkt);
+  if (bytes_sent < 0) {
+    perror("[Error] Failed to send lobby join pkt to server");
+    serverDisconnect();
+    return clientAddrInfo();
+  }
+  
+  ServerPacket in_pkt = recvServerPacket(server_sock);
+  if (in_pkt.lobby_id == 0) {
+    serverDisconnect();
+    return clientAddrInfo();
+  }
+
+  peer_addr = in_pkt.parseAddrInfo();
+
+  serverDisconnect();
+  return peer_addr;
+}
+
 int NetEngine::testNetClient() {
   std::cout << "[Log] Running linux netcode" << std::endl;
   Timer timer;
@@ -306,6 +366,8 @@ int NetEngine::testNetClient() {
       std::cout << "[Error] Failed to get lobby list\n";
       return -1;
     }
+
+    // Select lobby from list
     std::cout << "Select one of the above lobbies (" 
     << min_idx << " - " << max_idx << ")\n";
 
@@ -314,7 +376,27 @@ int NetEngine::testNetClient() {
       std::cin >> selected_idx;
       std::cout << "\n";
     }
+
+    // Inform Server of Lobby Join
+    lobby_id = lobby_list.at(selected_idx).second;
+    joinLobby();
   }
+
+  timer.start();
+  std::cout << std::fixed << std::setprecision(2);
+  while (peer_addr.addr == 0) {
+    std::cout << "[Log] Requesting peer addr ("
+    << timer.duration() << "s)" << std::endl;
+
+    getPeerAddr();
+    if (peer_addr.addr == 0) {
+      sleep(3);
+    }
+  }
+
+  std::cout << "Peer Addr Received!\n";
+  // Get peer info
+
 
   // Connect to peer
 

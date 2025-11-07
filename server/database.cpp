@@ -94,11 +94,19 @@ int Registry::removePlayer(PlayerEntry* player) {
   }
 
   // Remove all player's map entries
-  clearId(player->session_id, SESSION_ID_SPECIFIER);
-  if (player->lobby_id)
+  if (player->lobby_id && 
+    getPlayer(player->lobby_id, LOBBY_ID_SPECIFIER)->session_id 
+    == player->session_id) {
+
     clearId(player->lobby_id, LOBBY_ID_SPECIFIER);
+
+  }
+
   if (player->player_id)
     clearId(player->player_id, PLAYER_ID_SPECIFIER);
+  
+  TYPE_PLAYER_MAP::iterator it = session_map.find(player->session_id);
+  session_map.erase(it);
   
   delete player;
   return 1;
@@ -166,7 +174,6 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
   // If passed session ID remove the player entirely
   if (id_type == SESSION_ID_SPECIFIER) {
     removePlayer(player);  
-    return;
   }
 
   // Clear player's ID
@@ -211,11 +218,12 @@ std::vector<TYPE_LOBBY_INFO> Registry::getLobbyList(size_t min_idx, size_t max_i
 
     // Get this player
     PlayerEntry* player = (PlayerEntry*)&(*it->second);
-    if (!player) { 
-      // Invalid player, push empty
-      lobby_list.push_back(cur_lobby);
-      continue;
-    }
+
+    // Make sure ptr is good
+    if (!player) { continue; }
+
+    // Make sure lobby open
+    if (player->match_made) { continue; }
 
     // Valid player, populate and add to list
     cur_lobby.first = player->user_name;
@@ -226,7 +234,22 @@ std::vector<TYPE_LOBBY_INFO> Registry::getLobbyList(size_t min_idx, size_t max_i
   return lobby_list;
 }
 
-size_t Registry::getNumLobbies() { return lobby_map.size(); }
+size_t Registry::getNumLobbies() { 
+  size_t n_lobbies = 0;
+  // Loop through lobby map
+  for (TYPE_PLAYER_MAP::iterator it = lobby_map.begin(); it != lobby_map.end(); it++) {
+    // Get lobby owner
+    PlayerEntry* player = it->second;
+    // Verify good ptr
+    if (!player) { continue; }
+    // Verify lobby open
+    if (player->match_made) { continue; }
+    // Increment open lobby count
+    n_lobbies++;
+  }
+  // Return lobby count
+  return n_lobbies; 
+}
 
 size_t Registry::size() {
   return session_map.size();

@@ -64,12 +64,13 @@ ssize_t sendServerPacket(ServerPacket, int s);
 
 int initializePlayer(ClientPacket in_pkt, int client_sock);
 
-int createLobby(ClientPacket in_pkt, int client_sock);
+int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr);
 
 int sendLobbies(ClientPacket in_pkt, int client_sock);
 
-int sendPeerInfo(ClientPacket in_pkt, int client_sock);
+int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr);
 
+int sendPeerInfo(ClientPacket in_pkt, int client_sock);
 
 /**
  * SAFETY FEATURES

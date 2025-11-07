@@ -48,6 +48,7 @@ class NetEngine {
   uint64_t lobby_id = 0;
   // std::vector<std::string> lobby_list = {};
   std::vector<TYPE_LOBBY_INFO> lobby_list = {};
+  clientAddrInfo peer_addr;
 
   int server_sock = -1;
   int peer_sock = -1;
@@ -99,7 +100,20 @@ class NetEngine {
    */
   ssize_t getLobbies(size_t min_idx, size_t max_idx);
 
-  ssize_t requestLobby();
+  /**
+   * @brief Function to inform the server of intent to join
+   * lobby with corresponding SID
+   * @return Bytes sent, or -1 on failure
+   */
+  ssize_t joinLobby();
+
+  /**
+   * @brief Function to get a matchmade peer's addr information
+   * from the server.
+   * @param lobby_id The lobby to connect to.
+   * @return The peer's addr info. Both forms 0 on failure.
+   */
+  clientAddrInfo getPeerAddr();
 
  private:
 

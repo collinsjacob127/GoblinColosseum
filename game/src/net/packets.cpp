@@ -130,7 +130,7 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, const char 
 
   // Log it
   if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << "[Log] ClientPacket initialized with " 
+    std::cout << "[Log] ServerPacket initialized with " 
     << (int)type << " as type and "
     << contents << " as contents" << std::endl;
   }
@@ -171,14 +171,6 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t n_sent, uint64_t n_total, std:
     std::cout << "[PACKET ERROR] Invalid lobby fill request\n";
   }
 
-  /*
-  Populate the contents like so:
-
-  [lobby0_username] [lobby0_id] [lobby1username] [lobby1id]...
-
-  where all chunks are CLIENT_CONTENTS_SIZE bytes
-  */
-
   unsigned char id_buf[sizeof(uint64_t)];
 
   // Loop through list of lobbies
@@ -201,6 +193,51 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t n_sent, uint64_t n_total, std:
     }
   }
 
+}
+
+ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrInfo peer_addr) {
+  // Standard initialization
+  pkt_size = SERVER_PACKET_N_BYTES;
+  contents_size = SERVER_CONTENTS_SIZE;
+  // Paramaterized initialization
+  packet_type = type;
+  session_id = sid;
+  lobby_id = lid;
+
+  // Temporary buffers
+  unsigned char addr_buf[sizeof(peer_addr.addr)];
+  unsigned char port_buf[sizeof(peer_addr.port)];
+
+  // Convert byte order of addr info
+  packi32(addr_buf, peer_addr.addr);  
+  packi16(port_buf, peer_addr.port);  
+
+  // Send buffers to contents
+  memcpy(contents, addr_buf, sizeof(peer_addr.addr));
+  memcpy(contents+sizeof(peer_addr.addr), port_buf, sizeof(peer_addr.port));
+
+  contents[SERVER_CONTENTS_SIZE-1] = '\0';
+
+  // Build repr string
+  std::stringstream ss;
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[0]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[1]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[2]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[3]);
+  ss << std::setw(1) << ":" << peer_addr.port;
+  peer_addr.rep_str = ss.str();
+
+  // Print
+  if (ENABLE_CLIENTPACKET_INSPECTION) {
+    std::cout << "[Packet] Packing Peer Address:" << std::endl;
+    std::cout << "  [Contents] Type: " << packet_type << std::endl;
+    std::cout << "  [Contents] SID: " << session_id << std::endl;
+    std::cout << "  [Contents] LID: " << lobby_id << std::endl;
+    std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
+  }
 }
 
 std::vector<TYPE_LOBBY_INFO> ServerPacket::parseLobbyList() {
@@ -248,9 +285,59 @@ std::vector<TYPE_LOBBY_INFO> ServerPacket::parseLobbyList() {
   return lobby_list;
 }
 
+clientAddrInfo ServerPacket::parseAddrInfo() {
+  clientAddrInfo peer_addr;
+  contents[SERVER_CONTENTS_SIZE-1] = '\0';
+
+  // Temp buffer
+  unsigned char addr_buf[sizeof(peer_addr.addr)];
+  unsigned char port_buf[sizeof(peer_addr.port)];
+
+  // Copy
+  memcpy(addr_buf, contents, sizeof(peer_addr.addr));
+  memcpy(port_buf, contents+sizeof(peer_addr.addr), sizeof(peer_addr.port));
+
+  // Host order
+  peer_addr.addr = unpacku32(addr_buf);
+  peer_addr.port = unpacku16(port_buf);
+
+  // Build repr string
+  std::stringstream ss;
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[0]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[1]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[2]);
+  ss << std::setw(1) << ".";
+  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[3]);
+  ss << std::setw(1) << ":" << peer_addr.port;
+  peer_addr.rep_str = ss.str();
+
+  // Print
+  if (ENABLE_CLIENTPACKET_INSPECTION) {
+    std::cout << "[Packet] Parsing Peer Address:" << std::endl;
+    std::cout << "  [Contents] Type: " << packet_type << std::endl;
+    std::cout << "  [Contents] SID: " << session_id << std::endl;
+    std::cout << "  [Contents] LID: " << lobby_id << std::endl;
+    std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
+  }
+  return peer_addr;
+}
+
 /**
  * NET UTILS - courtesy of l'beej
  */
+
+void packi16(unsigned char *buf, unsigned int i)
+{
+    *buf++ = i>>8; *buf++ = i;
+}
+
+void packi32(unsigned char *buf, unsigned long int i)
+{
+    *buf++ = i>>24; *buf++ = i>>16;
+    *buf++ = i>>8;  *buf++ = i;
+}
 
 void packi64(unsigned char *buf, uint64_t i)
 {
@@ -260,9 +347,19 @@ void packi64(unsigned char *buf, uint64_t i)
     *buf++ = i>>8;  *buf++ = i;
 }
 
-/**
- * @brief unpack a 64-bit unsigned from a char buffer (like ntohl())
- */
+uint16_t unpacku16(unsigned char *buf)
+{
+    return ((uint16_t)buf[0]<<8) | buf[1];
+}
+
+uint32_t unpacku32(unsigned char *buf)
+{
+    return ((uint32_t)buf[0]<<24) |
+           ((uint32_t)buf[1]<<16) |
+           ((uint32_t)buf[2]<<8)  |
+           buf[3];
+}
+
 uint64_t unpacku64(unsigned char *buf)
 {
     return ((uint64_t)buf[0]<<56) |

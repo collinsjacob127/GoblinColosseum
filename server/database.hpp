@@ -15,6 +15,7 @@
 #include <memory>      // Sized types
 #include <random>      // ID Generation
 #include <map>         // Mapping IDs to players
+#include <netinet/in.h>// sockaddr_in
 
 #include "util.hpp"
 #include "packets.hpp"
@@ -33,9 +34,16 @@ constexpr TYPE_ID_SPECIFIER PLAYER_ID_SPECIFIER = 1;
 constexpr TYPE_ID_SPECIFIER LOBBY_ID_SPECIFIER = 2;
 
 struct PlayerEntry {
+  // Player's individual info
   uint64_t session_id = 0;            // Unique ID for this player's session
   uint64_t player_id = 0;            // Unique ID for this player
   uint64_t lobby_id = 0;            // Unique ID for this player's lobby
+  sockaddr_in player_addr;          // IP address for this player
+
+  // For matchmaking
+  bool match_made = false;        // Flag for some peer having joined this player's lobby
+  bool first_addr_sent = false;   // Flag for one address in the pair having been sent already
+  uint64_t peer_session_id = 0;   // Session ID of matched peer
 
   std::string user_name = "";
   Timer p_timer;              // Time of player join
