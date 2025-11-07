@@ -32,8 +32,6 @@ constexpr TYPE_ID_SPECIFIER SESSION_ID_SPECIFIER = 0;
 constexpr TYPE_ID_SPECIFIER PLAYER_ID_SPECIFIER = 1;
 constexpr TYPE_ID_SPECIFIER LOBBY_ID_SPECIFIER = 2;
 
-typedef std::pair<std::string, uint64_t> TYPE_LOBBY_INFO;
-
 struct PlayerEntry {
   uint64_t session_id = 0;            // Unique ID for this player's session
   uint64_t player_id = 0;            // Unique ID for this player
@@ -139,6 +137,11 @@ class Registry {
    * a (username, lobby_id) pair.
    */
   std::vector<TYPE_LOBBY_INFO> getLobbyList(size_t min_idx, size_t max_idx);
+
+  /**
+   * @brief Function to get the number of open lobbies
+   */
+  size_t getNumLobbies();
 
   /**
    * @return The number of players connected.

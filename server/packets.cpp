@@ -158,6 +158,96 @@ ServerPacket::ServerPacket(unsigned char* buf, ssize_t n_bytes) {
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
 }
 
+ServerPacket::ServerPacket(uint8_t type, uint64_t n_sent, uint64_t n_total, std::vector<TYPE_LOBBY_INFO> lobby_list) {
+  pkt_size = SERVER_PACKET_N_BYTES;
+  contents_size = SERVER_CONTENTS_SIZE;
+  // Set first header value (no need to modify)
+  packet_type = type;
+  session_id = n_sent;
+  lobby_id = n_total;
+
+  // Verify valid fill request
+  if (lobby_list.size() > MAX_N_REQUESTED_LOBBIES) {
+    std::cout << "[PACKET ERROR] Invalid lobby fill request\n";
+  }
+
+  /*
+  Populate the contents like so:
+
+  [lobby0_username] [lobby0_id] [lobby1username] [lobby1id]...
+
+  where all chunks are CLIENT_CONTENTS_SIZE bytes
+  */
+
+  unsigned char id_buf[sizeof(uint64_t)];
+
+  // Loop through list of lobbies
+  for (size_t i = 0; i < lobby_list.size(); ++i) {
+    // Get lobby name
+    const char *cur_lobby_name = lobby_list.at(i).first.c_str();
+    char* contents_idx_ptr = contents + (CLIENT_CONTENTS_SIZE * 2 * i);
+
+    // Copy lobby name into every other buffer segment
+    strncpy(contents_idx_ptr, cur_lobby_name, (size_t)CLIENT_CONTENTS_SIZE);
+    
+    // Pack ID buffer in the temp buffer
+    packi64(id_buf, lobby_list.at(i).second);
+
+    // Copy Packed ID to contents in the between segments
+    memcpy(contents_idx_ptr + CLIENT_CONTENTS_SIZE, id_buf, sizeof(uint64_t));
+
+    if (ENABLE_CLIENTPACKET_INSPECTION) {
+      std::cout << "[Debug] Adding lobby #" << i << ": " << cur_lobby_name << std::endl;
+    }
+  }
+
+}
+
+std::vector<TYPE_LOBBY_INFO> ServerPacket::parseLobbyList() {
+  // Verify good state
+  if (session_id > MAX_N_REQUESTED_LOBBIES) {
+    return {};
+  }
+  uint64_t n_lobbies = session_id;
+
+  std::vector<TYPE_LOBBY_INFO> lobby_list = {};
+
+  uint64_t cur_lobby_id = 0;
+  std::string cur_lobby_name = "";
+
+  char name_buf[CLIENT_CONTENTS_SIZE] = "";
+  unsigned char *id_buf = (unsigned char*)calloc(CLIENT_CONTENTS_SIZE, sizeof(unsigned char));
+
+  for (uint64_t i = 0; i < n_lobbies; ++i) {
+    TYPE_LOBBY_INFO cur_lobby;
+
+    // Get pointer to current pair in buffer
+    char* contents_idx_ptr = contents + (CLIENT_CONTENTS_SIZE * 2 * i);
+
+    // Populate temp name buffer
+    memcpy(name_buf, contents_idx_ptr, CLIENT_CONTENTS_SIZE);
+    // Verify good cstr
+    name_buf[CLIENT_CONTENTS_SIZE-1] = '\0';
+    // Set current lobby name
+    cur_lobby_name = name_buf;
+
+    // Copy from char buffer to unsigned char buffer
+    memcpy(id_buf, contents_idx_ptr+CLIENT_CONTENTS_SIZE, CLIENT_CONTENTS_SIZE);
+    // Unpack ID
+    cur_lobby_id = unpacku64(id_buf);
+
+    // Set values
+    cur_lobby.first = cur_lobby_name;
+    cur_lobby.second = cur_lobby_id;
+
+    // Push to vector
+    lobby_list.push_back(cur_lobby);
+  }
+
+  free(id_buf);
+  return lobby_list;
+}
+
 /**
  * NET UTILS - courtesy of l'beej
  */

@@ -231,31 +231,28 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
   // This request parses client packet differently
   size_t min_idx = (size_t) in_pkt.session_id;
   size_t max_idx = (size_t) in_pkt.lobby_id;
+  size_t n_requested_lobbies = max_idx - min_idx;
+
+  // Verify valid inputs
+  if (n_requested_lobbies > MAX_N_REQUESTED_LOBBIES) {
+    std::cout << "[Error] User lobby index request mismatch\n";
+    sendServerPacket(ServerPacket(in_pkt.packet_type, 0, 0, ""), client_sock);
+  }
 
   // Generate lobby list
   std::vector<TYPE_LOBBY_INFO> lobby_list = registry.getLobbyList(min_idx, max_idx);
 
   if (ENABLE_SERVER_DEBUG) { std::cout << "[Debug] Building lobby list packet\n"; }
 
-  // Initialize buffer for lobby names
-  char list_buf[SERVER_CONTENTS_SIZE] = "";
+  // Populate lobby list packet
+  ServerPacket out_pkt(in_pkt.packet_type, lobby_list.size(), registry.getNumLobbies(), lobby_list);
 
-  // Populate each CLIENT_CONTENTS_SIZE segment with current lobby name
-  for (size_t i = 0; i < lobby_list.size(); ++i) {
-    const char *cur_lobby_name = lobby_list.at(i).first.c_str();
-    strncpy(list_buf + (CLIENT_CONTENTS_SIZE * i), cur_lobby_name, (size_t)CLIENT_CONTENTS_SIZE);
-    if (ENABLE_SERVER_DEBUG) {
-      std::cout << "[Debug] Adding lobby #" << i << ": " << cur_lobby_name << std::endl;
-    }
-  }
-
-  // Send list of lobbies to user
-  //TODO: Update lobby_list.size() to total number of lobbies
-  ServerPacket out_pkt(in_pkt.packet_type, (uint64_t)min_idx, (uint64_t)lobby_list.size()-1, list_buf);
   if (ENABLE_SERVER_DEBUG) {
     std::cout << "[Debug] Lobby id range: " << (uint64_t)min_idx 
-    << " " << (uint64_t)lobby_list.size()-1 << std::endl;
+    << " " << (uint64_t)max_idx << std::endl;
+    std::cout << "[Debug] # lobbies sent: " << (uint64_t)lobby_list.size();
   }
+
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     // registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     return -1; 

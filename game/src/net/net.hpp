@@ -46,7 +46,8 @@ class NetEngine {
   std::string username = "";
   uint64_t session_id = 0;
   uint64_t lobby_id = 0;
-  std::vector<std::string> lobby_list;
+  // std::vector<std::string> lobby_list = {};
+  std::vector<TYPE_LOBBY_INFO> lobby_list = {};
 
   int server_sock = -1;
   int peer_sock = -1;
@@ -97,6 +98,8 @@ class NetEngine {
    * @return Bytes sent, or -1 on failure
    */
   ssize_t getLobbies(size_t min_idx, size_t max_idx);
+
+  ssize_t requestLobby();
 
  private:
 

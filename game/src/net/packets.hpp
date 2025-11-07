@@ -9,6 +9,7 @@
 #include <iostream> // output
 #include <string.h> // strings
 #include <sstream> // string streams
+#include <vector>
 #include <memory> // sized types
 
 #define ENABLE_CLIENTPACKET_INSPECTION true
@@ -19,8 +20,11 @@ constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
 
 constexpr ssize_t SERVER_CONTENTS_SIZE = 1024;
 constexpr ssize_t SERVER_PACKET_N_BYTES = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+constexpr size_t MAX_N_REQUESTED_LOBBIES = (SERVER_CONTENTS_SIZE / CLIENT_CONTENTS_SIZE) / 2;
 
 constexpr int BUFFER_SIZE = SERVER_PACKET_N_BYTES;
+
+typedef std::pair<std::string, uint64_t> TYPE_LOBBY_INFO;
 
 class MatchmakingPacket {
  public:
@@ -33,7 +37,7 @@ class MatchmakingPacket {
   // Lobby number assigned by server.
   uint64_t lobby_id = 0;
 
-  char contents[BUFFER_SIZE];
+  char contents[BUFFER_SIZE] = "";
 
   /**
    * @brief Function to move ClientPacket into a provided
@@ -52,7 +56,6 @@ class MatchmakingPacket {
    * of this struct.
    */
   std::string getStringFromSelf();
-
 };
 
 /**
@@ -96,7 +99,21 @@ class ServerPacket : public MatchmakingPacket {
  public:
 
   ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, const char* val);
+
   ServerPacket(unsigned char* buf, ssize_t n_bytes);
+
+  /**
+   * @brief Function to populate the contents buffer with
+   * @param type packet type
+   * @param lobbies list of lobby username / id pairs
+   */
+  ServerPacket(uint8_t type, uint64_t n_sent, uint64_t n_total, std::vector<TYPE_LOBBY_INFO> lobby_list);
+
+  /**
+   * @brief Function to parse a received lobby list
+   * @return The lobby list. Returns empty vector on error.
+   */
+  std::vector<TYPE_LOBBY_INFO> parseLobbyList();
 };
 
 

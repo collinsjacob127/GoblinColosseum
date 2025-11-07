@@ -261,15 +261,13 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   }
   
   ServerPacket in_pkt = recvServerPacket(server_sock);
-  
-  if (ENABLE_PACKET_INSPECTION) {
-    size_t n_lobbies_recvd = in_pkt.lobby_id - in_pkt.session_id;
-    std::cout << "[Log] Received " << n_lobbies_recvd << " lobbies\n";
-    for (size_t i = 0; i <= n_lobbies_recvd; ++i) {
-      lobby_list.push_back(in_pkt.contents +(CLIENT_CONTENTS_SIZE*i));
-      size_t n_lobbies = lobby_list.size();
-      std::cout << "  [Lobby " << n_lobbies << "] " << lobby_list.at(n_lobbies-1) << std::endl;
-    }
+  lobby_list = in_pkt.parseLobbyList();
+
+  std::cout << "[Log] Received " << lobby_list.size() << " lobbies.\n";
+  for (size_t i = 0; i < lobby_list.size(); ++i) {
+    std::cout << "  [Lobby " << i << "] "
+    << lobby_list.at(i).first << " | "
+    << lobby_list.at(i).second << std::endl;
   }
 
   serverDisconnect();
@@ -306,6 +304,15 @@ int NetEngine::testNetClient() {
     result = getLobbies(min_idx, max_idx);
     if (result < 0) {
       std::cout << "[Error] Failed to get lobby list\n";
+      return -1;
+    }
+    std::cout << "Select one of the above lobbies (" 
+    << min_idx << " - " << max_idx << ")\n";
+
+    int selected_idx = -1;
+    while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
+      std::cin >> selected_idx;
+      std::cout << "\n";
     }
   }
 

@@ -226,6 +226,8 @@ std::vector<TYPE_LOBBY_INFO> Registry::getLobbyList(size_t min_idx, size_t max_i
   return lobby_list;
 }
 
+size_t Registry::getNumLobbies() { return lobby_map.size(); }
+
 size_t Registry::size() {
   return session_map.size();
 }
