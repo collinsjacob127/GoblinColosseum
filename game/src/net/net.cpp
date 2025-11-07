@@ -88,7 +88,7 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
 }
 
 ServerPacket NetEngine::recvServerPacket(int s) {
-  unsigned char buf[BUFFER_SIZE];
+  unsigned char buf[SERVER_PACKET_N_BYTES];
 
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
@@ -244,7 +244,36 @@ ssize_t NetEngine::createLobby() {
 }
 
 ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
-  return -1;
+  // 1. Bind server connection to the returned socket
+  int result = serverConnect();
+  if (server_sock < 0 || result < 0) {
+    perror("[Error] Server connect request failed");
+    serverDisconnect();
+    return -1;
+  }
+
+  ClientPacket out_pkt(2, min_idx, max_idx, username);
+  ssize_t bytes_sent = sendClientPacket(out_pkt);
+  if (bytes_sent < 0) {
+    perror("[Error] Failed to send lobby creation pkt to server");
+    serverDisconnect();
+    return -1;
+  }
+  
+  ServerPacket in_pkt = recvServerPacket(server_sock);
+  
+  if (ENABLE_PACKET_INSPECTION) {
+    size_t n_lobbies_recvd = in_pkt.lobby_id - in_pkt.session_id;
+    std::cout << "[Log] Received " << n_lobbies_recvd << " lobbies\n";
+    for (size_t i = 0; i <= n_lobbies_recvd; ++i) {
+      lobby_list.push_back(in_pkt.contents +(CLIENT_CONTENTS_SIZE*i));
+      size_t n_lobbies = lobby_list.size();
+      std::cout << "  [Lobby " << n_lobbies << "] " << lobby_list.at(n_lobbies-1) << std::endl;
+    }
+  }
+
+  serverDisconnect();
+  return bytes_sent;
 }
 
 int NetEngine::testNetClient() {
@@ -270,7 +299,11 @@ int NetEngine::testNetClient() {
     }
   } else {
     // Receive list of first 10 lobbies
-    result = getLobbies(0, 10);
+    // Request next 10 lobbies
+    size_t n_requested_lobbies = 10;
+    size_t min_idx = lobby_list.size();
+    size_t max_idx = min_idx + (n_requested_lobbies-1);
+    result = getLobbies(min_idx, max_idx);
     if (result < 0) {
       std::cout << "[Error] Failed to get lobby list\n";
     }

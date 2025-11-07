@@ -13,13 +13,14 @@
 
 #define ENABLE_CLIENTPACKET_INSPECTION true
 
-constexpr int BUFFER_SIZE = 1024;
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
 
-constexpr ssize_t SERVER_CONTENTS_SIZE = 25;
+constexpr ssize_t SERVER_CONTENTS_SIZE = 1024;
 constexpr ssize_t SERVER_PACKET_N_BYTES = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+
+constexpr int BUFFER_SIZE = SERVER_PACKET_N_BYTES;
 
 class MatchmakingPacket {
  public:
@@ -65,6 +66,8 @@ class MatchmakingPacket {
  *            Server responds with lobby ID.
  * 
  * @note 2 -> (LIST <X>) Requesting list of available peers. 
+ *            sid replaced with min_lobby_idx
+ *            lid replaced with max_lobby_idx
  *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
  * 
  * @note 3 -> (JOIN) Send username of peer to join
@@ -92,7 +95,7 @@ class ClientPacket : public MatchmakingPacket {
 class ServerPacket : public MatchmakingPacket {
  public:
 
-  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val);
+  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, const char* val);
   ServerPacket(unsigned char* buf, ssize_t n_bytes);
 };
 

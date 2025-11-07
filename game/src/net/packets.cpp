@@ -110,7 +110,7 @@ ClientPacket::ClientPacket(unsigned char* buf, ssize_t n_bytes) {
  * SERVER PACKET DEFINITIONS
  */
 
-ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string val) {
+ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, const char *val) {
   pkt_size = SERVER_PACKET_N_BYTES;
   contents_size = SERVER_CONTENTS_SIZE;
   // Set first header value (no need to modify)
@@ -119,7 +119,13 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string
   lobby_id = lid;
 
   // Set contents (string copy and guarantee null terminator)
-  strncpy(contents, val.c_str(), contents_size);
+  memcpy(
+    contents, 
+    val, 
+    contents_size
+  );
+  // Guarantee null term
+  contents[SERVER_CONTENTS_SIZE-1] = '\0';
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
 
   // Log it
@@ -131,7 +137,7 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, std::string
 }
 
 ServerPacket::ServerPacket(unsigned char* buf, ssize_t n_bytes) {
-  pkt_size = (CLIENT_PACKET_N_BYTES - CLIENT_CONTENTS_SIZE) + SERVER_CONTENTS_SIZE;
+  pkt_size = SERVER_PACKET_N_BYTES;
   contents_size = SERVER_CONTENTS_SIZE;
 
   // Copy to a local buffer to make sure all is well

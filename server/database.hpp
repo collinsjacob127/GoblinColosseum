@@ -135,7 +135,7 @@ class Registry {
    * @brief Get the list of currently open lobbies
    * @param min_idx The starting point of requested lobby list
    * @param max_idx The ending point of requested lobby list
-   * @return A vector of TYPE_LOBBY_INFO. Each entry is 
+   * @return A vector of TYPE_LOBBY_INFO. List is start-inclusive, end-exclusive.
    * a (username, lobby_id) pair.
    */
   std::vector<TYPE_LOBBY_INFO> getLobbyList(size_t min_idx, size_t max_idx);

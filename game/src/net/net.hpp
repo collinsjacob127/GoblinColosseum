@@ -46,6 +46,8 @@ class NetEngine {
   std::string username = "";
   uint64_t session_id = 0;
   uint64_t lobby_id = 0;
+  std::vector<std::string> lobby_list;
+
   int server_sock = -1;
   int peer_sock = -1;
 

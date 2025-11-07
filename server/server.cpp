@@ -46,11 +46,16 @@ int main() {
 
   while (continue_server) {
     // Server automatic shutoff
-    if (server_timer.duration() > 120.0) { continue_server = false; }
+    if (server_timer.duration() > 600.0) { 
+      continue_server = false; 
+      std::cout << "\nServer Timed Out\n";
+    }
 
     if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
-      std::cout << "\n[Server Awaiting New Messages] "
-      << "The registry has " << registry.size() << " entries.\n";
+      std::cout << std::fixed << std::setprecision(2);
+      std::cout << "\n[Server Awaiting New Messages - Runtime: "
+      << server_timer.duration() << "s]" << std::endl;
+      std::cout << "[The registry has " << registry.size() << " entries.]\n";
     }
 
     // Bind socket to local interface and passive open
@@ -142,13 +147,10 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
 }
 
 ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
-  unsigned char buf[BUFFER_SIZE];
+  unsigned char buf[SERVER_PACKET_N_BYTES];
 
   // Populate buffer with packet contents (prepped for netsend)
   ssize_t pkt_size = out_pkt.buildPacket(buf);
-
-  ClientPacket test_pkt(buf, pkt_size);
-  std::cout << "Test packet contents:\n" << test_pkt.getStringFromSelf();
 
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
@@ -226,8 +228,6 @@ int createLobby(ClientPacket in_pkt, int client_sock) {
 }
 
 int sendLobbies(ClientPacket in_pkt, int client_sock) {
-  PlayerEntry *cur_player;
-  
   // This request parses client packet differently
   size_t min_idx = (size_t) in_pkt.session_id;
   size_t max_idx = (size_t) in_pkt.lobby_id;
@@ -235,14 +235,26 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
   // Generate lobby list
   std::vector<TYPE_LOBBY_INFO> lobby_list = registry.getLobbyList(min_idx, max_idx);
 
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Debug] Building lobby list packet\n";
+  }
   // Populate packet buffer
   char list_buf[SERVER_CONTENTS_SIZE];
   for (size_t i = 0; i < lobby_list.size(); ++i) {
-    strncpy(list_buf + (CLIENT_CONTENTS_SIZE * i), lobby_list.at(i).first.c_str(), (size_t)CLIENT_CONTENTS_SIZE);
+    const char *cur_lobby_name = lobby_list.at(i).first.c_str();
+    strncpy(list_buf + (CLIENT_CONTENTS_SIZE * i), cur_lobby_name, (size_t)CLIENT_CONTENTS_SIZE);
+    if (ENABLE_SERVER_DEBUG) {
+      std::cout << "[Debug] Adding lobby #" << i << ": " << cur_lobby_name << std::endl;
+    }
   }
 
   // Send list of lobbies to user
-  ServerPacket out_pkt(in_pkt.packet_type, (uint64_t)min_idx, (uint64_t)max_idx, list_buf);
+  //TODO: Update lobby_list.size() to total number of lobbies
+  ServerPacket out_pkt(in_pkt.packet_type, (uint64_t)min_idx, (uint64_t)lobby_list.size()-1, list_buf);
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Debug] Lobby id range: " << (uint64_t)min_idx 
+    << " " << (uint64_t)lobby_list.size()-1 << std::endl;
+  }
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     // registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     return -1; 

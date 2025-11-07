@@ -200,7 +200,7 @@ std::vector<TYPE_LOBBY_INFO> Registry::getLobbyList(size_t min_idx, size_t max_i
   size_t cur_idx = 0;
   for (it = lobby_map.begin(); it != lobby_map.end(); it++) {
     // Only select in range
-    if (cur_idx < min_idx || cur_idx > max_idx) {
+    if (cur_idx < min_idx || cur_idx >= max_idx) {
       cur_idx++;
       continue;
     }
