@@ -204,7 +204,7 @@ int createLobby(ClientPacket in_pkt, int client_sock) {
   // Get and verify current user
   if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
     // User does not exist
-    ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Player DNE");
+    ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid session ID");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Player doesn't exist in registry
   }
@@ -226,7 +226,29 @@ int createLobby(ClientPacket in_pkt, int client_sock) {
 }
 
 int sendLobbies(ClientPacket in_pkt, int client_sock) {
-  return -1;
+  PlayerEntry *cur_player;
+  
+  // This request parses client packet differently
+  size_t min_idx = (size_t) in_pkt.session_id;
+  size_t max_idx = (size_t) in_pkt.lobby_id;
+
+  // Generate lobby list
+  std::vector<TYPE_LOBBY_INFO> lobby_list = registry.getLobbyList(min_idx, max_idx);
+
+  // Populate packet buffer
+  char list_buf[SERVER_CONTENTS_SIZE];
+  for (size_t i = 0; i < lobby_list.size(); ++i) {
+    strncpy(list_buf + (CLIENT_CONTENTS_SIZE * i), lobby_list.at(i).first.c_str(), (size_t)CLIENT_CONTENTS_SIZE);
+  }
+
+  // Send list of lobbies to user
+  ServerPacket out_pkt(in_pkt.packet_type, (uint64_t)min_idx, (uint64_t)max_idx, list_buf);
+  if (sendServerPacket(out_pkt, client_sock) < 0) {
+    // registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
+    return -1; 
+  }
+
+  return 1;
 }
 
 int sendPeerInfo(ClientPacket in_pkt, int client_sock) {

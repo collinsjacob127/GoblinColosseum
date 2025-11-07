@@ -32,6 +32,8 @@ constexpr TYPE_ID_SPECIFIER SESSION_ID_SPECIFIER = 0;
 constexpr TYPE_ID_SPECIFIER PLAYER_ID_SPECIFIER = 1;
 constexpr TYPE_ID_SPECIFIER LOBBY_ID_SPECIFIER = 2;
 
+typedef std::pair<std::string, uint64_t> TYPE_LOBBY_INFO;
+
 struct PlayerEntry {
   uint64_t session_id = 0;            // Unique ID for this player's session
   uint64_t player_id = 0;            // Unique ID for this player
@@ -81,6 +83,9 @@ class IdGenerator {
 // Map IDs to PlayerEntry pointers.
 typedef std::map<uint64_t, PlayerEntry*> TYPE_PLAYER_MAP;
 
+/**
+ * @brief Primary data structure 
+ */
 class Registry {
  public:
   
@@ -94,6 +99,14 @@ class Registry {
    * @return Generated session ID for the new player
    */
   uint64_t addPlayer();
+
+  /**
+   * @brief Function to remove a player entirely from the registry
+   * @param player Pointer to the player to be deleted
+   * @return 1 on success, -1 on failure
+   * @warning THIS WILL FREE THE PLAYER'S POINTER
+   */
+  int removePlayer(PlayerEntry* player);
 
   /**
    * @brief Function to get pointer to player given one of their ids
@@ -117,6 +130,15 @@ class Registry {
    * from all mappings and removes them entirely.
    */
   void clearId(uint64_t id, TYPE_ID_SPECIFIER id_type);
+
+  /**
+   * @brief Get the list of currently open lobbies
+   * @param min_idx The starting point of requested lobby list
+   * @param max_idx The ending point of requested lobby list
+   * @return A vector of TYPE_LOBBY_INFO. Each entry is 
+   * a (username, lobby_id) pair.
+   */
+  std::vector<TYPE_LOBBY_INFO> getLobbyList(size_t min_idx, size_t max_idx);
 
   /**
    * @return The number of players connected.

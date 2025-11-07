@@ -78,6 +78,32 @@ uint64_t Registry::addPlayer() {
   return session_id;
 }
 
+int Registry::removePlayer(PlayerEntry* player) {
+  // Verify valid ptr
+  if (!player) { return -1; }
+
+  // Get the session ID
+  uint64_t *session_id = player->getIdOfType(SESSION_ID_SPECIFIER);
+  if (!session_id) {
+    if (ENABLE_REGISTRY_DEBUG) {
+      std::cout << "[RegistryDBG] Attempted removal of player" 
+      << " with no seesion ID" << std::endl;
+    }
+    delete player;
+    return -1;
+  }
+
+  // Remove all player's map entries
+  clearId(player->session_id, SESSION_ID_SPECIFIER);
+  if (player->lobby_id)
+    clearId(player->lobby_id, LOBBY_ID_SPECIFIER);
+  if (player->player_id)
+    clearId(player->player_id, PLAYER_ID_SPECIFIER);
+  
+  delete player;
+  return 1;
+}
+
 PlayerEntry* Registry::getPlayer(uint64_t id, TYPE_ID_SPECIFIER id_type) {
   // Get corresponding map
   TYPE_PLAYER_MAP *map = getMapOfType(id_type);
@@ -135,6 +161,13 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
 
   // Get corresponding player ptr
   PlayerEntry* player = getPlayer(id, id_type);
+  if (!player) { return; }
+
+  // If passed session ID remove the player entirely
+  if (id_type == SESSION_ID_SPECIFIER) {
+    removePlayer(player);  
+    return;
+  }
 
   // Clear player's ID
   uint64_t *id_ptr = player->getIdOfType(id_type); 
@@ -157,6 +190,40 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
     std::cout << "[RegistryDBG] Map (" << id_type << ") size post-clearId(): " 
     << map->size() << std::endl;
   }
+}
+
+std::vector<TYPE_LOBBY_INFO> Registry::getLobbyList(size_t min_idx, size_t max_idx) {
+  TYPE_PLAYER_MAP::iterator it;
+
+  std::vector<TYPE_LOBBY_INFO> lobby_list;
+
+  size_t cur_idx = 0;
+  for (it = lobby_map.begin(); it != lobby_map.end(); it++) {
+    // Only select in range
+    if (cur_idx < min_idx || cur_idx > max_idx) {
+      cur_idx++;
+      continue;
+    }
+    cur_idx++;
+
+    // Var to store current lobby info
+    TYPE_LOBBY_INFO cur_lobby("", 0);
+
+    // Get this player
+    PlayerEntry* player = (PlayerEntry*)&(*it->second);
+    if (!player) { 
+      // Invalid player, push empty
+      lobby_list.push_back(cur_lobby);
+      continue;
+    }
+
+    // Valid player, populate and add to list
+    cur_lobby.first = player->user_name;
+    cur_lobby.second = player->lobby_id;
+    lobby_list.push_back(cur_lobby);
+  }
+
+  return lobby_list;
 }
 
 size_t Registry::size() {
