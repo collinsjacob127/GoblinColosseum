@@ -6,12 +6,25 @@
 
 #pragma once
 
+#ifdef _WIN32
+
+#include<windows.h>       // Windows types
+#include <cstdint>         // uintX_t
+#include <basetsd.h>       // SSIZE_T
+
+typedef SSIZE_T ssize_t;
+
+#else
+
+#include <memory> // sized types
+
+#endif
+
 #include <iostream> // output
 #include <iomanip>  // output formatting
 #include <string.h> // strings
 #include <sstream> // string streams
 #include <vector>
-#include <memory> // sized types
 
 #define ENABLE_CLIENTPACKET_INSPECTION true
 

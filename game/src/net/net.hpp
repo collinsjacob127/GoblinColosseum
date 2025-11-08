@@ -13,10 +13,40 @@
 
 #pragma once
 
+#ifdef _WIN32
+
+
+#include <winsock2.h>     // addrinfo
+#include <ws2tcpip.h>
+#include <stdlib.h>       // misc helper funcs
+#include <cstdint>         // uintX_t
+#include <basetsd.h>       // SSIZE_T
+
+#include <windows.h>       // Windows types
+
+// Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
+#pragma comment (lib, "Ws2_32.lib")
+#pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "AdvApi32.lib")
+
+SOCKET ConnectSocket = INVALID_SOCKET;
+
+typedef SSIZE_T ssize_t;
+
+#else
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <memory>
+
+#endif
+
 #include <iostream>
 #include <string.h>
 #include <sstream>
-#include <memory>
 #include <cstring>
 
 #include "engine.hpp"

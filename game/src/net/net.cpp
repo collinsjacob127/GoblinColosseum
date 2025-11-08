@@ -7,17 +7,172 @@
 #include "net.hpp"
 
 #ifdef _WIN32
-int testNetClient() {
-  std::cout << "No windows netcode right now." << std::endl;
-  return 0;
-}
-#else
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+NetEngine::NetEngine() {
+  server_sock = -1;
+  peer_sock = -1;
+}
+
+NetEngine::~NetEngine() {
+  serverDisconnect();
+  peerDisconnect();
+}
+
+int NetEngine::serverConnect() {
+  WSADATA wsaData;
+  ConnectSocket = INVALID_SOCKET;
+  struct addrinfo *result = NULL, *ptr = NULL, hints;
+  int iResult;
+
+  // Initialize Winsock
+  iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+  if (iResult != 0) {
+    printf("WSAStartup failed with error: %d\n", iResult);
+    return -1;
+  }
+  
+  ZeroMemory( &hints, sizeof(hints) );
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+
+  char port_buf[6];
+  snprintf(port_buf, sizeof(port_buf), "%d", SERVER_PORT);
+  port_buf[5] = '\0';
+
+  std::cout << "Connecting to server on socket " << port_buf << std::endl;
+
+  // Resolve the server address and port
+  iResult = getaddrinfo(SERVER_ADDR, port_buf, &hints, &result);
+  if ( iResult != 0 ) {
+    printf("getaddrinfo failed with error: %d\n", iResult);
+    WSACleanup();
+    return -1;
+  }
+
+  // Attempt to connect to an address until one succeeds
+  for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
+    // Create a SOCKET for connecting to server
+    ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+    if (ConnectSocket == INVALID_SOCKET) {
+      printf("socket failed with error: %ld\n", WSAGetLastError());
+      WSACleanup();
+      return -1;
+    }
+
+    // Connect to server.
+    iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+      closesocket(ConnectSocket);
+      ConnectSocket = INVALID_SOCKET;
+      continue;
+    }
+    break;
+  }
+
+  freeaddrinfo(result);
+
+  if (ConnectSocket == INVALID_SOCKET) {
+    printf("connection failed with error: %ld\n", WSAGetLastError());
+    WSACleanup();
+    return -1;
+  }
+
+  server_sock = (int)ConnectSocket;
+  return (int)ConnectSocket;
+}
+
+ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
+  if (ConnectSocket == INVALID_SOCKET) {
+    printf("Unable to connect to server!\n");
+    WSACleanup();
+    return -1;
+  }
+
+  unsigned char buf[BUFFER_SIZE];
+
+  // Populate buffer with packet contents (prepped for netsend)
+  ssize_t pkt_size = out_pkt.buildPacket(buf);
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = send(server_sock, (char*)buf, pkt_size-total_bytes_sent, 0);
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::stringstream ss;
+        ss << "[Error] Failed to send packet: ";
+        ss << out_pkt.getStringFromBuffer(buf, pkt_size);
+        perror(ss.str().c_str());
+      }
+      return bytes_sent;
+    }
+  }
+
+  // int iResult;
+  // shutdown the connection since no more data will be sent
+  // iResult = shutdown(ConnectSocket, SD_SEND);
+  // if (iResult == SOCKET_ERROR) {
+  //   printf("shutdown failed with error: %d\n", WSAGetLastError());
+  //   closesocket(ConnectSocket);
+  //   WSACleanup();
+  //   return -1;
+  // }
+
+  return total_bytes_sent;
+}
+
+ServerPacket NetEngine::recvServerPacket(int s) {
+  if (ConnectSocket == INVALID_SOCKET) {
+    printf("Unable to connect to server!\n");
+    WSACleanup();
+    return ServerPacket(0,0,0,"");
+  }
+
+  unsigned char buf[SERVER_PACKET_N_BYTES];
+
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Beginning full recv\n";
+  }
+
+  // Ensure full packet is read
+  ssize_t bytes_in = 0, total_bytes_in = 0;
+  while (total_bytes_in < SERVER_PACKET_N_BYTES) {
+    bytes_in = recv(s, (char*)buf, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    total_bytes_in += bytes_in;
+    if (bytes_in < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::stringstream ss;
+        ss << "[Error] Failed to receive packet from %d" << s << std::endl;
+        perror(ss.str().c_str());
+      }
+      return ServerPacket(0, 0, 0, "");
+    }
+  }
+
+  // Convert to ClientPacket
+  ServerPacket out_pkt(buf, SERVER_PACKET_N_BYTES);
+  return out_pkt;
+}
+
+void NetEngine::serverDisconnect() {
+  if (ConnectSocket != INVALID_SOCKET) {
+    // cleanup
+    closesocket(ConnectSocket);
+  }
+  WSACleanup();
+}
+
+void NetEngine::peerDisconnect() {
+
+}
+
+void crossPlatformSleep(uint32_t milliseconds) {
+  Sleep(milliseconds);
+}
+
+#else
 
 /**
  * NET ENGINE UNIX DEFINITIONS
@@ -126,6 +281,10 @@ void NetEngine::peerDisconnect() {
     close(peer_sock);
     peer_sock = -1;
   }
+}
+
+void crossPlatformSleep(uint32_t milliseconds) {
+  usleep(1000 * milliseconds);
 }
 
 #endif
@@ -388,9 +547,11 @@ int NetEngine::testNetClient() {
     std::cout << "[Log] Requesting peer addr ("
     << timer.duration() << "s)" << std::endl;
 
+    // Check if someone has connected to the server
     getPeerAddr();
     if (peer_addr.addr == 0) {
-      sleep(3);
+      // Wait 5 seconds
+      crossPlatformSleep(5000);
     }
   }
 
