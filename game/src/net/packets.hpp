@@ -40,6 +40,10 @@ constexpr int BUFFER_SIZE = SERVER_PACKET_N_BYTES;
 
 typedef std::pair<std::string, uint64_t> TYPE_LOBBY_INFO;
 
+/*
+CLIENT-SERVER COMMUNICATION PACKETS
+*/
+
 struct clientAddrInfo {
   uint32_t addr = 0;
   uint16_t port = 0;
@@ -151,6 +155,49 @@ class ServerPacket : public MatchmakingPacket {
    * @return The lobby list. Returns empty vector on error.
    */
   clientAddrInfo parseAddrInfo();
+};
+
+/*
+PEER-PEER COMMUNICATION PACKETS
+*/
+
+// Max SIZE of username
+// Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
+constexpr size_t MAX_USERNAME_SIZE = 25;
+constexpr size_t PEER_SETUP_PACKET_SIZE = 3 + MAX_USERNAME_SIZE;
+
+/**
+ * @brief Packet for initializing the p2p communications
+ * @note Contains all game setup information as defined by lobby creator
+ * @note Also contains all necessary player information
+ */
+struct PeerSetupPacket {
+  uint16_t max_n_frames = 0;
+  uint8_t character_id = 0;
+  char user_name[MAX_USERNAME_SIZE] = "";
+  unsigned char packet_buf[PEER_SETUP_PACKET_SIZE] = "";
+
+  PeerSetupPacket(){}
+  PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string user_name);
+  PeerSetupPacket(char* net_buf, size_t n_bytes);
+
+  void printContents();
+};
+
+constexpr size_t PEER_INPUTS_PACKET_SIZE = 0; //TODO: Update this
+
+/**
+ * @brief Packet for p2p input send/recv once the game has started.
+ */
+struct NetInputs {
+  uint16_t frame_n = 0;
+  unsigned char packet_buf[PEER_SETUP_PACKET_SIZE] = "";
+
+  NetInputs(){}
+  NetInputs(uint16_t f_n, const ButtonStates* in);
+  NetInputs(char* net_buf, size_t n_bytes);
+
+  std::pair<ButtonStates, uint16_t> parse();
 };
 
 

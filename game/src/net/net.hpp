@@ -64,10 +64,6 @@ constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
 // constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
 constexpr int SERVER_PORT = 53243;
 
-// Max SIZE of username
-// Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
-constexpr size_t MAX_USERNAME_SIZE = 25;
-
 /**
  * @brief Driver class for all client-side network activity.
  */
