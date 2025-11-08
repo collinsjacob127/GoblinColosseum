@@ -46,10 +46,12 @@ int main() {
 
   while (continue_server) {
     // Server automatic shutoff
+    /*
     if (server_timer.duration() > 600.0) { 
       continue_server = false; 
       std::cout << "\nServer Timed Out\n";
     }
+    */
 
     if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
       std::cout << std::fixed << std::setprecision(2);
