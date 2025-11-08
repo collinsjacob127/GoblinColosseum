@@ -35,6 +35,7 @@
 #define ENABLE_BOX_DEBUG true
 
 #define ENABLE_HELPER_PRINTOUTS true
+#define ENABLE_MOTIONSCANNING_DEBUG true
 
 // For rollback functionality demo:
 #define MAX_ROLLBACK_FRAMES 60
@@ -54,6 +55,8 @@
 #define GAME_BORDER_X1 3020
 #define GAME_BORDER_Y0 0
 #define GAME_BORDER_Y1 1678
+
+#define MAX_N_FUZZY_FRAMES 3
 
 struct Keybinds {
   SDL_Scancode up = SDL_SCANCODE_W;

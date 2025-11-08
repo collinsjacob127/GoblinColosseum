@@ -301,9 +301,15 @@ bool PlayerController::holdingBack(const PlayerEntity* p, const ButtonStates* in
 }
 
 bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned int window, const NumPadDir* buf) {
+  // No motion -> goes through
+  if (motion.size() == 0) { return true; }
+
   // Iterating backwards through the given motion
   unsigned int j = motion.size()-1;
-  unsigned int n_seq_matches = 0;
+  // Negative is count of sequential mismatches
+  // Positive is count of sequential matches
+  // 0 is first instance of either
+  int n_seq_matches = 0;
 
   // Current direction; sequential repeats are OK
   NumPadDir cur_dir = motion[j];
@@ -312,20 +318,28 @@ bool PlayerController::checkMotionInputs(std::vector<NumPadDir> motion, unsigned
   for (unsigned int i = 0; i < window; ++i) {
     // Base case, end of motion reached
     if (j == -1) { return true; }
+
+    // Current direction in motion buffer
     if (cur_dir == buf[i]) { 
-      // std::cout << "curdir: " << getNumPadDirString(&cur_dir) << " buf[" << i << "]: " << getNumPadDirString(&buf[i]) << std::endl;
-      // Motion matches buffer here
-      // Move index to next motion on new match
-      if (n_seq_matches == 0) { j--; }
-      n_seq_matches++;
+      // If first match, decrement motion INDEX
+      if (n_seq_matches <= 0) { j--; }
+
+      // Update match count
+      n_seq_matches = std::max(0, n_seq_matches + 1);
+
     } else {
       // Motion does not match buffer
-      // Mismatch found WITHOUT prior match
-      if (n_seq_matches == 0) { return false; }
-      // Mismatch found, decrement motion and update cur_dir
-      n_seq_matches = 0;
-      cur_dir = motion[j];
+
+      // Mismatches <= 0
+      n_seq_matches = std::min(0, n_seq_matches-1);
+      
+      // Failure after reaching MAX_N_FUZZY_FRAMES mismatches
+      if (n_seq_matches < -MAX_N_FUZZY_FRAMES) { return false; }
+
+      // Progress the motion buffer on first mismatch
+      if (n_seq_matches == 0) { cur_dir = motion[j]; }
     }
+
   }
   // Just in case
   return false;

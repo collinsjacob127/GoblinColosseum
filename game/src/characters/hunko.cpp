@@ -191,7 +191,7 @@ void Hunko::initializeAttacks() {
   air_normals.push_back(Attack( "SLAM HAMMER", B3, {CENTER}, 30, 12, 24, 16));
   atk = &air_normals.at(air_normals.size()-1);
   atk->id = 0;
-  atk->damage = 60;
+  atk->damage = 80;
   atk->proration = 0.7;
   atk->x_vel = 5.0;
   atk->y_vel = -5.0;

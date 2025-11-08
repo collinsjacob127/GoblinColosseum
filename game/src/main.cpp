@@ -42,24 +42,23 @@ int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
   std::signal(SIGABRT, handleUnexpectedClosure);
   std::signal(SIGTERM, handleUnexpectedClosure);
-  /****
-   * 
-   *  Fuck below 
-   * 
-   ***/
-   
-  int return_val = 2;
-  while (return_val == 2) {
-    net_engine.getLocalUserName();
-    return_val = net_engine.testNetClient();
-  }
-  return 0;
 
-  /**
-   * 
-   * Don't fuck below
-   * 
-   */
+  /*
+  START NET TEST 
+  */
+   
+  // int return_val = 2;
+  // while (return_val == 2) {
+  //   net_engine.getLocalUserName();
+  //   return_val = net_engine.testNetClient();
+  // }
+
+  // return 0;
+
+  /*
+  END NET TEST 
+  */
+
   RenderEngine renderer;
 
   int selection = start(&renderer);
