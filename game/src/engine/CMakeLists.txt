@@ -19,4 +19,5 @@ target_link_libraries(engine
 PRIVATE
     libs
     util
+    buttons
 )

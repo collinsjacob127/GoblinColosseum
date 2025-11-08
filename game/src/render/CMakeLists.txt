@@ -19,6 +19,7 @@ PUBLIC
 target_link_libraries(render 
 PRIVATE
     libs
+    buttons
     engine
     util
 )

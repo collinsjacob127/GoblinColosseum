@@ -22,5 +22,6 @@ target_link_libraries(characters
 PRIVATE
     libs
     util
+    buttons
     engine
 )

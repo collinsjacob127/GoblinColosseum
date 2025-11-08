@@ -2,6 +2,7 @@
  * Author: Jacob Collins
  * Date: 11/5/2025
  * Description: Header file for packet classes.
+ * This is for players, so includes P2P packets as well.
  */
 
 #pragma once

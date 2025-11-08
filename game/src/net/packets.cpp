@@ -1,4 +1,11 @@
 
+/**
+ * Author: Jacob Collins
+ * Date: 11/5/2025
+ * Description: Definitions for packet classes.
+ * This is for players, so includes P2P packets as well.
+ */
+
 #include "packets.hpp"
 
 /**
@@ -371,3 +378,5 @@ uint64_t unpacku64(unsigned char *buf)
            ((uint64_t)buf[6]<<8)  |
            buf[7];
 }
+
+

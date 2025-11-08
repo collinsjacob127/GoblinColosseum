@@ -20,6 +20,7 @@ target_include_directories(net
 target_link_libraries(net 
 PRIVATE
     libs
+    buttons
     engine
     util
 )
