@@ -209,8 +209,9 @@ int NetEngine::peerConnect() {
   snprintf(port_buf, sizeof(port_buf), "%u", peer_addr.port);
   port_buf[5] = '\0';
 
-  if (ENABLE_PEERPACKET_INSPECTION)
+  if (ENABLE_PEERPACKET_INSPECTION) {
     std::cout << "Connecting to peer on port " << port_buf << std::endl;
+  }
 
   // Resolve the peer addr & port
   iResult = getaddrinfo(peer_addr.rep_str.c_str(), port_buf, &hints, &result);
@@ -434,6 +435,107 @@ void NetEngine::serverDisconnect() {
       std::cout << "[Log] Disconnected from server.\n";
     }
   }
+}
+
+int NetEngine::peerConnect() {
+  // Verify good peer_addr struct
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "Attempting connection with peer @" << peer_addr.rep_str
+    << ":" << peer_addr.port << std::endl;
+  }
+  if (peer_addr.addr == 0) {
+    std::cout << "Peer connection failed; Peer addr not yet set.\n";
+    return -1;
+  }
+
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "Connecting to peer on port " << peer_addr.port << std::endl;
+  }
+
+  struct sockaddr_in unix_peer_addr;
+  unix_peer_addr.sin_family = AF_INET;
+  unix_peer_addr.sin_port = htons(peer_addr.port);
+
+  // Creating socket file descriptor
+  if ((peer_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    std::cerr << "[Error] Socket creation error" << std::endl;
+    return -1;
+  }
+
+  // Resolve the peer addr & port
+  if (inet_pton(unix_peer_addr.sin_family, peer_addr.rep_str.c_str(), &unix_peer_addr.sin_addr) <= 0) {
+    std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
+    return -1;
+  }
+
+  // Connect to the server
+  if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
+      std::cerr << "[Error] Connection Failed" << std::endl;
+    return -1;
+  } else {
+    printf("[Log] Connected to peer!\n");
+  }
+
+  // Set and return socket
+  return peer_sock;
+}
+
+ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
+  if (peer_sock <= 0) {
+    printf("Unable to connect to peer!\n");
+    WSACleanup();
+    return -1;
+  }
+
+  ssize_t pkt_size = PEER_SETUP_PACKET_SIZE;
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = send(peer_sock, out_pkt.packet_buf+total_bytes_sent, pkt_size-total_bytes_sent, 0);
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::cout << "[Error] Failed to send packet: " << std::endl;
+        out_pkt.printContents();
+      }
+      return bytes_sent;
+    }
+  }
+
+  return total_bytes_sent;
+}
+
+PeerSetupPacket NetEngine::recvPeerSetupPacket() {
+  if (PeerSocket == INVALID_SOCKET) {
+    printf("[Error] Unable to connect to server!\n");
+    WSACleanup();
+    return PeerSetupPacket();
+  }
+
+  char buf[PEER_SETUP_PACKET_SIZE] = "";
+
+  if (ENABLE_NETCODE_DEBUG) {
+    std::cout << "[Debug] Beginning full recv\n";
+  }
+
+  // Ensure full packet is read
+  ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
+  while (total_bytes_in < pkt_size) {
+    bytes_in = recv(ServerSocket, buf+total_bytes_in, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    total_bytes_in += bytes_in;
+    if (bytes_in < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        std::cout << "[Error] Recv failure error message: "
+        << std::system_category().message(WSAGetLastError()) << std::endl;
+      }
+      return PeerSetupPacket();
+    }
+  }
+
+  // Convert to ClientPacket
+  PeerSetupPacket in_pkt(buf, pkt_size);
+  return in_pkt;
 }
 
 void NetEngine::peerDisconnect() {
