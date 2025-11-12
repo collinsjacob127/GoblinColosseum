@@ -755,10 +755,16 @@ clientAddrInfo NetEngine::getPeerAddr() {
 }
 
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
+  Timer connection_attempt_timer;
   // Connect and verify
-  if (peerConnect() < 0) {
-    std::cout << "[Error] Peer connection request failed." << std::endl;
+  std::cout << "[Log] Trying to connect to peer..." << std::endl;
+  while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
+    std::cout << "[Error] Connection failed, trying again..." << std::endl;
+    crossPlatformSleep(100);
+  }
+  if (connection_attempt_timer.duration() >= 10.0) {
     peerDisconnect();
+    std::cout << "[Error] Connection failed too many times. Exiting.\n";
     return PeerSetupPacket();
   }
 
