@@ -449,7 +449,7 @@ int NetEngine::peerConnect() {
   }
 
   if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "Connecting to peer on port " << peer_addr.port << std::endl;
+    std::cout << "[Debug] Connecting to peer on port " << peer_addr.port << std::endl;
   }
 
   struct sockaddr_in unix_peer_addr;
@@ -457,18 +457,27 @@ int NetEngine::peerConnect() {
   unix_peer_addr.sin_port = htons(peer_addr.port);
 
   // Creating socket file descriptor
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "[Debug] Creating socket\n";
+  }
   if ((peer_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     std::cerr << "[Error] Socket creation error" << std::endl;
     return -1;
   }
 
   // Resolve the peer addr & port
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "[Debug] Verifying address...\n";
+  }
   if (inet_pton(unix_peer_addr.sin_family, peer_addr.rep_str.c_str(), &unix_peer_addr.sin_addr) <= 0) {
     std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
     return -1;
   }
 
   // Connect to the server
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "[Debug] Attempting connect...\n";
+  }
   if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
       std::cerr << "[Error] Connection Failed" << std::endl;
     return -1;
@@ -756,6 +765,7 @@ clientAddrInfo NetEngine::getPeerAddr() {
 
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
   Timer connection_attempt_timer;
+  connection_attempt_timer.start();
   // Connect and verify
   std::cout << "[Log] Trying to connect to peer..." << std::endl;
   while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
