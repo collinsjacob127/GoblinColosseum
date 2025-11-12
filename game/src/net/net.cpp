@@ -544,6 +544,9 @@ void NetEngine::peerDisconnect() {
   if (peer_sock > 0) {
     close(peer_sock);
     peer_sock = -1;
+    if(ENABLE_NETCODE_LOG) {
+      std::cout << "[Log] Disconnected from peer.\n";
+    }
   }
 }
 
