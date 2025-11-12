@@ -375,6 +375,12 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   peer_addr_info.addr = cur_peer->player_addr.sin_addr.s_addr;
   peer_addr_info.port = cur_peer->player_addr.sin_port;
 
+  // If both players have the same address, send them localhost instead
+  if (cur_player->player_addr.sin_addr.s_addr == cur_peer->player_addr.sin_addr.s_addr) {
+    std::string local_host = "127.0.0.1";
+    peer_addr_info.addr = inet_pton(AF_INET, local_host.c_str(), &(peer_addr_info.addr));
+  }
+
   // Send peer addr to client
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, peer_addr_info);
   if (sendServerPacket(out_pkt, client_sock) < 0) {
