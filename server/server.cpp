@@ -371,8 +371,10 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     << "get address of peer:" << cur_peer->user_name << std::endl;
   }
 
+  // Peer's address
   peer_addr_info.addr = cur_peer->player_addr.sin_addr.s_addr;
-  peer_addr_info.port = cur_peer->player_addr.sin_port;
+  // Both players use port of lobby owner
+  peer_addr_info.port = lobby_owner->player_addr.sin_port;
 
   // Send peer addr to client
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, peer_addr_info);
@@ -392,6 +394,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     return 1;
   }
 
+  // Set in registry of both players that the first addr has been sent
   cur_player->first_addr_sent = true;
   cur_peer->first_addr_sent = true;
 
