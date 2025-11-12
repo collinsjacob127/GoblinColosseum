@@ -373,8 +373,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
 
   // Peer's address
   peer_addr_info.addr = cur_peer->player_addr.sin_addr.s_addr;
-  // Both players use port of lobby owner
-  peer_addr_info.port = lobby_owner->player_addr.sin_port;
+  peer_addr_info.port = cur_peer->player_addr.sin_port;
 
   // Send peer addr to client
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, peer_addr_info);
