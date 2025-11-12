@@ -27,7 +27,10 @@ typedef SSIZE_T ssize_t;
 #include <sstream> // string streams
 #include <vector>
 
+#include "buttons.hpp"
+
 #define ENABLE_CLIENTPACKET_INSPECTION true
+#define ENABLE_PEERPACKET_INSPECTION true
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
@@ -164,7 +167,7 @@ PEER-PEER COMMUNICATION PACKETS
 // Max SIZE of username
 // Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
 constexpr size_t MAX_USERNAME_SIZE = 25;
-constexpr size_t PEER_SETUP_PACKET_SIZE = 3 + MAX_USERNAME_SIZE;
+constexpr size_t PEER_SETUP_PACKET_SIZE = sizeof(uint16_t) + sizeof(uint8_t) + MAX_USERNAME_SIZE;
 
 /**
  * @brief Packet for initializing the p2p communications
@@ -175,10 +178,10 @@ struct PeerSetupPacket {
   uint16_t max_n_frames = 0;
   uint8_t character_id = 0;
   char user_name[MAX_USERNAME_SIZE] = "";
-  unsigned char packet_buf[PEER_SETUP_PACKET_SIZE] = "";
+  char packet_buf[PEER_SETUP_PACKET_SIZE];
 
-  PeerSetupPacket(){}
-  PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string user_name);
+  PeerSetupPacket();
+  PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_name);
   PeerSetupPacket(char* net_buf, size_t n_bytes);
 
   void printContents();
@@ -191,7 +194,7 @@ constexpr size_t PEER_INPUTS_PACKET_SIZE = 0; //TODO: Update this
  */
 struct NetInputs {
   uint16_t frame_n = 0;
-  unsigned char packet_buf[PEER_SETUP_PACKET_SIZE] = "";
+  unsigned char packet_buf[PEER_INPUTS_PACKET_SIZE];
 
   NetInputs(){}
   NetInputs(uint16_t f_n, const ButtonStates* in);
@@ -208,12 +211,12 @@ struct NetInputs {
 /**
  * @brief store a 16-bit int into a char buffer (like htonl())
  */
-void packi16(unsigned char *buf, unsigned int i);
+void packi16(unsigned char *buf, uint16_t i);
 
 /**
  * @brief store a 32-bit int into a char buffer (like htonl())
  */
-void packi32(unsigned char *buf, unsigned long int i);
+void packi32(unsigned char *buf, uint32_t i);
 
 /**
  * @brief store a 64-bit int into a char buffer (like htonl())

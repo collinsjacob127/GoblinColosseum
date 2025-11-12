@@ -47,13 +47,13 @@ int main(int argc, char* argv[]) {
   START NET TEST 
   */
    
-  // int return_val = 2;
-  // while (return_val == 2) {
-  //   net_engine.getLocalUserName();
-  //   return_val = net_engine.testNetClient();
-  // }
+  int return_val = 2;
+  while (return_val == 2) {
+    net_engine.getLocalUserName();
+    return_val = net_engine.testNetClient();
+  }
 
-  // return 0;
+  return 0;
 
   /*
   END NET TEST 

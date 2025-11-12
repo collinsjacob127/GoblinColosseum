@@ -29,7 +29,8 @@
 #pragma comment (lib, "Mswsock.lib")
 #pragma comment (lib, "AdvApi32.lib")
 
-SOCKET ConnectSocket = INVALID_SOCKET;
+SOCKET ServerSocket = INVALID_SOCKET;
+SOCKET PeerSocket = INVALID_SOCKET;
 
 typedef SSIZE_T ssize_t;
 
@@ -107,6 +108,10 @@ class NetEngine {
    */
   int testNetClient();
 
+  /*
+  SERVER - CLIENT FUNCTIONS 
+  */
+
   /**
    * @brief Function to inform the server of your username and get
    * a new session ID.
@@ -141,6 +146,17 @@ class NetEngine {
    */
   clientAddrInfo getPeerAddr();
 
+  /*
+  PEER - PEER FUNCTIONS
+  */
+
+  /**
+   * @brief Function to initialize a game between two peers
+   * after setup via server.
+   * @return The packet received from the peer
+   */
+  PeerSetupPacket initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id);
+
  private:
 
   /**
@@ -149,8 +165,30 @@ class NetEngine {
   int serverConnect();
 
   /**
+   * @brief Function to connect to a peer
+   * @return -1 on failure, otherwise socket fd
+   * @note Uses PeerSocket on Windows and uses
+   * peer_socket on UNIX.
+   */
+  int peerConnect();
+
+  /**
+   * @brief Function to send a setup packet to the peer
+   * @return Returns bytes sent or -1 on error 
+   * @note For TCP Holepunch, this will very likely error
+   * the first time, and must be sent twice.
+   */
+  ssize_t sendPeerSetupPacket(PeerSetupPacket);
+
+  /**
+   * @brief Function to receive a peer setup packet
+   * @return The packet received. All default values on failure.
+   */
+  PeerSetupPacket recvPeerSetupPacket();
+
+  /**
    * @brief Function to parse and send a ClientPacket to the server
-   * @brief Returns bytes sent or -1 on error
+   * @return Returns bytes sent or -1 on error
    */
   ssize_t sendClientPacket(ClientPacket);
 

@@ -9,6 +9,76 @@
 #include "packets.hpp"
 
 /**
+ * P2P PACKET DEFINITIONS
+ */
+
+PeerSetupPacket::PeerSetupPacket() {
+  user_name[MAX_USERNAME_SIZE-1] = '\0';
+  packet_buf[PEER_SETUP_PACKET_SIZE-1] = (unsigned char)'\0';
+}
+
+PeerSetupPacket::PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_name) {
+  max_n_frames = n_f;
+  character_id = char_id;
+
+  // Pointer to the current position in `packet_buf` that
+  // we're writing to.
+  unsigned char* buf_ptr = (unsigned char*)packet_buf;
+
+  // First place max n frames
+  packi16(buf_ptr, n_f);
+  buf_ptr += sizeof(n_f);
+  // Next put character ID
+  memcpy(buf_ptr, &char_id, sizeof(char_id));
+  buf_ptr += sizeof(char_id);
+
+  // Copy the username into
+  strcpy(user_name, u_name.c_str());
+  user_name[MAX_USERNAME_SIZE-1] = '\0'; // just to be sure
+
+  // Now put username
+  memcpy(buf_ptr, user_name, MAX_USERNAME_SIZE);
+
+  // Variables set and packet buffer filled.
+}
+
+PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
+  if (n_bytes != PEER_SETUP_PACKET_SIZE) {
+    std::cout << "[Error] Invalid packet received for parsing. Bad size.\n";
+    return;
+  }
+
+  // Copy received char buffer into unsigned char buffer for parsing
+  unsigned char local_buf[PEER_SETUP_PACKET_SIZE];
+  memcpy(local_buf, net_buf, n_bytes);
+  unsigned char* buf_ptr = (unsigned char*)local_buf;
+
+  // Copy max n frames
+  max_n_frames = unpacku16(buf_ptr);
+  buf_ptr += sizeof(max_n_frames);
+  // Copy char ID
+  character_id = (uint8_t)buf_ptr[0];
+  buf_ptr += sizeof(uint8_t);
+  // Safe c-str
+  local_buf[PEER_SETUP_PACKET_SIZE-1] = (unsigned char)'\0';
+  // Copy username
+  memcpy(user_name, buf_ptr, MAX_USERNAME_SIZE);
+  // Safe c-str
+  user_name[MAX_USERNAME_SIZE-1] = '\0';
+  // All copied over.
+}
+
+void PeerSetupPacket::printContents() {
+  user_name[MAX_USERNAME_SIZE-1] = '\0';
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "[Packet] Received peer setup packet:" << std::endl;
+    std::cout << "  [Contents] Max # Frames: " << max_n_frames << std::endl;
+    std::cout << "  [Contents] Character ID: " << (int)character_id << std::endl;
+    std::cout << "  [Contents] Username: " << user_name << std::endl;
+  }
+}
+
+/**
  * DEFAULT PACKET DEFINITIONS
  */
 
@@ -310,14 +380,14 @@ clientAddrInfo ServerPacket::parseAddrInfo() {
 
   // Build repr string
   std::stringstream ss;
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[0]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[1]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[2]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[3]);
-  ss << std::setw(1) << ":" << peer_addr.port;
+  ss << (int)(((unsigned char*)&peer_addr.addr)[0]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&peer_addr.addr)[1]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&peer_addr.addr)[2]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&peer_addr.addr)[3]);
+  // ss << ":" << peer_addr.port;
   peer_addr.rep_str = ss.str();
 
   // Print
@@ -335,12 +405,12 @@ clientAddrInfo ServerPacket::parseAddrInfo() {
  * NET UTILS - courtesy of l'beej
  */
 
-void packi16(unsigned char *buf, unsigned int i)
+void packi16(unsigned char *buf, uint16_t i)
 {
     *buf++ = i>>8; *buf++ = i;
 }
 
-void packi32(unsigned char *buf, unsigned long int i)
+void packi32(unsigned char *buf, uint32_t i)
 {
     *buf++ = i>>24; *buf++ = i>>16;
     *buf++ = i>>8;  *buf++ = i;
