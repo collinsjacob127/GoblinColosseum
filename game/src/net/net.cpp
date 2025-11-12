@@ -483,7 +483,7 @@ int NetEngine::peerConnect() {
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   if (peer_sock <= 0) {
     printf("Unable to connect to peer!\n");
-    WSACleanup();
+    peerDisconnect();
     return -1;
   }
 
@@ -507,34 +507,27 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
 }
 
 PeerSetupPacket NetEngine::recvPeerSetupPacket() {
-  if (PeerSocket == INVALID_SOCKET) {
-    printf("[Error] Unable to connect to server!\n");
-    WSACleanup();
-    return PeerSetupPacket();
-  }
-
-  char buf[PEER_SETUP_PACKET_SIZE] = "";
-
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
   }
 
+  char in_buf[PEER_SETUP_PACKET_SIZE] = "";
+
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
   while (total_bytes_in < pkt_size) {
-    bytes_in = recv(ServerSocket, buf+total_bytes_in, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    bytes_in = recv(peer_sock, in_buf+total_bytes_in, pkt_size-total_bytes_in, 0);
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        std::cout << "[Error] Recv failure error message: "
-        << std::system_category().message(WSAGetLastError()) << std::endl;
+        std::cout << "[Error] Failed to receive peer setup packet\n";
       }
       return PeerSetupPacket();
     }
   }
 
   // Convert to ClientPacket
-  PeerSetupPacket in_pkt(buf, pkt_size);
+  PeerSetupPacket in_pkt(in_buf, pkt_size);
   return in_pkt;
 }
 
