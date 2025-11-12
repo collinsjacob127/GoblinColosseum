@@ -453,14 +453,15 @@ int NetEngine::peerConnect() {
   }
 
   struct sockaddr_in unix_peer_addr;
-  unix_peer_addr.sin_family = AF_INET;
+  // unix_peer_addr.sin_family = AF_INET;
+  unix_peer_addr.sin_family = AF_UNSPEC;
   unix_peer_addr.sin_port = htons(peer_addr.port);
 
   // Creating socket file descriptor
   if (ENABLE_PEERPACKET_INSPECTION) {
     std::cout << "[Debug] Creating socket\n";
   }
-  if ((peer_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     std::cerr << "[Error] Socket creation error" << std::endl;
     return -1;
   }
