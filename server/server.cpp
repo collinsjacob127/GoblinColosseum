@@ -373,7 +373,8 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
 
   // Peer's address
   peer_addr_info.addr = cur_peer->player_addr.sin_addr.s_addr;
-  peer_addr_info.port = cur_peer->player_addr.sin_port;
+  // peer_addr_info.port = cur_peer->player_addr.sin_port;
+  peer_addr_info.port = PEER_TO_PEER_PORT;
 
   // If both players have the same address, send them localhost instead
   if (cur_player->player_addr.sin_addr.s_addr == cur_peer->player_addr.sin_addr.s_addr) {
