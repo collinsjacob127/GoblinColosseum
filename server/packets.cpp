@@ -267,7 +267,7 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
   lobby_id = lid;
 
   // Temporary buffer
-  char ipvr_str_buf[CLIENT_CONTENTS_SIZE] = "";
+  char ipv4_str_buf[CLIENT_CONTENTS_SIZE] = "";
   // Copy PUBLIC ipv4 str to temp buffer
   strncpy(ipv4_str_buf, peer_addr_pub.rep_str.c_str(), CLIENT_CONTENTS_SIZE);
   ipv4_str_buf[CLIENT_CONTENTS_SIZE-1] = '\0';
