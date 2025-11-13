@@ -9,7 +9,7 @@ clientAddrInfo::clientAddrInfo(std::string ipv4_str) {
   // Verify not too small
   if (ipv4_str.size() < 9) { return; }
   // Verify not too big
-  if (ipv4_str.size() > MAX_USERNAME_SIZE) { return; }
+  if (ipv4_str.size() > CLIENT_CONTENTS_SIZE) { return; }
 
   size_t colon_pos;
   if ((colon_pos = ipv4_str.find(':')) == std::string::npos) {
@@ -45,6 +45,22 @@ clientAddrInfo::clientAddrInfo(std::string ipv4_str) {
 
   rep_str = ipv4_str;
 }
+
+clientAddrInfo::clientAddrInfo(uint32_t in_addr, uint16_t in_port) {
+  addr = unpacku32((unsigned char*)&in_addr);
+  port = unpacku16((unsigned char*)&in_port);
+  std::stringstream ss;
+  ss << (int)(((unsigned char*)&addr)[3]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[2]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[1]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[0]);
+  ss << ":" << port;
+  rep_str = ss.str();
+}
+
 
 
 /**

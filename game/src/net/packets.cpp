@@ -53,6 +53,21 @@ clientAddrInfo::clientAddrInfo(std::string ipv4_str) {
   rep_str = ipv4_str;
 }
 
+clientAddrInfo::clientAddrInfo(uint32_t in_addr, uint16_t in_port) {
+  addr = unpacku32((unsigned char*)&in_addr);
+  port = unpacku16((unsigned char*)&in_port);
+  std::stringstream ss;
+  ss << (int)(((unsigned char*)&addr)[3]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[2]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[1]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&addr)[0]);
+  ss << ":" << port;
+  rep_str = ss.str();
+}
+
 /**
  * P2P PACKET DEFINITIONS
  */

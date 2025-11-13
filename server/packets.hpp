@@ -32,6 +32,7 @@ struct clientAddrInfo {
   std::string rep_str = "0.0.0.0:0";
 
   clientAddrInfo(){}
+  clientAddrInfo(uint32_t in_addr, uint16_t in_port);
   clientAddrInfo(std::string ipv4_str);
 };
 

@@ -592,23 +592,6 @@ int NetEngine::updateLocalAddress(int s) {
     std::cout << "[Address] Rep saved as: " << my_local_addr.rep_str << std::endl;
   }
 
-
-  clientAddrInfo test_addr(my_local_addr.rep_str);
-  std::stringstream ss2;
-  ss2 << (int)(((unsigned char*)&test_addr.addr)[3]);
-  ss2 << ".";
-  ss2 << (int)(((unsigned char*)&test_addr.addr)[2]);
-  ss2 << ".";
-  ss2 << (int)(((unsigned char*)&test_addr.addr)[1]);
-  ss2 << ".";
-  ss2 << (int)(((unsigned char*)&test_addr.addr)[0]);
-  ss2 << ":" << test_addr.port;
-  test_addr.rep_str = ss2.str();
-  if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << "[Address] Test Conversion: " << test_addr.rep_str << std::endl;
-  }
-  
-
   return 1;
 }
 
