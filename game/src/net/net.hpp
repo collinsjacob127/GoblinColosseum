@@ -49,6 +49,7 @@ typedef SSIZE_T ssize_t;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h> // For nonblocking
 #include <memory>
 
 #endif
@@ -160,7 +161,7 @@ class NetEngine {
    * @return Sets peer_addr_public and peer_addr_private based on
    * the server's response
    */
-  int getPeerAddr();
+  ssize_t getPeerAddr();
 
   /*
   PEER - PEER FUNCTIONS
@@ -181,10 +182,16 @@ class NetEngine {
   int serverConnect();
 
   /**
+   * @brief Attempt a UDP connection to a peer provided one of thier addresses
+   * @return -1 on failure, fd on success.
+   */
+  int attemptSinglePeerConnection(clientAddrInfo address);
+
+  /**
    * @brief Function to connect to a peer
    * @return -1 on failure, otherwise socket fd
-   * @note Uses PeerSocket on Windows and uses
-   * peer_socket on UNIX.
+   * @note Attempts connections to both public and private
+   * addresses of the peer until one succeeds.
    */
   int peerConnect();
 
@@ -232,3 +239,5 @@ class NetEngine {
    */
   int updateLocalAddress(int s);
 };
+
+void crossPlatformSleep(uint32_t milliseconds);

@@ -34,7 +34,7 @@
 #define ENABLE_SERVER_ERROR true
 #define ENABLE_AWAITING_NEW_PACKETS_NOTIF true
 
-constexpr uint16_t PEER_TO_PEER_PORT = 27017;
+// constexpr uint16_t PEER_TO_PEER_PORT = 27017;
 constexpr char* SERVER_PORT = (char*)"53243";
 constexpr int MAX_PENDING = 64;
 

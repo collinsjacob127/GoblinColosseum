@@ -440,62 +440,97 @@ void NetEngine::serverDisconnect() {
   }
 }
 
-int NetEngine::peerConnect() {
-  // Verify good peer_addr struct
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "Attempting connection with peer @" << peer_addr.rep_str
-    << ":" << peer_addr.port << std::endl;
-  }
-  if (peer_addr.addr == 0) {
-    std::cout << "Peer connection failed; Peer addr not yet set.\n";
-    return -1;
-  }
-
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Debug] Connecting to peer on port " << peer_addr.port << std::endl;
-  }
-
-  struct sockaddr_in unix_peer_addr;
+int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
   // unix_peer_addr.sin_family = AF_INET;
-  unix_peer_addr.sin_family = AF_UNSPEC;
-  unix_peer_addr.sin_port = htons(peer_addr.port);
+
+  // Set addr info in UNIX net addr struct
+  struct sockaddr_in unix_peer_addr;
+  unix_peer_addr.sin_family = AF_INET;
+  packi32((unsigned char*)&unix_peer_addr.sin_addr.s_addr, address.addr);
+  packi16((unsigned char*)&unix_peer_addr.sin_port, address.port);
+  // unix_peer_addr.sin_port = htons(address.port);
 
   // Creating socket file descriptor
   if (ENABLE_PEERPACKET_INSPECTION) {
     std::cout << "[Debug] Creating socket\n";
   }
-  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+  // Set socket with UDP
+  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_STREAM, IPPROTO_UDP)) < 0) {
     std::cerr << "[Error] Socket creation error" << std::endl;
+    perror("socket");
     return -1;
   }
 
-  // Resolve the peer addr & port
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Debug] Verifying address...\n";
+  int opt = 1;
+  // Enable safe reuse of port
+  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    perror("setsockopt");
+    close(peer_sock);
+    return -1;
   }
-  if (inet_pton(unix_peer_addr.sin_family, peer_addr.rep_str.c_str(), &unix_peer_addr.sin_addr) <= 0) {
-    std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
+
+  // Set non-blocking
+  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+    perror("fcntl");
+    close(peer_sock);
     return -1;
   }
 
   // Connect to the server
   if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Debug] Attempting connect...\n";
+    std::cout << "[Debug] Requesting connection to " << address.rep_str << "\n";
   }
   if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
       std::cerr << "[Error] Connection Failed" << std::endl;
     return -1;
   } else {
-    printf("[Log] Connected to peer!\n");
+    printf("[Log] Connected to peer via socket %d!\n", peer_sock);
   }
 
-  // Set and return socket
+  return peer_sock;
+}
+
+int NetEngine::peerConnect() {
+  // Verify peer addrs
+  if (ENABLE_PEERPACKET_INSPECTION) {
+    std::cout << "[PEER-CONNECT] Attempting connection with peer:" << std::endl;
+    std::cout << "  [ADDR] Public: " << peer_addr_public.rep_str << std::endl;
+    std::cout << "  [ADDR] Private: " << peer_addr_private.rep_str << std::endl;
+  }
+  if (peer_addr_public.addr == 0 || peer_addr_private.addr == 0) {
+    std::cout << "Peer connection failed; Peer addr not yet set.\n";
+    return -1;
+  }
+
+  // Attempt connection max_attempts times
+  size_t n_attempts = 0, max_attempts = 15;
+  while (n_attempts < max_attempts) {
+    if (!continue_program) { exit(0); }
+
+    n_attempts++;
+    std::cout << "[PEER-CONNECT] Attempt #" << n_attempts << "...\n";
+
+    // Attempt connection to peer's public endpoint
+    if ((peer_sock = attemptSinglePeerConnection(peer_addr_public)) >= 0) {
+      return peer_sock;
+    }
+
+    // Attempt connection to peer's private endpoint
+    if ((peer_sock = attemptSinglePeerConnection(peer_addr_private)) >= 0) {
+      return peer_sock;
+    }
+
+    // Wait 1s between connection attempts after the first
+    if (n_attempts) { crossPlatformSleep(1000); }
+  }
+
+  // Return peer socket
   return peer_sock;
 }
 
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   if (peer_sock <= 0) {
-    printf("Unable to connect to peer!\n");
+    printf("[Error] Invalid peer connection!\n");
     peerDisconnect();
     return -1;
   }
@@ -788,7 +823,7 @@ ssize_t NetEngine::joinLobby() {
   return bytes_sent;
 }
 
-clientAddrInfo NetEngine::getPeerAddr() {
+ssize_t NetEngine::getPeerAddr() {
   // Clear peer addrs
   peer_addr_public.addr = 0;
   peer_addr_public.port = 0;
@@ -800,7 +835,7 @@ clientAddrInfo NetEngine::getPeerAddr() {
   if (server_sock < 0 || result < 0) {
     perror("[Error] Server connect request failed");
     serverDisconnect();
-    return clientAddrInfo();
+    return -1;
   }
 
   // Request peer addr
@@ -809,14 +844,14 @@ clientAddrInfo NetEngine::getPeerAddr() {
   if (bytes_sent < 0) {
     perror("[Error] Failed to send lobby join pkt to server");
     serverDisconnect();
-    return clientAddrInfo();
+    return -1;
   }
   
   // Receive peer addr
   ServerPacket in_pkt = recvServerPacket(server_sock);
   if (in_pkt.lobby_id == 0) {
     serverDisconnect();
-    return clientAddrInfo();
+    return -1;
   }
   
   // Parse the addrs
@@ -826,23 +861,14 @@ clientAddrInfo NetEngine::getPeerAddr() {
   peer_addr_private = in_addrs.second;
 
   serverDisconnect();
+  return bytes_sent;
 }
 
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
-  Timer connection_attempt_timer;
-  connection_attempt_timer.start();
-
   // Connect and verify
-  std::cout << "[Log] Trying to connect to peer..." << std::endl;
-  while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
-    if (!continue_program) { exit(0); }
-    std::cout << "[Error] Connection failed, trying again..." << std::endl;
-    crossPlatformSleep(1000);
-    if (!continue_program) { exit(0); }
-  }
-  if (connection_attempt_timer.duration() >= 10.0) {
+  if (peerConnect() < 0) {
+    std::cout << "[Error] Peer connection failed." << std::endl;
     peerDisconnect();
-    std::cout << "[Error] Connection failed too many times. Exiting.\n";
     return PeerSetupPacket();
   }
 
