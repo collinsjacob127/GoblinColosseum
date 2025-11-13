@@ -422,33 +422,12 @@ std::vector<TYPE_LOBBY_INFO> ServerPacket::parseLobbyList() {
   return lobby_list;
 }
 
-clientAddrInfo ServerPacket::parseAddrInfo() {
-  clientAddrInfo peer_addr;
+std::pair<clientAddrInfo, clientAddrInfo> ServerPacket::parseAddrInfo() {
+  contents[CLIENT_CONTENTS_SIZE-1] = '\0';
+  contents[(2*CLIENT_CONTENTS_SIZE)-1] = '\0';
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
-
-  // Temp buffer
-  unsigned char addr_buf[sizeof(peer_addr.addr)];
-  unsigned char port_buf[sizeof(peer_addr.port)];
-
-  // Copy
-  memcpy(addr_buf, contents, sizeof(peer_addr.addr));
-  memcpy(port_buf, contents+sizeof(peer_addr.addr), sizeof(peer_addr.port));
-
-  // Host order
-  peer_addr.addr = unpacku32(addr_buf);
-  peer_addr.port = unpacku16(port_buf);
-
-  // Build repr string
-  std::stringstream ss;
-  ss << (int)(((unsigned char*)&peer_addr.addr)[0]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&peer_addr.addr)[1]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&peer_addr.addr)[2]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&peer_addr.addr)[3]);
-  ss << ":" << peer_addr.port;
-  peer_addr.rep_str = ss.str();
+  clientAddrInfo peer_addr_pub((std::string)contents);
+  clientAddrInfo peer_addr_priv((std::string)(contents+CLIENT_CONTENTS_SIZE));
 
   // Print
   if (ENABLE_CLIENTPACKET_INSPECTION) {
@@ -456,9 +435,10 @@ clientAddrInfo ServerPacket::parseAddrInfo() {
     std::cout << "  [Contents] Type: " << packet_type << std::endl;
     std::cout << "  [Contents] SID: " << session_id << std::endl;
     std::cout << "  [Contents] LID: " << lobby_id << std::endl;
-    std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
+    std::cout << "  [Contents] Pub addr: " << peer_addr_pub.rep_str << std::endl;
+    std::cout << "  [Contents] Priv addr: " << peer_addr_priv.rep_str << std::endl;
   }
-  return peer_addr;
+  return std::pair<clientAddrInfo,clientAddrInfo>(peer_addr_pub,peer_addr_priv);
 }
 
 /**

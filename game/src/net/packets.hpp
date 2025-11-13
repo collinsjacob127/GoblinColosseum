@@ -158,10 +158,10 @@ class ServerPacket : public MatchmakingPacket {
   std::vector<TYPE_LOBBY_INFO> parseLobbyList();
 
   /**
-   * @brief Function to parse a received lobby list
-   * @return The lobby list. Returns empty vector on error.
+   * @brief Function to parse public and private peer ips sent by server
+   * @return A pair containing public, private IP addrs of peer
    */
-  clientAddrInfo parseAddrInfo();
+  std::pair<clientAddrInfo, clientAddrInfo> parseAddrInfo();
 };
 
 /*

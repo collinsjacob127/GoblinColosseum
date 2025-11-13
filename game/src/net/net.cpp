@@ -814,8 +814,11 @@ clientAddrInfo NetEngine::getPeerAddr() {
     serverDisconnect();
     return clientAddrInfo();
   }
-
-  peer_addr = in_pkt.parseAddrInfo();
+  
+  std::pair<clientAddrInfo, clientAddrInfo> in_addrs;
+  in_addrs = in_pkt.parseAddrInfo();
+  peer_addr_public = in_addrs.first;
+  peer_addr_private = in_addrs.second;
 
   serverDisconnect();
   return peer_addr;

@@ -266,28 +266,20 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
   session_id = sid;
   lobby_id = lid;
 
-  // Temporary buffers
-  unsigned char addr_buf[sizeof(uint32_t)];
-  unsigned char port_buf[sizeof(uint16_t)];
+  // Temporary buffer
+  char ipvr_str_buf[CLIENT_CONTENTS_SIZE] = "";
+  // Copy PUBLIC ipv4 str to temp buffer
+  strncpy(ipv4_str_buf, peer_addr_pub.rep_str.c_str(), CLIENT_CONTENTS_SIZE);
+  ipv4_str_buf[CLIENT_CONTENTS_SIZE-1] = '\0';
+  // Copy to contents buffer
+  memcpy(contents, ipv4_str_buf, CLIENT_CONTENTS_SIZE);
 
-  // Convert byte order of PUBLIC addr info
-  packi32(addr_buf, peer_addr_pub.addr);  
-  packi16(port_buf, peer_addr_pub.port);  
-
-  // Send buffers to contents
-  memcpy(contents, addr_buf, sizeof(uint32_t));
-  memcpy(contents+sizeof(uint32_t), port_buf, sizeof(uint16_t));
-
-  // Convert byte order of PRIVATE addr info
-  size_t addr_size = sizeof(uint32_t) + sizeof(uint16_t);
-  packi32(addr_buf, peer_addr_priv.addr);  
-  packi16(port_buf, peer_addr_priv.port);  
-
-  // Send buffers to contents
-  memcpy(contents+addr_size, addr_buf, sizeof(uint32_t));
-  memcpy(contents+addr_size+sizeof(uint32_t), port_buf, sizeof(uint16_t));
-
-  // TODO: Just put in the string repr for contents to send
+  // Copy PRIVATE ipv4 str to temp buffer
+  ipv4_str_buf = "";
+  strncpy(ipv4_str_buf, peer_addr_priv.rep_str.c_str(), CLIENT_CONTENTS_SIZE);
+  ipv4_str_buf[CLIENT_CONTENTS_SIZE-1] = '\0';
+  // Copy to contents buffer
+  memcpy(contents+CLIENT_CONTENTS_SIZE, ipv4_str_buf, CLIENT_CONTENTS_SIZE);
 
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
 
