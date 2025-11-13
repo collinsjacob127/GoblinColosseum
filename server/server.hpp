@@ -16,6 +16,7 @@
 #include <memory>
 #include <cstring>
 #include <netdb.h>
+#include <fcntl.h> // For nonblocking
 // #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/socket.h>

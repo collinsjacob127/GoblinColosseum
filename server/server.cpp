@@ -64,10 +64,8 @@ int main() {
     struct sockaddr_in new_address;
     socklen_t addr_len = sizeof(new_address);
     if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
-      // Accept failed
-      perror("[Error] Invalid accept attempted, closing server and exiting");
-      closeAllConnections();
-      exit(EXIT_FAILURE);
+      usleep(1000);
+      continue;
     } else {
       // Accept succeeded
       if (ENABLE_SERVER_DEBUG) {
@@ -461,6 +459,14 @@ int bindAndListen(const char *service) {
       close(listen_socket);
       exit(EXIT_FAILURE);
     }
+
+    // Set non-blocking
+    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0) {
+      perror("fcntl");
+      close(listen_socket);
+      exit(EXIT_FAILURE);
+    }
+
 
     if (!bind(s, rp->ai_addr, rp->ai_addrlen)) {
       break;
