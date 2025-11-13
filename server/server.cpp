@@ -72,7 +72,7 @@ int main() {
       // Accept succeeded
       if (ENABLE_SERVER_DEBUG) {
         std::cout << "[Debug] Client connected via socket " << client_socket 
-        << " on port " << new_address.sin_port << std::endl; 
+        << " on port " << ntohs(new_address.sin_port) << std::endl; 
       }
     }
 
@@ -470,7 +470,7 @@ void closeAllConnections() {
 
 void disconnectClient(int fd) {
   close(fd);
-  printf("[Log] User on port %d disconnected.\n", fd);
+  printf("[Log] User on socket %d disconnected.\n", fd);
 }
 
 void handleSigint(int signal_num) {

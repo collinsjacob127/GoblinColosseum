@@ -50,7 +50,7 @@ CLIENT-SERVER COMMUNICATION PACKETS
 struct clientAddrInfo {
   uint32_t addr = 0;
   uint16_t port = 0;
-  std::string rep_str = "000.000.000.000:00000";
+  std::string rep_str = "0.0.0.0:0";
 };
 
 class MatchmakingPacket {
@@ -92,7 +92,7 @@ class MatchmakingPacket {
  * @note 0 -> Sending own username (Entering server). 
  *            Server responds with unique session ID
  * 
- * @note 1 -> (CREATE) Requesting to create a lobby. 
+ * @note 1 -> (CREATE) Requesting to create a lobby. (type, session, 0, private_address)
  *            Server responds with lobby ID.
  * 
  * @note 2 -> (LIST <X>) Requesting list of available peers. 
@@ -100,7 +100,7 @@ class MatchmakingPacket {
  *            lid replaced with max_lobby_idx
  *            Server responds with usernames batched in 10s (0 - 9, X0 - X9).
  * 
- * @note 3 -> (JOIN) Send lobby ID to join (session, lobbyid, "")
+ * @note 3 -> (JOIN) Send lobby ID to join (type, session, lobbyid, private_address)
  *            Server responds with lobby id on success, 0 on failure
  * 
  * @note 4 -> (LOBBY <ID>) Send current lobby ID.

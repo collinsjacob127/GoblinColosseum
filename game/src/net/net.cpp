@@ -351,12 +351,14 @@ NetEngine::~NetEngine() {
 
 int NetEngine::serverConnect() {
   struct sockaddr_in serv_addr;
+
   // Creating socket file descriptor
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     std::cerr << "[Error] Socket creation error" << std::endl;
     return -1;
   }
 
+  // Set connection settings
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(SERVER_PORT);
 
@@ -373,6 +375,26 @@ int NetEngine::serverConnect() {
   } else {
     printf("[Log] Connected to server\n");
   }
+
+  // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
+  // Use getsockname to read our local ipv4 addr
+  struct sockaddr_in loc_addr;
+  socklen_t name_len = sizeof(loc_addr);
+  int err = getsockname(server_sock, (struct sockaddr*)&loc_addr, &name_len);
+  // Convert provided ipv4 addr
+  char buf[80] = "";
+  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
+  buf[79] = '\0';
+  // Print out the new addr
+  if (p != NULL) {
+    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
+  } else {
+    perror("[Error] Failed to retrieve local IPv4 addr\n");
+  }
+
+  // Update my_local_addr
+  // ...
+
   return 0;
 }
 
@@ -651,7 +673,7 @@ ssize_t NetEngine::createLobby() {
     serverDisconnect();
     return -1;
   }
-  ClientPacket out_pkt(1, session_id, 0, username);
+  ClientPacket out_pkt(1, session_id, 0, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
     perror("[Error] Failed to send lobby creation pkt to server");
@@ -770,11 +792,12 @@ clientAddrInfo NetEngine::getPeerAddr() {
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
   Timer connection_attempt_timer;
   connection_attempt_timer.start();
+
   // Connect and verify
   std::cout << "[Log] Trying to connect to peer..." << std::endl;
   while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
     std::cout << "[Error] Connection failed, trying again..." << std::endl;
-    crossPlatformSleep(100);
+    crossPlatformSleep(1000);
   }
   if (connection_attempt_timer.duration() >= 10.0) {
     peerDisconnect();
@@ -859,13 +882,15 @@ int NetEngine::testNetClient() {
 
   timer.start();
   std::cout << std::fixed << std::setprecision(2);
-  while (peer_addr.addr == 0) {
+  uint32_t cur_addr = peer_addr.addr;
+  while (cur_addr == 0) {
     std::cout << "[Log] Requesting peer addr ("
     << timer.duration() << "s)" << std::endl;
 
     // Check if someone has connected to the server
     getPeerAddr();
-    if (peer_addr.addr == 0) {
+    cur_addr = peer_addr.addr;
+    if (cur_addr == 0) {
       // Wait 5 seconds
       crossPlatformSleep(5000);
     }

@@ -5,10 +5,14 @@
  * Header for network functionality. 
  * Some networking is overloaded in net.cpp with platform-specific implementations.
  * Bro is the goat: https://beej.us/guide/bgnet/html/index-wide.html
+ * Referenced this for p2p nat: https://bford.info/pub/net/p2pnat/
  * 
  * High-level description:
  * - Each send/recv is done as a pair in a single connection instance.
  * - ClientPacket structs are sent to the server and ServerPacket structs are received.
+ * 
+ * Client / Server interactions use TCP
+ * Peer / Peer interactions use UDP
  */
 
 #pragma once
@@ -75,10 +79,19 @@ class NetEngine {
   uint64_t lobby_id = 0;
   // std::vector<std::string> lobby_list = {};
   std::vector<TYPE_LOBBY_INFO> lobby_list = {};
-  clientAddrInfo peer_addr;
 
+  clientAddrInfo my_local_addr;
+  clientAddrInfo peer_addr;
+  clientAddrInfo peer_addr_private;
+  clientAddrInfo peer_addr_public;
+
+  // Server connection is 2-way on this socket
   int server_sock = -1;
+
+  // Peers both listen and send to eachother
   int peer_sock = -1;
+  int peer_sock_listen = -1;
+  int peer_sock_send = -1;
 
   NetEngine();
   ~NetEngine();
