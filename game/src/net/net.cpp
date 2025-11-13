@@ -455,7 +455,7 @@ int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
     std::cout << "[Debug] Creating socket\n";
   }
   // Set socket with UDP
-  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_STREAM, IPPROTO_UDP)) < 0) {
+  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "[Error] Socket creation error" << std::endl;
     perror("socket");
     return -1;

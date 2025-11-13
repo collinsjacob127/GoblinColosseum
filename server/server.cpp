@@ -44,6 +44,14 @@ int main() {
   // Main loop of server running
   bool continue_server = true;
 
+  if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "\n[Server Awaiting New Messages - Runtime: "
+    << server_timer.duration() << "s]" << std::endl;
+    std::cout << "[The registry has " << registry.size() << " entries.]\n";
+  }
+
+
   while (continue_server) {
     // Server automatic shutoff
     /*
@@ -52,13 +60,6 @@ int main() {
       std::cout << "\nServer Timed Out\n";
     }
     */
-
-    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
-      std::cout << std::fixed << std::setprecision(2);
-      std::cout << "\n[Server Awaiting New Messages - Runtime: "
-      << server_timer.duration() << "s]" << std::endl;
-      std::cout << "[The registry has " << registry.size() << " entries.]\n";
-    }
 
     // Bind socket to local interface and passive open
     struct sockaddr_in new_address;
@@ -113,6 +114,14 @@ int main() {
 
     // Close the connection
     close(client_socket);
+
+    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
+      std::cout << std::fixed << std::setprecision(2);
+      std::cout << "\n[Server Awaiting New Messages - Runtime: "
+      << server_timer.duration() << "s]" << std::endl;
+      std::cout << "[The registry has " << registry.size() << " entries.]\n";
+    }
+
   }
 
   // Close the server's socket
