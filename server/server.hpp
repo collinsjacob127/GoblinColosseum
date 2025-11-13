@@ -89,3 +89,5 @@ void closeAllConnections();
  * @note This does NOT remove a player from the registry.
  */
 void disconnectClient(int fd);
+
+sockaddr_in parseAddressString(const char* buf);

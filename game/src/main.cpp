@@ -7,7 +7,6 @@
 #include <iostream>  // cout
 #include <thread> // sleep(0) on windows
 #include <csignal>
-#include <atomic>
 
 // #include <cstdlib>  // read environment variables
 #include <SDL3/SDL.h>
@@ -20,8 +19,6 @@
 #include "characters/characters.hpp"
 
 #define FRAME_RATE_CAP 60
-
-std::atomic<bool> continue_game(true);
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -53,7 +50,7 @@ int main(int argc, char* argv[]) {
   int return_val = 2;
   while (return_val == 2) {
     net_engine.getLocalUserName();
-    if (!continue_game) { exit(0); } // Prevent loop from continuing if int signal handled
+    if (!continue_program) { exit(0); } // Prevent loop from continuing if int signal handled
     return_val = net_engine.testNetClient();
   }
 
@@ -248,7 +245,7 @@ int startLocalGame(RenderEngine* renderer) {
 void handleUnexpectedClosure(int signal_num) {
   std::cout << "Recieved SIGINT.\n";
   std::cout << "Calling NetEngine destructor...\n";
-  continue_game = false;
+  continue_program = false;
   net_engine.~NetEngine();
   std::cout << "Finished cleaning up NetEngine.\n";
   exit(0);

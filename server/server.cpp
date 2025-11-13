@@ -223,8 +223,16 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
     return -1; 
   }
 
-  // Set addr info
+  // Set users public & private IPs
   cur_player->player_addr = client_addr;
+
+  // Print Public & Private IPs
+  if (ENABLE_SERVER_DEBUG) {
+    std::cout << "[Debug] Lobby created for user "
+    << cur_player->user_name << std::endl;
+    std::cout << "[Debug] User public IP: "
+    << cur_player->user_name << std::endl;
+  }
 
   // Start the lobby update timer
   cur_player->lobby_update_time.start();

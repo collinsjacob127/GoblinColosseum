@@ -376,25 +376,6 @@ int NetEngine::serverConnect() {
     printf("[Log] Connected to server\n");
   }
 
-  // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
-  // Use getsockname to read our local ipv4 addr
-  struct sockaddr_in loc_addr;
-  socklen_t name_len = sizeof(loc_addr);
-  int err = getsockname(server_sock, (struct sockaddr*)&loc_addr, &name_len);
-  // Convert provided ipv4 addr
-  char buf[80] = "";
-  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
-  buf[79] = '\0';
-  // Print out the new addr
-  if (p != NULL) {
-    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
-  } else {
-    perror("[Error] Failed to retrieve local IPv4 addr\n");
-  }
-
-  // Update my_local_addr
-  // ...
-
   return 0;
 }
 
@@ -573,6 +554,64 @@ void NetEngine::peerDisconnect() {
   }
 }
 
+int NetEngine::updateLocalAddress(int s) {
+  // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
+
+  // Use getsockname to read our local ipv4 addr
+  struct sockaddr_in loc_addr;
+  socklen_t name_len = sizeof(loc_addr);
+  int err = getsockname(s, (struct sockaddr*)&loc_addr, &name_len);
+
+  // Convert provided ipv4 addr
+  char buf[80] = "";
+  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
+  buf[79] = '\0';
+
+  // Print out the new addr
+  if (p != NULL) {
+    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
+  } else {
+    perror("[Error] Failed to retrieve local IPv4 addr\n");
+    return -1;
+  }
+
+  // Update my_local_addr
+  my_local_addr.addr = unpacku32((unsigned char*)&loc_addr.sin_addr);
+  my_local_addr.port = ntohs(loc_addr.sin_port);
+  std::stringstream ss;
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[3]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[2]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[1]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[0]);
+  ss << ":" << my_local_addr.port;
+  my_local_addr.rep_str = ss.str();
+  if (ENABLE_CLIENTPACKET_INSPECTION) {
+    std::cout << "[Address] Rep saved as: " << my_local_addr.rep_str << std::endl;
+  }
+
+
+  clientAddrInfo test_addr(my_local_addr.rep_str);
+  std::stringstream ss2;
+  ss2 << (int)(((unsigned char*)&test_addr.addr)[3]);
+  ss2 << ".";
+  ss2 << (int)(((unsigned char*)&test_addr.addr)[2]);
+  ss2 << ".";
+  ss2 << (int)(((unsigned char*)&test_addr.addr)[1]);
+  ss2 << ".";
+  ss2 << (int)(((unsigned char*)&test_addr.addr)[0]);
+  ss2 << ":" << test_addr.port;
+  test_addr.rep_str = ss2.str();
+  if (ENABLE_CLIENTPACKET_INSPECTION) {
+    std::cout << "[Address] Test Conversion: " << test_addr.rep_str << std::endl;
+  }
+  
+
+  return 1;
+}
+
 void crossPlatformSleep(uint32_t milliseconds) {
   usleep(1000 * milliseconds);
 }
@@ -589,17 +628,16 @@ void NetEngine::getLocalUserName() {
   std::getline(std::cin, usr_name);
   size_t n_attempts = 0;
   // If bad input, repeat request until good
-  while((usr_name.size() == 0 
+  while(usr_name.size() == 0 
   || usr_name.size() > MAX_USERNAME_SIZE-1
   || usr_name == "LIST"
-  || usr_name == "CREATE")
-  && n_attempts <= 3) {
+  || usr_name == "CREATE") {
+    if (!continue_program) { exit(0); }
     std::cout << "Error] Invalid username: " << usr_name << std::endl;
     std::cout << "Error] Username must be 1-24 characters (" 
     << usr_name.size() << " is invalid.)" << std::endl;
     usr_name = "";
     std::getline(std::cin, usr_name);
-    n_attempts++;
   }
   if (n_attempts >= 3) { usr_name = "LIVING FAILURE"; }
   // std::cout << "Username \"" << usr_name << "\" Received!\n";
@@ -626,11 +664,10 @@ int NetEngine::getLocalJoinOrCreate() {
   std::cout << "[0] JOIN" << std::endl;
   std::cout << "[1] CREATE" << std::endl;
   std::cin >> selection;
-  size_t n_attempts = 0;
-  while (selection != 0 && selection != 1 && n_attempts < 3) {
+  while (selection != 0 && selection != 1) {
+    if (!continue_program) { exit(0); }
     std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
     std::cin >> selection;
-    n_attempts++;
   }
   return selection;
 }
@@ -673,6 +710,13 @@ ssize_t NetEngine::createLobby() {
     serverDisconnect();
     return -1;
   }
+
+  // Update local addr info for send to server
+  if (updateLocalAddress(server_sock) < 0) {
+    serverDisconnect();
+    return -1;
+  }
+
   ClientPacket out_pkt(1, session_id, 0, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
@@ -732,9 +776,14 @@ ssize_t NetEngine::joinLobby() {
     perror("[Error] Server connect request failed");
     serverDisconnect();
     return -1;
+  } 
+  
+  // Update local addr info for send to server
+  if (updateLocalAddress(server_sock) < 0) {
+    return -1;
   }
 
-  ClientPacket out_pkt(3, session_id, lobby_id, username);
+  ClientPacket out_pkt(3, session_id, lobby_id, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
     perror("[Error] Failed to send lobby join pkt to server");
@@ -842,6 +891,8 @@ int NetEngine::testNetClient() {
   result = initializeServerCommunication();
   if (result < 0) {
     std::cout << "[Error] Failed to initialize server connection\n";
+    serverDisconnect();
+    return -1;
   }
 
   // Get user selection
@@ -851,7 +902,9 @@ int NetEngine::testNetClient() {
     // Create a lobby
     result = createLobby();
     if (result < 0) {
-      std::cout << "[Error] Failed to create server\n";
+      std::cout << "[Error] Failed to create lobby\n";
+      serverDisconnect();
+      return -1;
     }
   } else {
     // Receive list of first 10 lobbies
@@ -864,6 +917,10 @@ int NetEngine::testNetClient() {
       std::cout << "[Error] Failed to get lobby list\n";
       return -1;
     }
+    if (lobby_list.size() <= 0) {
+      std::cout << "[Log] There are currently no open lobbies.\n";
+      return -1;
+    }
 
     // Select lobby from list
     std::cout << "Select one of the above lobbies (" 
@@ -871,6 +928,7 @@ int NetEngine::testNetClient() {
 
     int selected_idx = -1;
     while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
+      if (!continue_program) { exit(0); }
       std::cin >> selected_idx;
       std::cout << "\n";
     }
@@ -884,6 +942,7 @@ int NetEngine::testNetClient() {
   std::cout << std::fixed << std::setprecision(2);
   uint32_t cur_addr = peer_addr.addr;
   while (cur_addr == 0) {
+      if (!continue_program) { exit(0); }
     std::cout << "[Log] Requesting peer addr ("
     << timer.duration() << "s)" << std::endl;
 

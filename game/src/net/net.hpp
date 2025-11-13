@@ -17,6 +17,10 @@
 
 #pragma once
 
+// This makes while statements safe with the signal handler
+#include <atomic>
+std::atomic<bool> continue_program(true);
+
 #ifdef _WIN32
 
 
@@ -221,4 +225,11 @@ class NetEngine {
    * @brief Function to disconnect from a peer
    */
   void peerDisconnect();
+
+  /**
+   * @brief Function to update my_local_addr based on the current connection
+   * @return 1 on success, -1 on failure
+   * @note References this forum post https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
+   */
+  int updateLocalAddress(int s);
 };

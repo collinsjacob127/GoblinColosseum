@@ -29,7 +29,10 @@ typedef std::pair<std::string, uint64_t> TYPE_LOBBY_INFO;
 struct clientAddrInfo {
   uint32_t addr = 0;
   uint16_t port = 0;
-  std::string rep_str = "000.000.000.000:00000";
+  std::string rep_str = "0.0.0.0:0";
+
+  clientAddrInfo(){}
+  clientAddrInfo(std::string ipv4_str);
 };
 
 class MatchmakingPacket {

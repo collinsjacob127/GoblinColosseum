@@ -2,6 +2,52 @@
 #include "packets.hpp"
 
 /**
+ * ADDR INFO DEFINITIONS
+ */
+
+clientAddrInfo::clientAddrInfo(std::string ipv4_str) {
+  // Verify not too small
+  if (ipv4_str.size() < 9) { return; }
+  // Verify not too big
+  if (ipv4_str.size() > MAX_USERNAME_SIZE) { return; }
+
+  size_t colon_pos;
+  if ((colon_pos = ipv4_str.find(':')) == std::string::npos) {
+    std::cout << "[Error] Error converting IP address: " << ipv4_str << std::endl; 
+    return;
+  }
+
+  // Select substrings
+  std::string addr_str = ipv4_str.substr(0, colon_pos);
+  if (addr_str.length() == 0) { return; }
+  std::string port_str = ipv4_str.substr(colon_pos+1);
+  if (port_str.length() == 0) { return; }
+
+  // Convert ipv4 addr
+  std::string cur_str, remainder=addr_str;
+  uint8_t ipv4_buf[4];
+  // First 3 numbers
+  for (size_t i = 0; i < 3; ++i) {
+    // Get index of next colon
+    if ((colon_pos = remainder.find_first_of('.')) == std::string::npos) { return; }
+    // Current number (until next period)
+    cur_str = remainder.substr(0, colon_pos);
+    // Update remainder, removing cur number & period
+    remainder = remainder.substr(colon_pos + 1);
+    // Send current number to buffer
+    ipv4_buf[3-i] = (uint8_t)atoi(cur_str.c_str());
+  }
+  ipv4_buf[0] = (uint8_t)atoi(remainder.c_str());
+  memcpy(&addr, ipv4_buf, 4);
+
+  // Convert port
+  port = (uint16_t)atoi(port_str.c_str());
+
+  rep_str = ipv4_str;
+}
+
+
+/**
  * DEFAULT PACKET DEFINITIONS
  */
 
