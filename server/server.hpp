@@ -71,6 +71,12 @@ int sendLobbies(ClientPacket in_pkt, int client_sock);
 
 int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr);
 
+/**
+ * @brief Function to forward the address of one matched peer
+ * to the other.
+ * @note Sends both the private and public addresses of their peer.
+ * @note Contents follows format: [public clientAddrInfo][private clientAddrInfo]
+ */
 int sendPeerInfo(ClientPacket in_pkt, int client_sock);
 
 /**

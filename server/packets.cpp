@@ -257,7 +257,7 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t n_sent, uint64_t n_total, std:
 
 }
 
-ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrInfo peer_addr) {
+ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrInfo peer_addr_pub, clientAddrInfo peer_addr_priv) {
   // Standard initialization
   pkt_size = SERVER_PACKET_N_BYTES;
   contents_size = SERVER_CONTENTS_SIZE;
@@ -267,30 +267,29 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
   lobby_id = lid;
 
   // Temporary buffers
-  unsigned char addr_buf[sizeof(peer_addr.addr)];
-  unsigned char port_buf[sizeof(peer_addr.port)];
+  unsigned char addr_buf[sizeof(uint32_t)];
+  unsigned char port_buf[sizeof(uint16_t)];
 
-  // Convert byte order of addr info
-  packi32(addr_buf, peer_addr.addr);  
-  packi16(port_buf, peer_addr.port);  
+  // Convert byte order of PUBLIC addr info
+  packi32(addr_buf, peer_addr_pub.addr);  
+  packi16(port_buf, peer_addr_pub.port);  
 
   // Send buffers to contents
-  memcpy(contents, addr_buf, sizeof(peer_addr.addr));
-  memcpy(contents+sizeof(peer_addr.addr), port_buf, sizeof(peer_addr.port));
+  memcpy(contents, addr_buf, sizeof(uint32_t));
+  memcpy(contents+sizeof(uint32_t), port_buf, sizeof(uint16_t));
+
+  // Convert byte order of PRIVATE addr info
+  size_t addr_size = sizeof(uint32_t) + sizeof(uint16_t);
+  packi32(addr_buf, peer_addr_priv.addr);  
+  packi16(port_buf, peer_addr_priv.port);  
+
+  // Send buffers to contents
+  memcpy(contents+addr_size, addr_buf, sizeof(uint32_t));
+  memcpy(contents+addr_size+sizeof(uint32_t), port_buf, sizeof(uint16_t));
+
+  // TODO: Just put in the string repr for contents to send
 
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
-
-  // Build repr string
-  std::stringstream ss;
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[0]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[1]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[2]);
-  ss << std::setw(1) << ".";
-  ss << std::setw(3) << (int)(((unsigned char*)&peer_addr.addr)[3]);
-  ss << std::setw(1) << ":" << peer_addr.port;
-  peer_addr.rep_str = ss.str();
 
   // Print
   if (ENABLE_CLIENTPACKET_INSPECTION) {
@@ -298,7 +297,8 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
     std::cout << "  [Contents] Type: " << packet_type << std::endl;
     std::cout << "  [Contents] SID: " << session_id << std::endl;
     std::cout << "  [Contents] LID: " << lobby_id << std::endl;
-    std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
+    std::cout << "  [Contents] Pub addr: " << peer_addr_pub.rep_str << std::endl;
+    std::cout << "  [Contents] Priv addr: " << peer_addr_priv.rep_str << std::endl;
   }
 }
 

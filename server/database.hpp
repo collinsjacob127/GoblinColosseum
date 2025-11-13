@@ -38,8 +38,8 @@ struct PlayerEntry {
   uint64_t session_id = 0;            // Unique ID for this player's session
   uint64_t player_id = 0;            // Unique ID for this player
   uint64_t lobby_id = 0;            // Unique ID for this player's lobby
-  sockaddr_in player_addr;          // IP address for this player
-  clientAddrInfo player_addr_private;          // IP address for this player
+  clientAddrInfo player_addr_public;          // Public IP address for this player
+  clientAddrInfo player_addr_private;          // Local IP address for this player
 
   // For matchmaking
   bool match_made = false;        // Flag for some peer having joined this player's lobby

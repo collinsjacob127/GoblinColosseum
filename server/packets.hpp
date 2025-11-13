@@ -126,9 +126,9 @@ class ServerPacket : public MatchmakingPacket {
    * @brief Function to populate the contents buffer with a peer's IP address & port #
    * @param peer_addr Address of the client's matchmade peer
    * @note Populate the contents like so:
-   * @note [ipv4 - 4 bytes, uint32_t] [port - 2 bytes, uint16_t] [ empty ]...
+   * @note [public ipv4 - 4 bytes, uint32_t] [public port - 2 bytes, uint16_t] [private ipv4 - 4 bytes, uint32_t] [private port - 2 bytes, uint16_t]...
    */
-  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrInfo peer_addr);
+  ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrInfo peer_addr_pub, clientAddrInfo peer_addr_priv);
 
   /**
    * @brief Function to parse a received lobby list
