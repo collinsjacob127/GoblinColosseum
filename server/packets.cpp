@@ -275,11 +275,11 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
   memcpy(contents, ipv4_str_buf, CLIENT_CONTENTS_SIZE);
 
   // Copy PRIVATE ipv4 str to temp buffer
-  ipv4_str_buf = "";
-  strncpy(ipv4_str_buf, peer_addr_priv.rep_str.c_str(), CLIENT_CONTENTS_SIZE);
-  ipv4_str_buf[CLIENT_CONTENTS_SIZE-1] = '\0';
+  char ipv4_str_buf2[CLIENT_CONTENTS_SIZE] = "";
+  strncpy(ipv4_str_buf2, peer_addr_priv.rep_str.c_str(), CLIENT_CONTENTS_SIZE);
+  ipv4_str_buf2[CLIENT_CONTENTS_SIZE-1] = '\0';
   // Copy to contents buffer
-  memcpy(contents+CLIENT_CONTENTS_SIZE, ipv4_str_buf, CLIENT_CONTENTS_SIZE);
+  memcpy(contents+CLIENT_CONTENTS_SIZE, ipv4_str_buf2, CLIENT_CONTENTS_SIZE);
 
   contents[SERVER_CONTENTS_SIZE-1] = '\0';
 
