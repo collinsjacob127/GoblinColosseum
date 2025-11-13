@@ -830,6 +830,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
     std::cout << "[Error] Connection failed, trying again..." << std::endl;
     crossPlatformSleep(1000);
+    if (!continue_program) { exit(0); }
   }
   if (connection_attempt_timer.duration() >= 10.0) {
     peerDisconnect();
@@ -925,7 +926,6 @@ int NetEngine::testNetClient() {
   std::cout << std::fixed << std::setprecision(2);
   uint32_t cur_addr = peer_addr.addr;
   while (cur_addr == 0) {
-      if (!continue_program) { exit(0); }
     std::cout << "[Log] Requesting peer addr ("
     << timer.duration() << "s)" << std::endl;
 
@@ -934,8 +934,9 @@ int NetEngine::testNetClient() {
     cur_addr = peer_addr.addr;
     if (cur_addr == 0) {
       // Wait 5 seconds
-      crossPlatformSleep(5000);
+      crossPlatformSleep(1000);
     }
+    if (!continue_program) { exit(0); }
   }
 
   std::cout << "Peer Addr Received!\n";
