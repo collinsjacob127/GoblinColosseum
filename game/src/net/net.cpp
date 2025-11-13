@@ -831,6 +831,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // Connect and verify
   std::cout << "[Log] Trying to connect to peer..." << std::endl;
   while (peerConnect() < 0 && connection_attempt_timer.duration() < 10.0) {
+    if (!continue_program) { exit(0); }
     std::cout << "[Error] Connection failed, trying again..." << std::endl;
     crossPlatformSleep(1000);
     if (!continue_program) { exit(0); }
@@ -918,6 +919,7 @@ int NetEngine::testNetClient() {
       if (!continue_program) { exit(0); }
       std::cin >> selected_idx;
       std::cout << "\n";
+      if (!continue_program) { exit(0); }
     }
 
     // Inform Server of Lobby Join
@@ -929,6 +931,7 @@ int NetEngine::testNetClient() {
   std::cout << std::fixed << std::setprecision(2);
   uint32_t cur_addr = peer_addr.addr;
   while (cur_addr == 0) {
+    if (!continue_program) { exit(0); }
     std::cout << "[Log] Requesting peer addr ("
     << timer.duration() << "s)" << std::endl;
 
