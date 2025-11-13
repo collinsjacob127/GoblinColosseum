@@ -1,125 +1,498 @@
-==5958== Memcheck, a memory error detector
-==5958== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==5958== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
-==5958== Command: ./lin-build/GOBLIN
-==5958== Parent PID: 14
-==5958== 
---5958-- 
---5958-- Valgrind options:
---5958--    --leak-check=full
---5958--    --show-leak-kinds=all
---5958--    --track-origins=yes
---5958--    --verbose
---5958--    --log-file=logs/unix-new-tcache-error.log
---5958-- Contents of /proc/version:
---5958--   Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
---5958-- 
---5958-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
---5958-- Page sizes: currently 4096, max supported 4096
---5958-- Valgrind library directory: /usr/libexec/valgrind
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN
---5958-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
---5958--   Considering /usr/lib/debug/.build-id/52/0e05878220fb2fc6d28ff46b63b3fd5d48e763.debug ..
---5958--   .. build-id is valid
---5958-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
---5958--    object doesn't have a dynamic symbol table
---5958-- Scheduler: using generic scheduler lock implementation.
---5958-- Reading suppressions file: /usr/libexec/valgrind/default.supp
-==5958== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-5958-by-zato-on-???
-==5958== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-5958-by-zato-on-???
-==5958== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-5958-by-zato-on-???
-==5958== 
-==5958== TO CONTROL THIS PROCESS USING vgdb (which you probably
-==5958== don't want to do, unless you know exactly what you're doing,
-==5958== or are doing some strange experiment):
-==5958==   /usr/bin/vgdb --pid=5958 ...command...
-==5958== 
-==5958== TO DEBUG THIS PROCESS USING GDB: start GDB like this
-==5958==   /path/to/gdb ./lin-build/GOBLIN
-==5958== and then give GDB the following command
-==5958==   target remote | /usr/bin/vgdb --pid=5958
-==5958== --pid is optional if only one valgrind process is running
-==5958== 
---5958-- REDIR: 0x4028b00 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c2e1a (???)
---5958-- REDIR: 0x40272b0 (ld-linux-x86-64.so.2:index) redirected to 0x580c2e34 (???)
---5958-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
---5958-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
-==5958== WARNING: new redirection conflicts with existing -- ignoring it
---5958--     old: 0x04028b00 (strlen              ) R-> (0000.0) 0x580c2e1a ???
---5958--     new: 0x04028b00 (strlen              ) R-> (2007.0) 0x0484f340 strlen
---5958-- REDIR: 0x40274e0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4850460 (strcmp)
---5958-- REDIR: 0x4026910 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853cd0 (mempcpy)
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libcharacters.so
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/librender.so
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3.so.0.2.25
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libengine.so
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libbuttons.so
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libutil.so
---5958-- Reading syms from /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33
---5958-- Reading syms from /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
---5958-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
---5958--   Considering /usr/lib/debug/.build-id/27/4eec488d230825a136fa9c4d85370fed7a0a5e.debug ..
---5958--   .. build-id is valid
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3_image.so.0.2.5
---5958-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3_ttf.so.0.2.3
---5958-- Reading syms from /usr/lib/x86_64-linux-gnu/libm.so.6
---5958-- REDIR: 0x4028ca0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x484fc90 (strncmp)
---5958-- REDIR: 0x503a050 (libc.so.6:strnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x503a0e0 (libc.so.6:strpbrk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50381a0 (libc.so.6:strcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50513b0 (libc.so.6:wcsnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5037290 (libc.so.6:memset) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5050b20 (libc.so.6:wcslen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50bc3f0 (libc.so.6:__memcpy_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5037200 (libc.so.6:memrchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5051350 (libc.so.6:wcsncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5036720 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x504f8e0 (libc.so.6:wcschr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5038090 (libc.so.6:index) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x503a110 (libc.so.6:rindex) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x504f990 (libc.so.6:wcscmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50374b0 (libc.so.6:stpncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x505deb0 (libc.so.6:wmemchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039ef0 (libc.so.6:strncmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5037510 (libc.so.6:strcasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039310 (libc.so.6:strcspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50508f0 (libc.so.6:wcscpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5038020 (libc.so.6:strcat) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039df0 (libc.so.6:strncasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5038110 (libc.so.6:strchrnul) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5036630 (libc.so.6:bcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50392a0 (libc.so.6:strcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50375b0 (libc.so.6:strcasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039cc0 (libc.so.6:strlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039f90 (libc.so.6:strncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x505df30 (libc.so.6:wmemcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50bc510 (libc.so.6:__memmove_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
-==5958== WARNING: new redirection conflicts with existing -- ignoring it
---5958--     old: 0x0510da10 (__memcpy_chk_avx_una) R-> (2030.0) 0x04853dd0 __memcpy_chk
---5958--     new: 0x0510da10 (__memcpy_chk_avx_una) R-> (2024.0) 0x04853740 __memmove_chk
---5958-- REDIR: 0x5037440 (libc.so.6:stpcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5036fc0 (libc.so.6:memmove) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
-==5958== Preferring higher priority redirection:
---5958--     old: 0x0510da40 (__memcpy_avx_unalign) R-> (2018.0) 0x04851580 __memcpy_avx_unaligned_erms
---5958--     new: 0x0510da40 (__memcpy_avx_unalign) R-> (2018.1) 0x04852d60 memmove
---5958-- REDIR: 0x50365b0 (libc.so.6:memchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x503a2e0 (libc.so.6:strspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x50370e0 (libc.so.6:mempcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5039d50 (libc.so.6:strncasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
---5958-- REDIR: 0x5112630 (libc.so.6:__strrchr_avx2) redirected to 0x484ed20 (rindex)
---5958-- REDIR: 0x5110780 (libc.so.6:__strlen_avx2) redirected to 0x484f220 (strlen)
---5958-- REDIR: 0x510d2e0 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852480 (bcmp)
---5958-- REDIR: 0x5111860 (libc.so.6:__strncmp_avx2) redirected to 0x484fab0 (strncmp)
---5958-- REDIR: 0x5032650 (libc.so.6:malloc) redirected to 0x48467b0 (malloc)
---5958-- REDIR: 0x510da40 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852d60 (memmove)
---5958-- REDIR: 0x510da00 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x48538d0 (mempcpy)
---5958-- REDIR: 0x5032d30 (libc.so.6:free) redirected to 0x4849820 (free)
-==5958== 
-==5958== HEAP SUMMARY:
-==5958==     in use at exit: 0 bytes in 0 blocks
-==5958==   total heap usage: 3 allocs, 3 frees, 75,776 bytes allocated
-==5958== 
-==5958== All heap blocks were freed -- no leaks are possible
-==5958== 
-==5958== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==6298== Memcheck, a memory error detector
+==6298== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==6298== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==6298== Command: ./lin-build/GOBLIN
+==6298== Parent PID: 14
+==6298== 
+--6298-- 
+--6298-- Valgrind options:
+--6298--    --leak-check=full
+--6298--    --show-leak-kinds=all
+--6298--    --track-origins=yes
+--6298--    --verbose
+--6298--    --log-file=logs/unix-new-tcache-error.log
+--6298-- Contents of /proc/version:
+--6298--   Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+--6298-- 
+--6298-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--6298-- Page sizes: currently 4096, max supported 4096
+--6298-- Valgrind library directory: /usr/libexec/valgrind
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN
+--6298-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+--6298--   Considering /usr/lib/debug/.build-id/52/0e05878220fb2fc6d28ff46b63b3fd5d48e763.debug ..
+--6298--   .. build-id is valid
+--6298-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--6298--    object doesn't have a dynamic symbol table
+--6298-- Scheduler: using generic scheduler lock implementation.
+--6298-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==6298== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-6298-by-zato-on-???
+==6298== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-6298-by-zato-on-???
+==6298== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-6298-by-zato-on-???
+==6298== 
+==6298== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==6298== don't want to do, unless you know exactly what you're doing,
+==6298== or are doing some strange experiment):
+==6298==   /usr/bin/vgdb --pid=6298 ...command...
+==6298== 
+==6298== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==6298==   /path/to/gdb ./lin-build/GOBLIN
+==6298== and then give GDB the following command
+==6298==   target remote | /usr/bin/vgdb --pid=6298
+==6298== --pid is optional if only one valgrind process is running
+==6298== 
+--6298-- REDIR: 0x4028b00 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c2e1a (???)
+--6298-- REDIR: 0x40272b0 (ld-linux-x86-64.so.2:index) redirected to 0x580c2e34 (???)
+--6298-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--6298-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==6298== WARNING: new redirection conflicts with existing -- ignoring it
+--6298--     old: 0x04028b00 (strlen              ) R-> (0000.0) 0x580c2e1a ???
+--6298--     new: 0x04028b00 (strlen              ) R-> (2007.0) 0x0484f340 strlen
+--6298-- REDIR: 0x40274e0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4850460 (strcmp)
+--6298-- REDIR: 0x4026910 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853cd0 (mempcpy)
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libcharacters.so
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/librender.so
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3.so.0.2.25
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libengine.so
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libbuttons.so
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libutil.so
+--6298-- Reading syms from /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33
+--6298-- Reading syms from /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+--6298-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
+--6298--   Considering /usr/lib/debug/.build-id/27/4eec488d230825a136fa9c4d85370fed7a0a5e.debug ..
+--6298--   .. build-id is valid
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3_image.so.0.2.5
+--6298-- Reading syms from /mnt/g/School/GoblinColosseum/game/lin-build/libSDL3_ttf.so.0.2.3
+--6298-- Reading syms from /usr/lib/x86_64-linux-gnu/libm.so.6
+--6298-- REDIR: 0x4028ca0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x484fc90 (strncmp)
+--6298-- REDIR: 0x503a050 (libc.so.6:strnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x503a0e0 (libc.so.6:strpbrk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50381a0 (libc.so.6:strcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50513b0 (libc.so.6:wcsnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5037290 (libc.so.6:memset) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5050b20 (libc.so.6:wcslen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50bc3f0 (libc.so.6:__memcpy_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5037200 (libc.so.6:memrchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5051350 (libc.so.6:wcsncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5036720 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x504f8e0 (libc.so.6:wcschr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5038090 (libc.so.6:index) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x503a110 (libc.so.6:rindex) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x504f990 (libc.so.6:wcscmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50374b0 (libc.so.6:stpncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x505deb0 (libc.so.6:wmemchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039ef0 (libc.so.6:strncmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5037510 (libc.so.6:strcasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039310 (libc.so.6:strcspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50508f0 (libc.so.6:wcscpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5038020 (libc.so.6:strcat) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039df0 (libc.so.6:strncasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5038110 (libc.so.6:strchrnul) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5036630 (libc.so.6:bcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50392a0 (libc.so.6:strcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50375b0 (libc.so.6:strcasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039cc0 (libc.so.6:strlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039f90 (libc.so.6:strncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x505df30 (libc.so.6:wmemcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50bc510 (libc.so.6:__memmove_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==6298== WARNING: new redirection conflicts with existing -- ignoring it
+--6298--     old: 0x0510da10 (__memcpy_chk_avx_una) R-> (2030.0) 0x04853dd0 __memcpy_chk
+--6298--     new: 0x0510da10 (__memcpy_chk_avx_una) R-> (2024.0) 0x04853740 __memmove_chk
+--6298-- REDIR: 0x5037440 (libc.so.6:stpcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5036fc0 (libc.so.6:memmove) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==6298== Preferring higher priority redirection:
+--6298--     old: 0x0510da40 (__memcpy_avx_unalign) R-> (2018.0) 0x04851580 __memcpy_avx_unaligned_erms
+--6298--     new: 0x0510da40 (__memcpy_avx_unalign) R-> (2018.1) 0x04852d60 memmove
+--6298-- REDIR: 0x50365b0 (libc.so.6:memchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x503a2e0 (libc.so.6:strspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x50370e0 (libc.so.6:mempcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5039d50 (libc.so.6:strncasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6298-- REDIR: 0x5112630 (libc.so.6:__strrchr_avx2) redirected to 0x484ed20 (rindex)
+--6298-- REDIR: 0x5110780 (libc.so.6:__strlen_avx2) redirected to 0x484f220 (strlen)
+--6298-- REDIR: 0x510d2e0 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852480 (bcmp)
+--6298-- REDIR: 0x5111860 (libc.so.6:__strncmp_avx2) redirected to 0x484fab0 (strncmp)
+--6298-- REDIR: 0x5032650 (libc.so.6:malloc) redirected to 0x48467b0 (malloc)
+--6298-- REDIR: 0x510da40 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852d60 (memmove)
+--6298-- REDIR: 0x510da00 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x48538d0 (mempcpy)
+--6298-- REDIR: 0x5111ec0 (libc.so.6:__strncpy_avx2) redirected to 0x484f4f0 (strncpy)
+--6298-- REDIR: 0x4d928e0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4846f30 (operator new(unsigned long))
+--6298-- REDIR: 0x4d908a0 (libstdc++.so.6:operator delete(void*)) redirected to 0x484a080 (operator delete(void*))
+--6298-- REDIR: 0x50337a0 (libc.so.6:calloc) redirected to 0x484d8a0 (calloc)
+--6298-- REDIR: 0x5032d30 (libc.so.6:free) redirected to 0x4849820 (free)
+--6298-- REDIR: 0x510fde0 (libc.so.6:__strchrnul_avx2) redirected to 0x48537b0 (strchrnul)
+--6298-- REDIR: 0x5110530 (libc.so.6:__strcpy_avx2) redirected to 0x484f370 (strcpy)
+--6298-- REDIR: 0x510d040 (libc.so.6:__memchr_avx2) redirected to 0x48504e0 (memchr)
+--6298-- REDIR: 0x4d908b0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x484a530 (operator delete(void*, unsigned long))
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489090B: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x57371f0 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489090B: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F63F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E3FB24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4893C34: clientAddrInfo::operator=(clientAddrInfo const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892DC0: NetEngine::getPeerAddr() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936B2: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489091D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x5737250 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489091D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F63F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E3FB24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4893C34: clientAddrInfo::operator=(clientAddrInfo const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892DE3: NetEngine::getPeerAddr() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936B2: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489093D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x5736550 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489093D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F70E: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E4082A: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E399DE: std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >::str() const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4891825: NetEngine::updateLocalAddress(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48928F4: NetEngine::joinLobby() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48935CA: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== Invalid read of size 8
+==6298==    at 0x4E3FAE4: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::~basic_string() (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x488F2C5: std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>::~pair() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48903E7: void std::_Destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48902E9: void std::_Destroy_aux<false>::__destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*>(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FFD8: void std::_Destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*>(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5C5: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==  Address 0x5736290 is 0 bytes inside a block of size 40 free'd
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48904EF: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::allocate(unsigned long, void const*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489022E: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_allocate(unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FBEF: void std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_realloc_insert<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&>(__gnu_cxx::__normal_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > > >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F6D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::push_back(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488E9F6: ServerPacket::parseLobbyList[abi:cxx11]() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892674: NetEngine::getLobbies(unsigned long, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48933FE: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==  Address 0x5736290 is 0 bytes inside a block of size 40 free'd
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48904EF: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::allocate(unsigned long, void const*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489022E: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_allocate(unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FBEF: void std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_realloc_insert<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&>(__gnu_cxx::__normal_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > > >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F6D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::push_back(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488E9F6: ServerPacket::parseLobbyList[abi:cxx11]() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892674: NetEngine::getLobbies(unsigned long, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48933FE: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== 
+==6298== HEAP SUMMARY:
+==6298==     in use at exit: 0 bytes in 0 blocks
+==6298==   total heap usage: 32 allocs, 36 frees, 81,882 bytes allocated
+==6298== 
+==6298== All heap blocks were freed -- no leaks are possible
+==6298== 
+==6298== ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)
+==6298== 
+==6298== 1 errors in context 1 of 5:
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==  Address 0x5736290 is 0 bytes inside a block of size 40 free'd
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48904EF: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::allocate(unsigned long, void const*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489022E: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_allocate(unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FBEF: void std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_realloc_insert<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&>(__gnu_cxx::__normal_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > > >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F6D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::push_back(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488E9F6: ServerPacket::parseLobbyList[abi:cxx11]() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892674: NetEngine::getLobbies(unsigned long, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48933FE: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== 
+==6298== 1 errors in context 2 of 5:
+==6298== Invalid read of size 8
+==6298==    at 0x4E3FAE4: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::~basic_string() (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x488F2C5: std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>::~pair() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48903E7: void std::_Destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48902E9: void std::_Destroy_aux<false>::__destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*>(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FFD8: void std::_Destroy<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*>(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5C5: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==  Address 0x5736290 is 0 bytes inside a block of size 40 free'd
+==6298==    at 0x484A61D: operator delete(void*, unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48902BD: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FABB: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_deallocate(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F56C: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~_Vector_base() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F5D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::~vector() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489094D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x48904EF: std::__new_allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> >::allocate(unsigned long, void const*) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489022E: std::_Vector_base<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_allocate(unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488FBEF: void std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::_M_realloc_insert<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&>(__gnu_cxx::__normal_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>*, std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > > >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488F6D2: std::vector<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> > >::push_back(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long> const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x488E9F6: ServerPacket::parseLobbyList[abi:cxx11]() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892674: NetEngine::getLobbies(unsigned long, unsigned long) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48933FE: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== 
+==6298== 1 errors in context 3 of 5:
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489093D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x5736550 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489093D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F70E: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E4082A: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E399DE: std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >::str() const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4891825: NetEngine::updateLocalAddress(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48928F4: NetEngine::joinLobby() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48935CA: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== 
+==6298== 1 errors in context 4 of 5:
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489091D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x5737250 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489091D: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F63F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E3FB24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4893C34: clientAddrInfo::operator=(clientAddrInfo const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892DE3: NetEngine::getPeerAddr() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936B2: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== 
+==6298== 1 errors in context 5 of 5:
+==6298== Invalid free() / delete / delete[] / realloc()
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489090B: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4FCCA75: __run_exit_handlers (exit.c:108)
+==6298==    by 0x4FCCBBD: exit (exit.c:138)
+==6298==    by 0x10AE0F: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==  Address 0x57371f0 is 0 bytes inside a block of size 31 free'd
+==6298==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x489090B: NetEngine::~NetEngine() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10ADEC: handleUnexpectedClosure(int) (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==    by 0x4FCA32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6298==    by 0x5071A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6298==    by 0x507EA26: nanosleep (nanosleep.c:25)
+==6298==    by 0x50AE75B: usleep (usleep.c:31)
+==6298==    by 0x489191B: crossPlatformSleep(unsigned int) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936E1: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298==  Block was alloc'd at
+==6298==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6298==    by 0x4E3F63F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4E3FB24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6298==    by 0x4893C34: clientAddrInfo::operator=(clientAddrInfo const&) (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x4892DC0: NetEngine::getPeerAddr() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x48936B2: NetEngine::testNetClient() (in /mnt/g/School/GoblinColosseum/game/lin-build/libnet.so)
+==6298==    by 0x10A569: main (in /mnt/g/School/GoblinColosseum/game/lin-build/GOBLIN)
+==6298== 
+==6298== ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)

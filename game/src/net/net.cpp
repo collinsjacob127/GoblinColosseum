@@ -789,8 +789,11 @@ ssize_t NetEngine::joinLobby() {
 }
 
 clientAddrInfo NetEngine::getPeerAddr() {
-  // Clear peer addr
-  peer_addr.addr = 0; peer_addr.port = 0;
+  // Clear peer addrs
+  peer_addr_public.addr = 0;
+  peer_addr_public.port = 0;
+  peer_addr_private.addr = 0;
+  peer_addr_private.port = 0;
 
   // Connect to server
   int result = serverConnect();
@@ -809,19 +812,20 @@ clientAddrInfo NetEngine::getPeerAddr() {
     return clientAddrInfo();
   }
   
+  // Receive peer addr
   ServerPacket in_pkt = recvServerPacket(server_sock);
   if (in_pkt.lobby_id == 0) {
     serverDisconnect();
     return clientAddrInfo();
   }
   
+  // Parse the addrs
   std::pair<clientAddrInfo, clientAddrInfo> in_addrs;
   in_addrs = in_pkt.parseAddrInfo();
   peer_addr_public = in_addrs.first;
   peer_addr_private = in_addrs.second;
 
   serverDisconnect();
-  return peer_addr;
 }
 
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
@@ -929,20 +933,20 @@ int NetEngine::testNetClient() {
 
   timer.start();
   std::cout << std::fixed << std::setprecision(2);
-  uint32_t cur_addr = peer_addr.addr;
-  while (cur_addr == 0) {
+  bool bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
+  while (bad_addrs) {
     if (!continue_program) { exit(0); }
-    std::cout << "[Log] Requesting peer addr ("
-    << timer.duration() << "s)" << std::endl;
+    std::cout << "[Log] Requesting peer addr (" << timer.duration() << "s)" << std::endl;
 
     // Check if someone has connected to the server
     getPeerAddr();
-    cur_addr = peer_addr.addr;
-    if (cur_addr == 0) {
-      // Wait 5 seconds
-      crossPlatformSleep(1000);
-    }
-    if (!continue_program) { exit(0); }
+
+    // Update our condition
+    bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
+    if (!bad_addrs) { break; }
+
+    // Repeatedly ask the server, waiting 1s in-between
+    crossPlatformSleep(1000);
   }
 
   std::cout << "Peer Addr Received!\n";

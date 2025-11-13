@@ -85,7 +85,6 @@ class NetEngine {
   std::vector<TYPE_LOBBY_INFO> lobby_list = {};
 
   clientAddrInfo my_local_addr;
-  clientAddrInfo peer_addr;
   clientAddrInfo peer_addr_private;
   clientAddrInfo peer_addr_public;
 
@@ -158,10 +157,10 @@ class NetEngine {
   /**
    * @brief Function to get a matchmade peer's addr information
    * from the server.
-   * @param lobby_id The lobby to connect to.
-   * @return The peer's addr info. Both forms 0 on failure.
+   * @return Sets peer_addr_public and peer_addr_private based on
+   * the server's response
    */
-  clientAddrInfo getPeerAddr();
+  int getPeerAddr();
 
   /*
   PEER - PEER FUNCTIONS
