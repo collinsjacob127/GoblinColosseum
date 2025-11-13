@@ -880,20 +880,20 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     return PeerSetupPacket();
   } else {
     if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Successfully sent peer setup packet:" << std::endl;
+      std::cout << "[Log] Successfully sent peer setup packet" << std::endl;
       out_pkt.printContents();
     }
   }
 
   // Get info from peer
   PeerSetupPacket in_pkt = recvPeerSetupPacket();
-  if (in_pkt.character_id == 0) {
+  if ((std::string)in_pkt.user_name == "") {
     std::cout << "[Error] Failed to receive peer setup packet\n";
     peerDisconnect();
     return PeerSetupPacket();
   }
   if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Log] Successfully received peer setup packet:" << std::endl;
+    std::cout << "[Log] Successfully received peer setup packet" << std::endl;
     in_pkt.printContents();
   }
   return in_pkt; 
@@ -959,6 +959,7 @@ int NetEngine::testNetClient() {
 
   timer.start();
   std::cout << std::fixed << std::setprecision(2);
+  // Continuously request addr of matched peer
   bool bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
   while (bad_addrs) {
     if (!continue_program) { exit(0); }

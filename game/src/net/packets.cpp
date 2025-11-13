@@ -131,7 +131,7 @@ PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
 void PeerSetupPacket::printContents() {
   user_name[MAX_USERNAME_SIZE-1] = '\0';
   if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Packet] Received peer setup packet:" << std::endl;
+    std::cout << "[Packet] PeerSetupPacket Contents:" << std::endl;
     std::cout << "  [Contents] Max # Frames: " << max_n_frames << std::endl;
     std::cout << "  [Contents] Character ID: " << (int)character_id << std::endl;
     std::cout << "  [Contents] Username: " << user_name << std::endl;
