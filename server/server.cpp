@@ -448,6 +448,10 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     ss << "[Log] Successfully sent peer addrs to ";
     ss << cur_player->user_name << std::endl;
     ANSI_ESCAPES.printSuccess(ss.str());
+    std::cout << ANSI_ESCAPES.cyan_fg;
+    std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
+    std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
+    std::cout << ANSI_ESCAPES.white_fg << std::flush;
   }
 
   // Check if finished
