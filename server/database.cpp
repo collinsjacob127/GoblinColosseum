@@ -159,8 +159,8 @@ uint64_t Registry::setNewId(PlayerEntry* player, TYPE_ID_SPECIFIER id_type) {
 
   if (ENABLE_REGISTRY_LOG) {
     std::stringstream ss;
-    ss << "[Registry] " << getIdTypeName(id_type) << ": " 
-    << rand_n << " provided to player: " << player->user_name << std::endl;
+    ss << "[Registry] Player \"" << player->user_name << "\" has obtained "
+    << getIdTypeName(id_type) << " " << rand_n << std::endl;
     ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 

@@ -100,13 +100,13 @@ int main() {
       }
       default: {
         if (ENABLE_SERVER_ERROR) {
-          ANSI_ESCAPES.printInColor("[Error] Invalid packet type received.\n", ANSI_ESCAPES.red_fg);
+          ANSI_ESCAPES.printError("[Error] Invalid packet type received.\n");
         }
       }
     }
 
     if (response < 0 && ENABLE_SERVER_ERROR) {
-      ANSI_ESCAPES.printInColor("[Error] Server response indicated some failure.\n", ANSI_ESCAPES.red_fg);
+      ANSI_ESCAPES.printError("[Error] Server response indicated some failure.\n");
     }
 
     // Close the connection
