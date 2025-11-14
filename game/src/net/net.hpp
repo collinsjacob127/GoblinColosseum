@@ -70,8 +70,8 @@ typedef SSIZE_T ssize_t;
 
 
 // IPV4 addr of the server
-// constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
-constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
+constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+// constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
 constexpr int SERVER_PORT = 53243;
 
 /**

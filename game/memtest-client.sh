@@ -16,11 +16,11 @@ echo "Logging to $LOGFILE_PATH"
 
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file="$LOGFILE_PATH" ./build/GOBLIN
 
-echo ""
+echo -e "\n"
 
 grep -A4 'HEAP SUMMARY' "$LOGFILE_PATH"
 
-echo ""
+echo -e "\n"
 
 grep -A4 'ERROR SUMMARY' "$LOGFILE_PATH"
 

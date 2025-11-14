@@ -567,13 +567,16 @@ void disconnectClient(int fd) {
 }
 
 void handleSigint(int signal_num) {
-  std::cout << std::flush << std::endl << ANSI_ESCAPES.red_fg << std::flush;
-  fprintf(stderr, "\n[Log] Server Interrupted (Received signal %d)\n", signal_num);
+  // Print interruption message
+  std::cout << std::flush << std::endl << ANSI_ESCAPES.yellow_fg << std::flush;
+  fprintf(stderr, "\n[WARN] Server Interrupted (Received signal %d)\n", signal_num);
+
+  std::cout << ANSI_ESCAPES.green_fg;
   std::cout << "[Log] Disconnecting all clients and shutting down server.\n";
+
   // Close all sockets
   closeAllConnections();
 
-  std::cout << ANSI_ESCAPES.green_fg;
   std::cout << "[Log] Server shutting down safely.\n";
   std::cout << "[Log] Removing " << registry.size()
   << " entries from lobby." << ANSI_ESCAPES.white_fg << std::endl;
