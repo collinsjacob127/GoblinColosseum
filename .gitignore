@@ -15,3 +15,7 @@ server/*.o
 
 # Ignore hidden files
 .*
+
+# Ignore backup files
+*.bak
+*.bkp
