@@ -108,15 +108,13 @@ int main() {
       }
       default: {
         if (ENABLE_SERVER_ERROR) {
-          std::cout << ANSI_ESCAPES.red_fg;
-          std::cout << "[Error] Invalid packet type received.\n";
-          std::cout << ANSI_ESCAPES.white_fg;
+          ANSI_ESCAPES.printInColor("[Error] Invalid packet type received.\n", ANSI_ESCAPES.red_fg);
         }
       }
     }
 
     if (response < 0 && ENABLE_SERVER_ERROR) {
-      std::cerr << "[Error] Server response failed.\n";
+      ANSI_ESCAPES.printInColor("[Error] Server response indicated some failure.\n", ANSI_ESCAPES.red_fg);
     }
 
     // Close the connection
@@ -146,8 +144,9 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
     if (bytes_in < 0) {
       if (ENABLE_SERVER_ERROR) {
         std::stringstream ss;
-        ss << "[Error] Failed to receive packet from %d" << s << std::endl;
-        perror(ss.str().c_str());
+        ss << "[Error] Failed to receive packet from socket %d" << s << std::endl;
+        ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.red_fg);
+        perror("");
       }
       return ClientPacket(0, 0, 0, "");
     }
@@ -171,8 +170,8 @@ ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_SERVER_ERROR) {
-        std::stringstream ss;
-        perror( "[Error] Failed to send packet");
+        ANSI_ESCAPES.printInColor("[Error] Failed to send packet.\n", ANSI_ESCAPES.red_fg);
+        perror("");
       }
       return bytes_sent;
     }
@@ -261,7 +260,7 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
 
   // Verify valid inputs
   if (n_requested_lobbies > MAX_N_REQUESTED_LOBBIES) {
-    std::cout << "[Error] User lobby index request mismatch\n";
+    ANSI_ESCAPES.printInColor( "[Error] User lobby index request mismatch\n", ANSI_ESCAPES.red_fg);
     sendServerPacket(ServerPacket(in_pkt.packet_type, 0, 0, ""), client_sock);
   }
 
@@ -385,7 +384,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (cur_peer->peer_session_id != cur_player->session_id
     || cur_player->peer_session_id != cur_peer->session_id
     ) {
-    std::cout << "[Error] Matchmaking peer session ID mismatch\n" << std::endl;
+    ANSI_ESCAPES.printInColor("[Error] Matchmaking peer session ID mismatch\n" , ANSI_ESCAPES.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
@@ -396,7 +395,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
       || cur_player->player_addr_public.addr == 0
       || cur_peer->player_addr_public.addr == 0
       || cur_peer->player_addr_private.addr == 0) {
-    std::cout << "[Error] Players addrs not yet set\n" << std::endl;
+    ANSI_ESCAPES.printInColor("[Error] Players addrs not yet set\n" , ANSI_ESCAPES.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
@@ -413,6 +412,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
 
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
+    ANSI_ESCAPES.printInColor("[Error] Failed to send packet to client\n", ANSI_ESCAPES.red_fg);
     return -1; 
   }
 

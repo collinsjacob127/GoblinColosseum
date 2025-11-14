@@ -13,6 +13,7 @@
 /***************************
  ********* PRINT FMT ***********
  ***************************/
+
 struct CoutEscapes {
   std::string black_fg = "\x1b[30m";
   std::string red_fg = "\x1b[31m";
@@ -52,6 +53,11 @@ struct CoutEscapes {
 
   std::string line_reset = "\r\033[K";
   std::string carriage_return = "\r";
+
+  /**
+   * @brief Prints message in color, then returns cout to white
+   */
+  void printInColor(std::string message, std::string color);
 };
 
 /***************************

@@ -5,6 +5,16 @@
 #include "util.hpp"
 
 /***************************
+ ********* PRINT FMT ***********
+ ***************************/
+
+void CoutEscapes::printInColor(std::string message, std::string color) {
+  std::cout << std::flush << color;
+  std::cout << message;
+  std::cout << white_fg;
+}
+
+/***************************
  ********* TIMER ***********
  ***************************/
 Timer::Timer() {
