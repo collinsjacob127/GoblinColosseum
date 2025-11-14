@@ -355,6 +355,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
+    ANSI_ESCAPES.printInColor("[Error] Client not in registry\n");
     return -1; // Player doesn't exist in registry
   }
 
@@ -363,11 +364,13 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (!(lobby_owner = registry.getPlayer(lobby_id, LOBBY_ID_SPECIFIER))) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
+    ANSI_ESCAPES.printInColor("[Error] Requested lobby DNE\n");
     return -1; // Lobby DNE
   }
   if (!lobby_owner->match_made || !cur_player->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
+    ANSI_ESCAPES.printInColor("[Error] Requested lobby is full\n");
     return -1; // Lobby full
   }
 
@@ -377,6 +380,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // Invalid peer
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
+    ANSI_ESCAPES.printInColor("[Error] Peer requested by client DNE\n");
     return -1; // Peer DNE
   }
 
@@ -519,5 +523,6 @@ void handleSigint(int signal_num) {
   std::cout << "[Log] Server shutting down safely.\n";
   std::cout << "[Log] Removing " << registry.size()
   << " entries from lobby.\n";
+  std::cout << ANSI_ESCAPES.white_fg << std::endl;
   exit(EXIT_SUCCESS);
 }
