@@ -127,9 +127,10 @@ int main() {
     if (n_clients != registry.size()) {
       n_clients = registry.size();
       std::cout << ANSI_ESCAPES.cyan_fg;
-      std::cout << "[The registry has " << n_clients << " entries.]" << std::endl << std::endl;
+      std::cout << "[The registry has " << n_clients << " entries.]" << std::endl;
       std::cout << ANSI_ESCAPES.white_fg;
     }
+    std::cout << std::endl;
   }
 
   // Close the server's socket
