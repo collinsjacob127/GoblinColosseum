@@ -61,8 +61,11 @@ Registry::~Registry() {
   ssize_t n_removed;
 
   n_removed = clearMap(&session_map);
-  if (ENABLE_REGISTRY_LOG)
-    std::cout << "[Registry] Deleted " << n_removed << " entries from session map\n";
+  if (ENABLE_REGISTRY_LOG) {
+    std::stringstream ss;
+    ss << "[Registry] Deleted " << n_removed << " entries from session map\n";
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.blue_fg);
+  }
 
   session_map.clear();
   player_map.clear();
@@ -155,8 +158,10 @@ uint64_t Registry::setNewId(PlayerEntry* player, TYPE_ID_SPECIFIER id_type) {
   map->insert_or_assign(rand_n, player);
 
   if (ENABLE_REGISTRY_LOG) {
-    std::cout << "[Registry] ID " << rand_n << " (type " << id_type << ") "
-    << "provided to player: " << player->getReprString();
+    std::stringstream ss;
+    ss << "[Registry] " << getIdTypeName(id_type) << ": " 
+    << rand_n << " provided to player: " << player->user_name << std::endl;
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.blue_fg);
   }
 
   return rand_n;
@@ -290,6 +295,15 @@ ssize_t Registry::clearMap(TYPE_PLAYER_MAP* map) {
   }
 
   return n_removed;
+}
+
+std::string Registry::getIdTypeName(TYPE_ID_SPECIFIER id_type) {
+  switch (id_type) {
+    case (PLAYER_ID_SPECIFIER): { return "PLAYER_ID"; }
+    case (LOBBY_ID_SPECIFIER): { return "LOBBY_ID"; }
+    case (SESSION_ID_SPECIFIER): { return "SESSION_ID"; }
+    default: { return "INVALID_ID"; }
+  }
 }
 
 /**********************

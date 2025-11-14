@@ -73,7 +73,6 @@ typedef SSIZE_T ssize_t;
 constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
 // constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
 constexpr int SERVER_PORT = 53243;
-CoutEscapes ANSI_ESCAPES;
 
 /**
  * @brief Driver class for all client-side network activity.

@@ -247,7 +247,7 @@ void handleUnexpectedClosure(int signal_num) {
   std::cout << "Recieved SIGINT.\n";
   std::cout << "Calling NetEngine destructor...\n";
   continue_program = false;
-  net_engine.~NetEngine();
+  // net_engine.~NetEngine();
   std::cout << "Finished cleaning up NetEngine.\n";
   exit(0);
   // renderer.~RenderEngine();

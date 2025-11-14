@@ -60,6 +60,7 @@ struct CoutEscapes {
    */
   void printInColor(std::string message, std::string color);
 };
+static CoutEscapes ANSI_ESCAPES;
 
 /***************************
  ********* TIMER ***********
