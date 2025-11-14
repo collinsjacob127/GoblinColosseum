@@ -470,7 +470,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     ANSI_ESCAPES.printSuccess(ss.str());
     std::cout << ANSI_ESCAPES.cyan_fg;
     std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
-    std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
+    std::cout << " [PRIV ADDR] " << cur_player->player_addr_private.rep_str << std::endl;
     std::cout << ANSI_ESCAPES.white_fg << std::flush;
   }
 
