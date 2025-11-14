@@ -452,7 +452,7 @@ std::pair<clientAddrInfo, clientAddrInfo> ServerPacket::parseAddrInfo() {
 }
 
 /**
- * NET UTILS - courtesy of l'beej
+ * NET UTILS - courtesy of l'beej @ https://beej.us/guide/bgnet/html/index-wide.html#sonofdataencap
  */
 
 void packi16(unsigned char *buf, uint16_t i)

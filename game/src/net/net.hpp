@@ -120,15 +120,15 @@ class NetEngine {
   int getLocalJoinOrCreate();
 
   /**
+   * @brief Function to display the list of lobbies to the terminal
+   */
+  void printLobbyList();
+
+  /**
    * @brief Function to test client-side network functionality
    * @note It is assumed that the username has already been set
    */
   int testNetClient();
-
-  /**
-   * @brief Function to display the list of lobbies to the terminal
-   */
-  void printLobbyList();
 
   /*
   SERVER - CLIENT FUNCTIONS 

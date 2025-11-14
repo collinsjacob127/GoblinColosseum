@@ -626,10 +626,6 @@ int NetEngine::updateLocalAddress(int s) {
   ss << (int)(((unsigned char*)&my_local_addr.addr)[0]);
   ss << ":" << my_local_addr.port;
   my_local_addr.rep_str = ss.str();
-  if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << "[Address] Rep saved as: " << my_local_addr.rep_str << std::endl;
-  }
-
   return 1;
 }
 
@@ -685,6 +681,7 @@ void NetEngine::setLocalUserName(std::string user_name) {
 
 int NetEngine::getLocalJoinOrCreate() {
   int selection = -1;
+  std::cout << std::flush << ANSI_ESCAPES.brt_white_fg;
   std::cout << "Select JOIN or CREATE:" << std::endl;
   std::cout << "[0] JOIN" << std::endl;
   std::cout << "[1] CREATE" << std::endl;
@@ -694,6 +691,7 @@ int NetEngine::getLocalJoinOrCreate() {
     std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
     std::cin >> selection;
   }
+  std::cout << ANSI_ESCAPES.white_fg;
   return selection;
 }
 
@@ -1036,6 +1034,7 @@ int NetEngine::testNetClient() {
   // Initiate p2p (udp holepunch - https://bford.info/pub/net/p2pnat/)
 
   // Connect to peer and test communication
+  std::cout << "\n[Log] Initializing peer communication\n";
   initializePeerCommunication((uint16_t)(60*60*5), CHARACTER_ID_HUNKO);
 
   // Close peer connection

@@ -54,6 +54,8 @@ int main(int argc, char* argv[]) {
     return_val = net_engine.testNetClient();
   }
 
+  ANSI_ESCAPES.printSuccess("\nClient program exited normally\n");
+
   return 0;
 
   /*
