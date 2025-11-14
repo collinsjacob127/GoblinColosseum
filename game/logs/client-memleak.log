@@ -1,0 +1,344 @@
+==6648== Memcheck, a memory error detector
+==6648== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==6648== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==6648== Command: ./build/GOBLIN
+==6648== Parent PID: 3626
+==6648== 
+--6648-- 
+--6648-- Valgrind options:
+--6648--    --leak-check=full
+--6648--    --show-leak-kinds=all
+--6648--    --track-origins=yes
+--6648--    --verbose
+--6648--    --log-file=logs/client-memleak.log
+--6648-- Contents of /proc/version:
+--6648--   Linux version 6.14.0-35-generic (buildd@lcy02-amd64-078) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Oct 14 13:55:17 UTC 2
+--6648-- 
+--6648-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--6648-- Page sizes: currently 4096, max supported 4096
+--6648-- Valgrind library directory: /usr/libexec/valgrind
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/GOBLIN
+--6648-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+--6648--   Considering /usr/lib/debug/.build-id/52/0e05878220fb2fc6d28ff46b63b3fd5d48e763.debug ..
+--6648--   .. build-id is valid
+--6648-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--6648--    object doesn't have a dynamic symbol table
+--6648-- Scheduler: using generic scheduler lock implementation.
+--6648-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==6648== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-6648-by-zato-1-on-???
+==6648== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-6648-by-zato-1-on-???
+==6648== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-6648-by-zato-1-on-???
+==6648== 
+==6648== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==6648== don't want to do, unless you know exactly what you're doing,
+==6648== or are doing some strange experiment):
+==6648==   /usr/bin/vgdb --pid=6648 ...command...
+==6648== 
+==6648== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==6648==   /path/to/gdb ./build/GOBLIN
+==6648== and then give GDB the following command
+==6648==   target remote | /usr/bin/vgdb --pid=6648
+==6648== --pid is optional if only one valgrind process is running
+==6648== 
+--6648-- REDIR: 0x4028b00 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c2e1a (???)
+--6648-- REDIR: 0x40272b0 (ld-linux-x86-64.so.2:index) redirected to 0x580c2e34 (???)
+--6648-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--6648-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==6648== WARNING: new redirection conflicts with existing -- ignoring it
+--6648--     old: 0x04028b00 (strlen              ) R-> (0000.0) 0x580c2e1a ???
+--6648--     new: 0x04028b00 (strlen              ) R-> (2007.0) 0x0484f340 strlen
+--6648-- REDIR: 0x40274e0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4850460 (strcmp)
+--6648-- REDIR: 0x4026910 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853cd0 (mempcpy)
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libcharacters.so
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/librender.so
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libnet.so
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3.so.0.2.25
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libengine.so
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libbuttons.so
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libutil.so
+--6648-- Reading syms from /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33
+--6648-- Reading syms from /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+--6648-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
+--6648--   Considering /usr/lib/debug/.build-id/27/4eec488d230825a136fa9c4d85370fed7a0a5e.debug ..
+--6648--   .. build-id is valid
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3_image.so.0.2.5
+--6648-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3_ttf.so.0.2.3
+--6648-- Reading syms from /usr/lib/x86_64-linux-gnu/libm.so.6
+--6648-- REDIR: 0x4028ca0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x484fc90 (strncmp)
+--6648-- REDIR: 0x503c050 (libc.so.6:strnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503c0e0 (libc.so.6:strpbrk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503a1a0 (libc.so.6:strcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50533b0 (libc.so.6:wcsnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5039290 (libc.so.6:memset) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5052b20 (libc.so.6:wcslen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50be3f0 (libc.so.6:__memcpy_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5039200 (libc.so.6:memrchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5053350 (libc.so.6:wcsncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5038720 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50518e0 (libc.so.6:wcschr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503a090 (libc.so.6:index) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503c110 (libc.so.6:rindex) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5051990 (libc.so.6:wcscmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50394b0 (libc.so.6:stpncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x505feb0 (libc.so.6:wmemchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503bef0 (libc.so.6:strncmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5039510 (libc.so.6:strcasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503b310 (libc.so.6:strcspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50528f0 (libc.so.6:wcscpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503a020 (libc.so.6:strcat) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503bdf0 (libc.so.6:strncasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503a110 (libc.so.6:strchrnul) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5038630 (libc.so.6:bcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503b2a0 (libc.so.6:strcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50395b0 (libc.so.6:strcasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503bcc0 (libc.so.6:strlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503bf90 (libc.so.6:strncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x505ff30 (libc.so.6:wmemcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50be510 (libc.so.6:__memmove_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==6648== WARNING: new redirection conflicts with existing -- ignoring it
+--6648--     old: 0x0510fa10 (__memcpy_chk_avx_una) R-> (2030.0) 0x04853dd0 __memcpy_chk
+--6648--     new: 0x0510fa10 (__memcpy_chk_avx_una) R-> (2024.0) 0x04853740 __memmove_chk
+--6648-- REDIR: 0x5039440 (libc.so.6:stpcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5038fc0 (libc.so.6:memmove) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==6648== Preferring higher priority redirection:
+--6648--     old: 0x0510fa40 (__memcpy_avx_unalign) R-> (2018.0) 0x04851580 __memcpy_avx_unaligned_erms
+--6648--     new: 0x0510fa40 (__memcpy_avx_unalign) R-> (2018.1) 0x04852d60 memmove
+--6648-- REDIR: 0x50385b0 (libc.so.6:memchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503c2e0 (libc.so.6:strspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x50390e0 (libc.so.6:mempcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x503bd50 (libc.so.6:strncasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--6648-- REDIR: 0x5114630 (libc.so.6:__strrchr_avx2) redirected to 0x484ed20 (rindex)
+--6648-- REDIR: 0x5112780 (libc.so.6:__strlen_avx2) redirected to 0x484f220 (strlen)
+--6648-- REDIR: 0x510f2e0 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852480 (bcmp)
+--6648-- REDIR: 0x5113860 (libc.so.6:__strncmp_avx2) redirected to 0x484fab0 (strncmp)
+--6648-- REDIR: 0x5034650 (libc.so.6:malloc) redirected to 0x48467b0 (malloc)
+--6648-- REDIR: 0x510fa40 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852d60 (memmove)
+--6648-- REDIR: 0x510fa00 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x48538d0 (mempcpy)
+--6648-- REDIR: 0x5113ec0 (libc.so.6:__strncpy_avx2) redirected to 0x484f4f0 (strncpy)
+--6648-- REDIR: 0x4d948e0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4846f30 (operator new(unsigned long))
+--6648-- REDIR: 0x4d928a0 (libstdc++.so.6:operator delete(void*)) redirected to 0x484a080 (operator delete(void*))
+--6648-- REDIR: 0x5111de0 (libc.so.6:__strchrnul_avx2) redirected to 0x48537b0 (strchrnul)
+--6648-- REDIR: 0x5112530 (libc.so.6:__strcpy_avx2) redirected to 0x484f370 (strcpy)
+--6648-- REDIR: 0x510f040 (libc.so.6:__memchr_avx2) redirected to 0x48504e0 (memchr)
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489090B: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x573d0e0 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489090B: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4163F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E41B24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4893BD4: clientAddrInfo::operator=(clientAddrInfo const&) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892DC0: NetEngine::getPeerAddr() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893652: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489091D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x573d140 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489091D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4163F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E41B24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4893BD4: clientAddrInfo::operator=(clientAddrInfo const&) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892DE3: NetEngine::getPeerAddr() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893652: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489093D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x5738170 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489093D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4170E: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E4282A: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E3B9DE: std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >::str() const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4891825: NetEngine::updateLocalAddress(int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892252: NetEngine::createLobby() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893351: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+--6648-- REDIR: 0x5034d30 (libc.so.6:free) redirected to 0x4849820 (free)
+==6648== 
+==6648== HEAP SUMMARY:
+==6648==     in use at exit: 0 bytes in 0 blocks
+==6648==   total heap usage: 76 allocs, 79 frees, 97,220 bytes allocated
+==6648== 
+==6648== All heap blocks were freed -- no leaks are possible
+==6648== 
+==6648== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
+==6648== 
+==6648== 1 errors in context 1 of 3:
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489093D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x5738170 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489093D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4170E: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E4282A: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E3B9DE: std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >::str() const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4891825: NetEngine::updateLocalAddress(int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892252: NetEngine::createLobby() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893351: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+==6648== 
+==6648== 1 errors in context 2 of 3:
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489091D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x573d140 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489091D: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4163F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E41B24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4893BD4: clientAddrInfo::operator=(clientAddrInfo const&) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892DE3: NetEngine::getPeerAddr() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893652: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+==6648== 
+==6648== 1 errors in context 3 of 3:
+==6648== Invalid free() / delete / delete[] / realloc()
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489090B: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4FCEA75: __run_exit_handlers (exit.c:108)
+==6648==    by 0x4FCEBBD: exit (exit.c:138)
+==6648==    by 0x10ADEF: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==  Address 0x573d0e0 is 0 bytes inside a block of size 31 free'd
+==6648==    at 0x484A164: operator delete(void*) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x488F33D: clientAddrInfo::~clientAddrInfo() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x489090B: NetEngine::~NetEngine() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10ADCC: handleUnexpectedClosure(int) (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==    by 0x4FCC32F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==6648==    by 0x5073A79: clock_nanosleep@@GLIBC_2.17 (clock_nanosleep.c:78)
+==6648==    by 0x5080A26: nanosleep (nanosleep.c:25)
+==6648==    by 0x50B075B: usleep (usleep.c:31)
+==6648==    by 0x489191B: crossPlatformSleep(unsigned int) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893681: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648==  Block was alloc'd at
+==6648==    at 0x4846FA3: operator new(unsigned long) (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==6648==    by 0x4E4163F: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4E41B24: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==6648==    by 0x4893BD4: clientAddrInfo::operator=(clientAddrInfo const&) (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4892DC0: NetEngine::getPeerAddr() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x4893652: NetEngine::testNetClient() (in /home/zato-1/school/GoblinColosseum/game/build/libnet.so)
+==6648==    by 0x10A569: main (in /home/zato-1/school/GoblinColosseum/game/build/GOBLIN)
+==6648== 
+==6648== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)
