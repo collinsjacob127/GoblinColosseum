@@ -87,18 +87,19 @@ ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
   contents[contents_size-1] = '\0'; // Guarantee safe cstr
   memcpy(buf + cur_index, contents, contents_size);
 
-  if (ENABLE_CLIENTPACKET_INSPECTION){
-    std::cout << getStringFromBuffer(buf, pkt_size);
-  }
+  // if (ENABLE_CLIENTPACKET_INSPECTION){
+  //   std::cout << getStringFromBuffer(buf, pkt_size);
+  // }
 
   return pkt_size;
 }
 
 std::string MatchmakingPacket::getStringFromBuffer(unsigned char* buf, ssize_t n_bytes) {
   std::stringstream ss;
-  ss << " [Contents] packed type: " << (int)buf[0] << std::endl;
-  ss << " [Contents] packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
-  ss << " [Contents] packed lobby: " << unpacku64(buf+sizeof(packet_type)+sizeof(session_id)) << std::endl;
+  ss << "[Packet] Packet contents read from buffer:\n";
+  ss << " [Contents] Packed type: " << (int)buf[0] << std::endl;
+  ss << " [Contents] Packed session: " << unpacku64(buf+sizeof(packet_type)) << std::endl;
+  ss << " [Contents] Packed lobby: " << unpacku64(buf+sizeof(packet_type)+sizeof(session_id)) << std::endl;
   char tmp_buf[BUFFER_SIZE];
 
   memcpy(
@@ -287,7 +288,7 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
   if (ENABLE_CLIENTPACKET_INSPECTION) {
     std::cout << ANSI_ESCAPES.cyan_fg;
     std::cout << "[Packet] Packing Peer Address:" << std::endl;
-    std::cout << " [Contents] Type: " << packet_type << std::endl;
+    std::cout << " [Contents] Type: " << (int)packet_type << std::endl;
     std::cout << " [Contents] SID: " << session_id << std::endl;
     std::cout << " [Contents] LID: " << lobby_id << std::endl;
     std::cout << " [Contents] Pub addr: " << peer_addr_pub.rep_str << std::endl;
@@ -372,10 +373,10 @@ clientAddrInfo ServerPacket::parseAddrInfo() {
   // Print
   if (ENABLE_CLIENTPACKET_INSPECTION) {
     std::cout << "[Packet] Parsing Peer Address:" << std::endl;
-    std::cout << "  [Contents] Type: " << packet_type << std::endl;
-    std::cout << "  [Contents] SID: " << session_id << std::endl;
-    std::cout << "  [Contents] LID: " << lobby_id << std::endl;
-    std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
+    std::cout << " [Contents] Type: " << (int)packet_type << std::endl;
+    std::cout << " [Contents] SID: " << session_id << std::endl;
+    std::cout << " [Contents] LID: " << lobby_id << std::endl;
+    std::cout << " [Contents] Addr: " << peer_addr.rep_str << std::endl;
   }
   return peer_addr;
 }

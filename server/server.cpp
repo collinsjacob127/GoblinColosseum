@@ -268,7 +268,8 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
   if (ENABLE_SERVER_DEBUG) {
     std::cout << "[Debug] Lobby id range: " << (uint64_t)min_idx 
     << " " << (uint64_t)max_idx << std::endl;
-    std::cout << "[Debug] # lobbies sent: " << (uint64_t)lobby_list.size();
+    std::cout << "[Debug] # Lobbies sent: " 
+    << (uint64_t)lobby_list.size() << std::endl;
   }
 
   if (sendServerPacket(out_pkt, client_sock) < 0) {

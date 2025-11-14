@@ -190,20 +190,15 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
   TYPE_PLAYER_MAP::iterator it = map->find(id);
   if (it == map->end()) { return; } // Player not found
 
-  if (ENABLE_REGISTRY_DEBUG) {
-    std::stringstream ss;
-    ss << "[RegistryDBG] Map (" << getIdTypeName(id_type) << ") size pre-clearId(): " 
-    << map->size() << std::endl;
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
-  }
-
   // Erase player from this map
+  size_t n_erased = map->size();
   map->erase(it);
+  n_erased -= map->size();
 
   if (ENABLE_REGISTRY_DEBUG) {
     std::stringstream ss;
-    ss << "[RegistryDBG] Map (" << getIdTypeName(id_type) << ") size post-clearId(): " 
-    << map->size() << std::endl;
+    ss << "[RegistryDBG] Map " << getIdTypeName(id_type) << " has removed " 
+    << n_erased << " entries" << std::endl;
     ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 }
