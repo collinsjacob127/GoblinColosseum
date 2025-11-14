@@ -87,10 +87,6 @@ ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
   contents[contents_size-1] = '\0'; // Guarantee safe cstr
   memcpy(buf + cur_index, contents, contents_size);
 
-  // if (ENABLE_CLIENTPACKET_INSPECTION){
-  //   std::cout << getStringFromBuffer(buf, pkt_size);
-  // }
-
   return pkt_size;
 }
 

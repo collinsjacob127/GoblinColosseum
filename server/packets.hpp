@@ -15,7 +15,7 @@
 
 #include "util.hpp"
 
-#define ENABLE_CLIENTPACKET_INSPECTION true
+#define ENABLE_CLIENTPACKET_INSPECTION false
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;

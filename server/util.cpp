@@ -26,6 +26,12 @@ void CoutEscapes::printWarning(std::string message) {
   std::cout << white_fg;
 }
 
+void CoutEscapes::printSuccess(std::string message) {
+  std::cout << std::flush << green_fg;
+  std::cout << message;
+  std::cout << white_fg;
+}
+
 /***************************
  ********* TIMER ***********
  ***************************/

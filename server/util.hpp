@@ -68,6 +68,11 @@ struct CoutEscapes {
    * @brief Prints the provided warning message in yellow
    */
   void printWarning(std::string message);
+
+  /**
+   * @brief Prints the provided warning message in green
+   */
+  void printSuccess(std::string message);
 };
 
 static CoutEscapes ANSI_ESCAPES;

@@ -30,7 +30,7 @@
 
 
 #define ENABLE_SERVER_LOG true
-#define ENABLE_SERVER_DEBUG true
+#define ENABLE_SERVER_DEBUG false
 #define ENABLE_SERVER_ERROR true
 #define ENABLE_AWAITING_NEW_PACKETS_NOTIF true
 

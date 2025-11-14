@@ -209,6 +209,7 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid session ID");
+    ANSI_ESCAPES.printError("[Error] Invalid session ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Player doesn't exist in registry
   }
@@ -220,6 +221,7 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby created");
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
+    ANSI_ESCAPES.printError("[Error] Response failed to send\n");
     return -1; 
   }
 
@@ -233,11 +235,17 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   cur_player->player_addr_public = player_addr_pub;
 
   // Print Public & Private IPs
-  if (ENABLE_SERVER_DEBUG) {
-    std::cout << "[Debug] Lobby created for user " << cur_player->user_name << std::endl;
-    std::cout << "[Debug] User private IP: " << player_addr_priv.rep_str << std::endl;
-    std::cout << "[Debug] User public IP: " << player_addr_pub.rep_str << std::endl;
+  if (ENABLE_SERVER_LOG) {
+    std::stringstream ss;
+    ss << "[Log] Client \"" << cur_player->user_name
+    << "\" successfully created lobby with id: " << cur_player->lobby_id << std::endl;
+    ANSI_ESCAPES.printSuccess(ss.str());
+    ss << std::flush;
+    std::cout << "[Log] Address of player \"" << cur_player->user_name << "\" marked as:\n";
+    std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
+    std::cout << " [PRIV ADDR] " << cur_player->player_addr_private.rep_str << std::endl;
   }
+
 
   // Start the lobby update timer
   cur_player->lobby_update_time.start();
@@ -287,24 +295,27 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid session ID");
+    ANSI_ESCAPES.printError("[Error] Invalid session ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Player doesn't exist in registry
   }
 
   if (ENABLE_SERVER_LOG) {
-    std::cout << "[Log] Player " << cur_player->user_name << " attempting to "
-    << "join lobby " << lobby_id << std::endl;
+    std::cout << "[Log] Player \"" << cur_player->user_name
+    << "\" requesting to join lobby \"" << lobby_id << "\"" << std::endl;
   }
 
   // Get and verify lobby
   PlayerEntry *lobby_owner;
   if (!(lobby_owner = registry.getPlayer(lobby_id, LOBBY_ID_SPECIFIER))) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid lobby ID");
+    ANSI_ESCAPES.printError("[Error] Invalid lobby ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Lobby DNE
   }
   if (lobby_owner->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Lobby already full.");
+    ANSI_ESCAPES.printError("[Error] Lobby already full\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Lobby full
   }
@@ -312,6 +323,7 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   // Send lobby ID to player
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby joined");
   if (sendServerPacket(out_pkt, client_sock) < 0) {
+    ANSI_ESCAPES.printError("[Error] Response failed to send\n");
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     return -1; 
   }
@@ -332,6 +344,17 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   // Set addresses for this player (to be sent via sendPeerInfo)
   cur_player->player_addr_private = player_addr_priv;
   cur_player->player_addr_public = player_addr_pub;
+
+  if (ENABLE_SERVER_LOG) {
+    std::stringstream ss;
+    ss << "[Log] Client \"" << cur_player->user_name
+    << "\" successfully joined lobby \"" << lobby_owner->user_name << "\"\n";
+    ANSI_ESCAPES.printSuccess(ss.str());
+    ss << std::flush;
+    std::cout << "[Log] Address of player \"" << cur_player->user_name << "\" marked as:\n";
+    std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
+    std::cout << " [PRIV ADDR] " << cur_player->player_addr_private.rep_str << std::endl;
+  }
 
   // Start the lobby update timer
   cur_player->lobby_update_time.start();
@@ -400,8 +423,8 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   }
 
   if (ENABLE_SERVER_LOG) {
-    std::cout << "[Log] Player " << cur_player->user_name << " attempting to "
-    << "get address of peer:" << cur_peer->user_name << std::endl;
+    std::cout << "[Log] Sending addr of " << cur_peer->user_name
+    << " to " << cur_player->user_name << std::endl;
   }
 
   // Send peer addrs to client
@@ -412,6 +435,13 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     ANSI_ESCAPES.printInColor("[Error] Failed to send packet to client\n", ANSI_ESCAPES.red_fg);
     return -1; 
+  }
+
+  if (ENABLE_SERVER_LOG) {
+    std::stringstream ss; 
+    ss << "[Log] Successfully sent peer addrs to ";
+    ss << cur_player->user_name << std::endl;
+    ANSI_ESCAPES.printSuccess(ss.str());
   }
 
   // Check if finished
