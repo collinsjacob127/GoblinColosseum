@@ -66,6 +66,10 @@ int main() {
       << server_timer.duration() << "s]";
     }
 
+    //TODO: Remove inactive players after 10 minutes
+
+    //TODO: Remove inactive lobbies after 15 minutes
+
     // Bind socket to local interface and passive open
     struct sockaddr_in new_address;
     socklen_t addr_len = sizeof(new_address);
