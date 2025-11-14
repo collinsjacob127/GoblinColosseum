@@ -45,6 +45,9 @@ int main() {
   uint64_t cur_time_hs = (uint64_t)std::floor(10 * server_timer.duration());
   uint64_t prev_time_hs = cur_time_hs;
 
+  // Track lobby size
+  size_t n_clients = 0;
+
   // Good cout formatting
   std::cout << std::fixed << std::setprecision(1) << std::endl;
 
@@ -77,6 +80,9 @@ int main() {
         << " on port " << ntohs(new_address.sin_port) << std::endl; 
       }
     }
+
+    // Guarantee server notif message shows between all handlings
+    prev_time_hs = 0;
 
     // Receive client's packet
     ClientPacket in_pkt = recvClientPacket(CLIENT_PACKET_N_BYTES, client_socket);
@@ -118,7 +124,12 @@ int main() {
     // Close the connection
     close(client_socket);
 
-    std::cout << "[The registry has " << registry.size() << " entries.]" << std::endl << std::endl;
+    if (n_clients != registry.size()) {
+      n_clients = registry.size();
+      std::cout << ANSI_ESCAPES.cyan_fg;
+      std::cout << "[The registry has " << n_clients << " entries.]" << std::endl << std::endl;
+      std::cout << ANSI_ESCAPES.white_fg;
+    }
   }
 
   // Close the server's socket
@@ -186,7 +197,7 @@ int initializePlayer(ClientPacket in_pkt, int client_sock) {
   }
 
   // Add player to registry and get session ID
-  uint64_t session_id = registry.addPlayer();
+  uint64_t session_id = registry.addPlayer(user_name);
 
   // Send session ID back to player
   ServerPacket out_pkt(in_pkt.packet_type, session_id, 0, "Session ID Sent");
@@ -380,6 +391,10 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     sendServerPacket(out_pkt, client_sock);
     ANSI_ESCAPES.printInColor("[Error] Client not in registry\n", ANSI_ESCAPES.red_fg);
     return -1; // Player doesn't exist in registry
+  }
+
+  if (ENABLE_SERVER_LOG) {
+    std::cout << "[Log] Client \"" << cur_player->user_name << "\" requests peer addr\n";
   }
 
   // Get and verify lobby

@@ -105,7 +105,7 @@ class Registry {
    * @brief Function to add a new player to the registry.
    * @return Generated session ID for the new player
    */
-  uint64_t addPlayer();
+  uint64_t addPlayer(std::string user_name);
 
   /**
    * @brief Function to remove a player entirely from the registry

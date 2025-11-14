@@ -72,9 +72,12 @@ Registry::~Registry() {
   lobby_map.clear();
 }
 
-uint64_t Registry::addPlayer() {
+uint64_t Registry::addPlayer(std::string user_name) {
   // Construct new player
   PlayerEntry* player = new PlayerEntry();
+
+  player->user_name = user_name;
+
   // Generate ID and add player to session map
   uint64_t session_id = setNewId(player, SESSION_ID_SPECIFIER);
 
