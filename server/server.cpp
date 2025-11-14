@@ -22,6 +22,8 @@ int listen_socket, client_socket;
 
 static Registry registry;
 
+CoutEscapes ANSI_ESCAPES;
+
 int main() {
   // Safely clean up the server if shit breaks.
   std::signal(SIGINT, handleSigint);
@@ -43,15 +45,9 @@ int main() {
 
   // Main loop of server running
   bool continue_server = true;
+  double cur_time_ms = std::floor(1000 * server_timer.duration());
 
-  if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
-    std::cout << std::fixed << std::setprecision(2);
-    std::cout << "\n[Server Awaiting New Messages - Runtime: "
-    << server_timer.duration() << "s]" << std::endl;
-    std::cout << "[The registry has " << registry.size() << " entries.]\n";
-  }
-
-
+  std::cout << std::fixed << std::setprecision(2) << std::endl;
   while (continue_server) {
     // Server automatic shutoff
     /*
@@ -60,14 +56,23 @@ int main() {
       std::cout << "\nServer Timed Out\n";
     }
     */
+    cur_time_ms = std::floor(1000 * server_timer.duration());
+    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF && (int)cur_time_ms % 10 == 0) {
+      std::cout << std::flush;
+      std::cout << ANSI_ESCAPES.carriage_return;
+      std::cout << ANSI_ESCAPES.brt_magenta_fg;
+      std::cout << "[Server Awaiting New Messages - Runtime: "
+      << server_timer.duration() << "s]";
+    }
 
     // Bind socket to local interface and passive open
     struct sockaddr_in new_address;
     socklen_t addr_len = sizeof(new_address);
     if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
-      usleep(1000);
       continue;
     } else {
+      std::cout << "\n";
+      std::cout << ANSI_ESCAPES.white_fg; // White
       // Accept succeeded
       if (ENABLE_SERVER_DEBUG) {
         std::cout << "[Debug] Client connected via socket " << client_socket 
@@ -103,7 +108,9 @@ int main() {
       }
       default: {
         if (ENABLE_SERVER_ERROR) {
+          std::cout << ANSI_ESCAPES.red_fg;
           std::cout << "[Error] Invalid packet type received.\n";
+          std::cout << ANSI_ESCAPES.white_fg;
         }
       }
     }
@@ -115,13 +122,7 @@ int main() {
     // Close the connection
     close(client_socket);
 
-    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF) {
-      std::cout << std::fixed << std::setprecision(2);
-      std::cout << "\n[Server Awaiting New Messages - Runtime: "
-      << server_timer.duration() << "s]" << std::endl;
-      std::cout << "[The registry has " << registry.size() << " entries.]\n";
-    }
-
+    std::cout << "[The registry has " << registry.size() << " entries.]" << std::endl << std::endl;
   }
 
   // Close the server's socket
@@ -508,11 +509,13 @@ void disconnectClient(int fd) {
 }
 
 void handleSigint(int signal_num) {
-  fprintf(stderr, "\n\n[Log] Server Interrupted (Received signal %d)\n", signal_num);
+  std::cout << std::flush << std::endl << ANSI_ESCAPES.red_fg << std::flush;
+  fprintf(stderr, "\n[Log] Server Interrupted (Received signal %d)\n", signal_num);
   std::cout << "[Log] Disconnecting all clients and shutting down server.\n";
   // Close all sockets
   closeAllConnections();
 
+  std::cout << ANSI_ESCAPES.green_fg;
   std::cout << "[Log] Server shutting down safely.\n";
   std::cout << "[Log] Removing " << registry.size()
   << " entries from lobby.\n";

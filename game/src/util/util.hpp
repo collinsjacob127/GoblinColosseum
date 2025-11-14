@@ -13,6 +13,50 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 /***************************
+ ********* PRINT FMT ***********
+ ***************************/
+struct CoutEscapes {
+  std::string black_fg = "\x1b[30m";
+  std::string red_fg = "\x1b[31m";
+  std::string green_fg = "\x1b[32m";
+  std::string yellow_fg = "\x1b[33m";
+  std::string blue_fg = "\x1b[34m";
+  std::string magenta_fg = "\x1b[35m";
+  std::string cyan_fg = "\x1b[36m";
+  std::string white_fg = "\x1b[37m";
+
+  std::string brt_black_fg = "\x1b[90m";
+  std::string brt_red_fg = "\x1b[91m";
+  std::string brt_green_fg = "\x1b[92m";
+  std::string brt_yellow_fg = "\x1b[93m";
+  std::string brt_blue_fg = "\x1b[94m";
+  std::string brt_magenta_fg = "\x1b[95m";
+  std::string brt_cyan_fg = "\x1b[96m";
+  std::string brt_white_fg = "\x1b[97m";
+
+  std::string black_bg = "\x1b[40m";
+  std::string red_bg = "\x1b[41m";
+  std::string green_bg = "\x1b[42m";
+  std::string yellow_bg = "\x1b[43m";
+  std::string blue_bg = "\x1b[44m";
+  std::string magenta_bg = "\x1b[45m";
+  std::string cyan_bg = "\x1b[46m";
+  std::string white_bg = "\x1b[47m";
+
+  std::string brt_black_bg = "\x1b[100m";
+  std::string brt_red_bg = "\x1b[101m";
+  std::string brt_green_bg = "\x1b[102m";
+  std::string brt_yellow_bg = "\x1b[103m";
+  std::string brt_blue_bg = "\x1b[104m";
+  std::string brt_magenta_bg = "\x1b[105m";
+  std::string brt_cyan_bg = "\x1b[106m";
+  std::string brt_white_bg = "\x1b[107m";
+
+  std::string line_reset = "\r\033[K";
+  std::string carriage_return = "\r";
+};
+
+/***************************
  ********* TIMER ***********
  ***************************/
 
