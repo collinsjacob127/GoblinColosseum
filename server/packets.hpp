@@ -13,6 +13,8 @@
 #include <vector>
 #include <memory> // sized types
 
+#include "util.hpp"
+
 #define ENABLE_CLIENTPACKET_INSPECTION true
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;

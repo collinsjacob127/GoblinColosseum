@@ -363,8 +363,8 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (!lobby_owner->match_made || !cur_player->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    ANSI_ESCAPES.printInColor("[Error] Requested lobby is full\n", ANSI_ESCAPES.red_fg);
-    return -1; // Lobby full
+    ANSI_ESCAPES.printInColor("[Error] Match has not yet been made.\n", ANSI_ESCAPES.yellow_fg);
+    return 1; // Match not made
   }
 
   // Get and verify peer

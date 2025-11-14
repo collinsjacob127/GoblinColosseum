@@ -59,6 +59,16 @@ struct CoutEscapes {
    * @brief Prints message in color, then returns cout to white
    */
   void printInColor(std::string message, std::string color);
+
+  /**
+   * @brief Prints the provided error message in red
+   */
+  void printError(std::string message);
+
+  /**
+   * @brief Prints the provided warning message in yellow
+   */
+  void printWarning(std::string message);
 };
 static CoutEscapes ANSI_ESCAPES;
 

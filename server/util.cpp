@@ -14,6 +14,18 @@ void CoutEscapes::printInColor(std::string message, std::string color) {
   std::cout << white_fg;
 }
 
+void CoutEscapes::printError(std::string message) {
+  std::cout << std::flush << red_fg;
+  std::cout << message;
+  std::cout << white_fg;
+}
+
+void CoutEscapes::printWarning(std::string message) {
+  std::cout << std::flush << yellow_fg;
+  std::cout << message;
+  std::cout << white_fg;
+}
+
 /***************************
  ********* TIMER ***********
  ***************************/

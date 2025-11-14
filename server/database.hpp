@@ -23,8 +23,6 @@
 #define ENABLE_REGISTRY_LOG true
 #define ENABLE_REGISTRY_DEBUG true
 
-static CoutEscapes ANSI_ESCAPES;
-
 constexpr ssize_t MAX_USERNAME_SIZE = 25;
 
 constexpr uint64_t MIN_ID_VALUE = 1'000'000'000ULL;

@@ -64,7 +64,7 @@ Registry::~Registry() {
   if (ENABLE_REGISTRY_LOG) {
     std::stringstream ss;
     ss << "[Registry] Deleted " << n_removed << " entries from session map\n";
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.blue_fg);
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 
   session_map.clear();
@@ -161,7 +161,7 @@ uint64_t Registry::setNewId(PlayerEntry* player, TYPE_ID_SPECIFIER id_type) {
     std::stringstream ss;
     ss << "[Registry] " << getIdTypeName(id_type) << ": " 
     << rand_n << " provided to player: " << player->user_name << std::endl;
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.blue_fg);
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 
   return rand_n;
@@ -191,16 +191,20 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
   if (it == map->end()) { return; } // Player not found
 
   if (ENABLE_REGISTRY_DEBUG) {
-    std::cout << "[RegistryDBG] Map (" << id_type << ") size pre-clearId(): " 
+    std::stringstream ss;
+    ss << "[RegistryDBG] Map (" << getIdTypeName(id_type) << ") size pre-clearId(): " 
     << map->size() << std::endl;
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 
   // Erase player from this map
   map->erase(it);
 
   if (ENABLE_REGISTRY_DEBUG) {
-    std::cout << "[RegistryDBG] Map (" << id_type << ") size post-clearId(): " 
+    std::stringstream ss;
+    ss << "[RegistryDBG] Map (" << getIdTypeName(id_type) << ") size post-clearId(): " 
     << map->size() << std::endl;
+    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
   }
 }
 
