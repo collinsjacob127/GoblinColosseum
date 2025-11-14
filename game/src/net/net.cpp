@@ -392,10 +392,13 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
+        ANSI_ESCAPES.printError("[Error] Failed to send packet:\n");
+        perror("");
         std::stringstream ss;
-        ss << "[Error] Failed to send packet: ";
         ss << out_pkt.getStringFromBuffer(buf, pkt_size);
-        perror(ss.str().c_str());
+        std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+        std::cout << ss.str().c_str();
+        std::cout << ANSI_ESCAPES.white_fg;
       }
       return bytes_sent;
     }
@@ -419,7 +422,7 @@ ServerPacket NetEngine::recvServerPacket(int s) {
       if (ENABLE_NETCODE_ERROR) {
         std::stringstream ss;
         ss << "[Error] Failed to receive packet from %d" << s << std::endl;
-        perror(ss.str().c_str());
+        ANSI_ESCAPES.printError(ss.str());
       }
       return ServerPacket(0, 0, 0, "");
     }
@@ -456,7 +459,7 @@ int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
   }
   // Set socket with UDP
   if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_DGRAM, 0)) < 0) {
-    std::cerr << "[Error] Socket creation error" << std::endl;
+    ANSI_ESCAPES.printError("[Error] Socket creation error\n");
     perror("socket");
     return -1;
   }
@@ -481,7 +484,7 @@ int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
     std::cout << "[Debug] Requesting connection to " << address.rep_str << "\n";
   }
   if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
-      std::cerr << "[Error] Connection Failed" << std::endl;
+    ANSI_ESCAPES.printError("[Error] Connection Failed\n");
     return -1;
   } else {
     printf("[Log] Connected to peer via socket %d!\n", peer_sock);
@@ -530,7 +533,7 @@ int NetEngine::peerConnect() {
 
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   if (peer_sock <= 0) {
-    printf("[Error] Invalid peer connection!\n");
+    ANSI_ESCAPES.printError("[Error] Invalid peer connection!\n");
     peerDisconnect();
     return -1;
   }
@@ -568,7 +571,7 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        std::cout << "[Error] Failed to receive peer setup packet\n";
+        ANSI_ESCAPES.printError("[Error] Failed to receive peer setup packet\n");
       }
       return PeerSetupPacket();
     }
@@ -606,7 +609,7 @@ int NetEngine::updateLocalAddress(int s) {
   if (p != NULL) {
     std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
   } else {
-    perror("[Error] Failed to retrieve local IPv4 addr\n");
+    ANSI_ESCAPES.printError("[Error] Failed to retrieve local IPv4 addr\n");
     return -1;
   }
 
@@ -651,9 +654,13 @@ void NetEngine::getLocalUserName() {
   || usr_name == "LIST"
   || usr_name == "CREATE") {
     if (!continue_program) { exit(0); }
-    std::cout << "Error] Invalid username: " << usr_name << std::endl;
-    std::cout << "Error] Username must be 1-24 characters (" 
+
+    std::stringstream ss;
+    ss << "[Error] Invalid username: " << usr_name << std::endl;
+    ss << "[Error] Username must be 1-24 characters (" 
     << usr_name.size() << " is invalid.)" << std::endl;
+    ANSI_ESCAPES.printError(ss.str());
+
     usr_name = "";
     std::getline(std::cin, usr_name);
   }
@@ -672,7 +679,7 @@ void NetEngine::setLocalUserName(std::string user_name) {
     ss << "Net engine failed to set username (" << user_name << ") ";
     ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_SIZE-1 << ")";
     ss << std::endl;
-    perror(ss.str().c_str());
+    ANSI_ESCAPES.printError(ss.str());
   }
 }
 
@@ -690,18 +697,37 @@ int NetEngine::getLocalJoinOrCreate() {
   return selection;
 }
 
+void NetEngine::printLobbyList() {
+  std::cout << std::flush << ANSI_ESCAPES.brt_white_fg;
+  std::cout << "\n[-- AVAILABLE LOBBIES BELOW --]\n";
+
+  for (size_t i = 0; i < lobby_list.size(); ++i) {
+    std::cout << "[" << i << "] "
+    << lobby_list.at(i).first << " ("
+    << lobby_list.at(i).second << ")" << std::endl;
+  }
+
+  if (lobby_list.size() <= 0) {
+    std::cout << ANSI_ESCAPES.yellow_fg;
+    std::cout << "[Warning] There are currently no open lobbies.\n";
+    std::cout << ANSI_ESCAPES.white_fg << std::flush;
+  }
+
+  std::cout << ANSI_ESCAPES.white_fg;
+}
+
 ssize_t NetEngine::initializeServerCommunication() {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
+    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
   ClientPacket out_pkt(0, 0, 0, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    perror("[Error] Failed to send lobby creation pkt to server");
+    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -711,8 +737,12 @@ ssize_t NetEngine::initializeServerCommunication() {
     serverDisconnect();
     return -1;
   }
-  if (ENABLE_PACKET_INSPECTION)
-    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+  if (ENABLE_PACKET_INSPECTION) {
+    std::cout << "[Packet] Server Packet Received:\n";
+    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << in_pkt.getStringFromSelf();
+    std::cout << ANSI_ESCAPES.white_fg;
+  }
 
   session_id = in_pkt.session_id;
 
@@ -724,7 +754,7 @@ ssize_t NetEngine::createLobby() {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
+    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -738,7 +768,7 @@ ssize_t NetEngine::createLobby() {
   ClientPacket out_pkt(1, session_id, 0, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    perror("[Error] Failed to send lobby creation pkt to server");
+    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -748,8 +778,12 @@ ssize_t NetEngine::createLobby() {
     serverDisconnect();
     return -1;
   }
-  if (ENABLE_PACKET_INSPECTION)
-    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+  if (ENABLE_PACKET_INSPECTION) {
+    std::cout << "[Packet] Server Packet Received:\n";
+    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << in_pkt.getStringFromSelf();
+    std::cout << ANSI_ESCAPES.white_fg;
+  }
 
   lobby_id = in_pkt.lobby_id;
 
@@ -761,7 +795,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
+    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -769,7 +803,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   ClientPacket out_pkt(2, min_idx, max_idx, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    perror("[Error] Failed to send lobby creation pkt to server");
+    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -778,11 +812,6 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   lobby_list = in_pkt.parseLobbyList();
 
   std::cout << "[Log] Received " << lobby_list.size() << " lobbies.\n";
-  for (size_t i = 0; i < lobby_list.size(); ++i) {
-    std::cout << "  [Lobby " << i << "] "
-    << lobby_list.at(i).first << " | "
-    << lobby_list.at(i).second << std::endl;
-  }
 
   serverDisconnect();
   return bytes_sent;
@@ -791,7 +820,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
 ssize_t NetEngine::joinLobby() {
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
+    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   } 
@@ -804,7 +833,7 @@ ssize_t NetEngine::joinLobby() {
   ClientPacket out_pkt(3, session_id, lobby_id, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    perror("[Error] Failed to send lobby join pkt to server");
+    ANSI_ESCAPES.printError("[Error] Failed to send lobby join pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -814,8 +843,12 @@ ssize_t NetEngine::joinLobby() {
     serverDisconnect();
     return -1;
   }
-  if (ENABLE_PACKET_INSPECTION)
-    std::cout << "Server Packet Received:\n" << in_pkt.getStringFromSelf();
+  if (ENABLE_PACKET_INSPECTION) {
+    std::cout << "[Packet] Server Packet Received:\n";
+    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << in_pkt.getStringFromSelf();
+    std::cout << ANSI_ESCAPES.white_fg;
+  }
 
   lobby_id = in_pkt.lobby_id;
 
@@ -833,7 +866,7 @@ ssize_t NetEngine::getPeerAddr() {
   // Connect to server
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    perror("[Error] Server connect request failed");
+    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -842,7 +875,7 @@ ssize_t NetEngine::getPeerAddr() {
   ClientPacket out_pkt(4, session_id, lobby_id, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    perror("[Error] Failed to send lobby join pkt to server");
+    ANSI_ESCAPES.printError("[Error] Failed to send lobby join pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -867,7 +900,7 @@ ssize_t NetEngine::getPeerAddr() {
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
   // Connect and verify
   if (peerConnect() < 0) {
-    std::cout << "[Error] Peer connection failed." << std::endl;
+    ANSI_ESCAPES.printError("[Error] Peer connection failed.\n");
     peerDisconnect();
     return PeerSetupPacket();
   }
@@ -875,7 +908,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // Send info to peer
   PeerSetupPacket out_pkt(game_dur_f, character_id, username);
   if (sendPeerSetupPacket(out_pkt) < 0) {
-    std::cout << "[Error] Failed to send peer setup packet.\n";
+    ANSI_ESCAPES.printError("[Error] Failed to send peer setup packet.\n");
     peerDisconnect();
     return PeerSetupPacket();
   } else {
@@ -888,7 +921,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // Get info from peer
   PeerSetupPacket in_pkt = recvPeerSetupPacket();
   if ((std::string)in_pkt.user_name == "") {
-    std::cout << "[Error] Failed to receive peer setup packet\n";
+    ANSI_ESCAPES.printError("[Error] Failed to receive peer setup packet\n");
     peerDisconnect();
     return PeerSetupPacket();
   }
@@ -900,27 +933,29 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 }
 
 int NetEngine::testNetClient() {
-  std::cout << "[Log] Running linux netcode" << std::endl;
+  std::cout << "\n[Log] Running linux netcode" << std::endl;
   Timer timer;
   timer.start();
   ssize_t result;
 
   // Send username and get session ID
+  std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
   result = initializeServerCommunication();
   if (result < 0) {
-    std::cout << "[Error] Failed to initialize server connection\n";
+    ANSI_ESCAPES.printError("[Error] Failed to initialize server connection\n");
     serverDisconnect();
     return -1;
   }
+  std::cout << std::endl;
 
   // Get user selection
   int is_create = getLocalJoinOrCreate();
-
   if (is_create) {
     // Create a lobby
+    std::cout << "\n[Log] Requesting the server to create a lobby for us...\n";
     result = createLobby();
     if (result < 0) {
-      std::cout << "[Error] Failed to create lobby\n";
+      ANSI_ESCAPES.printError("[Error] Failed to create lobby\n");
       serverDisconnect();
       return -1;
     }
@@ -930,40 +965,59 @@ int NetEngine::testNetClient() {
     size_t n_requested_lobbies = 10;
     size_t min_idx = lobby_list.size();
     size_t max_idx = min_idx + (n_requested_lobbies-1);
+
+    // Get lobby list from server
+    std::cout << "\n[Log] Requesting list of lobbies...\n";
     result = getLobbies(min_idx, max_idx);
     if (result < 0) {
-      std::cout << "[Error] Failed to get lobby list\n";
-      return -1;
-    }
-    if (lobby_list.size() <= 0) {
-      std::cout << "[Log] There are currently no open lobbies.\n";
+      ANSI_ESCAPES.printError("[Error] Failed to get lobby list\n");
       return -1;
     }
 
-    // Select lobby from list
-    std::cout << "Select one of the above lobbies (" 
+    // Display to user
+    printLobbyList();
+    if (lobby_list.size() <= 0) {
+      return -1;
+    }
+
+    // Update n lobbies
+    max_idx = lobby_list.size()-1;
+
+    // Ask user for input
+    std::cout << "\nSelect one of the above lobbies (" 
     << min_idx << " - " << max_idx << ")\n";
 
+    // Retrieve and verify user input
     int selected_idx = -1;
     while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
       if (!continue_program) { exit(0); }
       std::cin >> selected_idx;
-      std::cout << "\n";
-      if (!continue_program) { exit(0); }
+      std::cout << std::flush;
     }
 
-    // Inform Server of Lobby Join
+    // Set ID of selected lobby
     lobby_id = lobby_list.at(selected_idx).second;
-    joinLobby();
+
+    // Inform Server of Lobby Join
+    std::cout << "\n[Log] Sending server join request for lobby #"
+    << selected_idx << ": \"" << lobby_list.at(selected_idx).first << "\"\n";
+    if (joinLobby() < 0) { return -1; }
   }
 
+  // Lobby creation & joining is now finished.
+  // Begin requesting addrs of matched peer
+
+  // Time how long it takes to match with the peer
   timer.start();
+  // Neat printouts
   std::cout << std::fixed << std::setprecision(2);
-  // Continuously request addr of matched peer
+  // Stop searching once the addr is set
   bool bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
+
+  // Continuously request addr of matched peer
   while (bad_addrs) {
     if (!continue_program) { exit(0); }
-    std::cout << "[Log] Requesting peer addr (" << timer.duration() << "s)" << std::endl;
+    std::cout << "\n[Log] Requesting peer addr (" << timer.duration() << "s)" << std::endl;
 
     // Check if someone has connected to the server
     getPeerAddr();
@@ -972,12 +1026,14 @@ int NetEngine::testNetClient() {
     bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
     if (!bad_addrs) { break; }
 
-    // Repeatedly ask the server, waiting 1s in-between
-    crossPlatformSleep(1000);
+    // Repeatedly ask the server, waiting 3s in-between
+    crossPlatformSleep(3000);
   }
 
-  std::cout << "Peer Addr Received!\n";
-  // Get peer info
+  // Display success statement
+  ANSI_ESCAPES.printSuccess("\nSuccessfully got peer addr from server!\n");
+
+  // Initiate p2p (udp holepunch - https://bford.info/pub/net/p2pnat/)
 
   // Connect to peer and test communication
   initializePeerCommunication((uint16_t)(60*60*5), CHARACTER_ID_HUNKO);

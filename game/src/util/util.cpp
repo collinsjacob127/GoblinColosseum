@@ -15,9 +15,9 @@ void CoutEscapes::printInColor(std::string message, std::string color) {
 }
 
 void CoutEscapes::printError(std::string message) {
-  std::cout << std::flush << red_fg;
-  std::cout << message;
-  std::cout << white_fg;
+  std::cerr << std::flush << red_fg;
+  std::cerr << message;
+  std::cerr << white_fg;
 }
 
 void CoutEscapes::printWarning(std::string message) {
@@ -26,6 +26,11 @@ void CoutEscapes::printWarning(std::string message) {
   std::cout << white_fg;
 }
 
+void CoutEscapes::printSuccess(std::string message) {
+  std::cout << std::flush << green_fg;
+  std::cout << message;
+  std::cout << white_fg;
+}
 
 /***************************
  ********* TIMER ***********

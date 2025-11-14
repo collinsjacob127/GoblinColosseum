@@ -27,6 +27,7 @@ typedef SSIZE_T ssize_t;
 #include <sstream> // string streams
 #include <vector>
 
+#include "util.hpp"
 #include "buttons.hpp"
 
 #define ENABLE_CLIENTPACKET_INSPECTION true

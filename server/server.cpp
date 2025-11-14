@@ -67,7 +67,7 @@ int main() {
     }
 
     //TODO: Remove inactive players after 10 minutes
-
+    
     //TODO: Remove inactive lobbies after 15 minutes
 
     // Bind socket to local interface and passive open
@@ -324,7 +324,7 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
 
   if (ENABLE_SERVER_LOG) {
     std::cout << "[Log] Player \"" << cur_player->user_name
-    << "\" requesting to join lobby \"" << lobby_id << "\"" << std::endl;
+    << "\" requesting to join lobby " << lobby_id << std::endl;
   }
 
   // Get and verify lobby

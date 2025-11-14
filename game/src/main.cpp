@@ -244,11 +244,13 @@ int startLocalGame(RenderEngine* renderer) {
 
 void handleUnexpectedClosure(int signal_num) {
   if (!continue_program) { exit(0); }
-  std::cout << "Recieved SIGINT.\n";
-  std::cout << "Calling NetEngine destructor...\n";
+  std::cout << std::flush << ANSI_ESCAPES.red_fg;
+  std::cout << "\nRecieved SIGINT.\n";
   continue_program = false;
   // net_engine.~NetEngine();
-  std::cout << "Finished cleaning up NetEngine.\n";
-  exit(0);
   // renderer.~RenderEngine();
+  std::cout << std::flush << ANSI_ESCAPES.green_fg;
+  std::cout << "Exiting safely...\n";
+  std::cout << ANSI_ESCAPES.white_fg;
+  exit(0);
 }

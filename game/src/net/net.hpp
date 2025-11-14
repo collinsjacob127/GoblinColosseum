@@ -125,6 +125,11 @@ class NetEngine {
    */
   int testNetClient();
 
+  /**
+   * @brief Function to display the list of lobbies to the terminal
+   */
+  void printLobbyList();
+
   /*
   SERVER - CLIENT FUNCTIONS 
   */
