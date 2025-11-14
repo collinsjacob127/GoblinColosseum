@@ -41,15 +41,21 @@ int main() {
   if (ENABLE_SERVER_DEBUG) { std::cout << "[Debug] Initial registry size: " << registry.size() << std::endl; }
   if (ENABLE_SERVER_LOG) { printf("[Log] Server has started!\n"); }
 
-  // Main loop of server running
-  bool continue_server = true;
-  double cur_time_ms = std::floor(1000 * server_timer.duration());
+  // Comparison times for clean printing
+  uint64_t cur_time_hs = (uint64_t)std::floor(10 * server_timer.duration());
+  uint64_t prev_time_hs = cur_time_hs;
 
-  std::cout << std::fixed << std::setprecision(2) << std::endl;
+  // Good cout formatting
+  std::cout << std::fixed << std::setprecision(1) << std::endl;
+
+  // Flow control
+  bool continue_server = true;
+  // Main loop of server running
   while (continue_server) {
     // Server automatic shutoff
-    cur_time_ms = std::floor(1000 * server_timer.duration());
-    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF && (int)cur_time_ms % 10 == 0) {
+    cur_time_hs = std::floor(10 * server_timer.duration());
+    if (ENABLE_AWAITING_NEW_PACKETS_NOTIF && cur_time_hs != prev_time_hs) {
+      prev_time_hs = cur_time_hs;
       std::cout << std::flush;
       std::cout << ANSI_ESCAPES.carriage_return;
       std::cout << ANSI_ESCAPES.brt_magenta_fg;
