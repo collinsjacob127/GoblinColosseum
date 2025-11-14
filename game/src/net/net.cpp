@@ -564,6 +564,19 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
 
   char in_buf[PEER_SETUP_PACKET_SIZE] = "";
 
+  // sendto() - For UDP
+  // recvfrom() - For UDP & Safer
+
+  // Make UDP port before sending server the addrs
+  // Send server the UDP port info
+
+  // - Maybe reimplement ARQ for sending inputs
+
+  // - 1111111 as frame number to indiciate bad packet
+  // instead of inputs it will then contain the actual frame number needed
+
+  // bind() - Guarantee my own port # maybe bad
+
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
   while (total_bytes_in < pkt_size) {

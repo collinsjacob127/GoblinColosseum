@@ -1,0 +1,125 @@
+==38244== Memcheck, a memory error detector
+==38244== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==38244== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==38244== Command: ./build/GOBLIN
+==38244== Parent PID: 38135
+==38244== 
+--38244-- 
+--38244-- Valgrind options:
+--38244--    --leak-check=full
+--38244--    --show-leak-kinds=all
+--38244--    --track-origins=yes
+--38244--    --verbose
+--38244--    --log-file=logs/showing.log
+--38244-- Contents of /proc/version:
+--38244--   Linux version 6.14.0-35-generic (buildd@lcy02-amd64-078) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Oct 14 13:55:17 UTC 2
+--38244-- 
+--38244-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--38244-- Page sizes: currently 4096, max supported 4096
+--38244-- Valgrind library directory: /usr/libexec/valgrind
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/GOBLIN
+--38244-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+--38244--   Considering /usr/lib/debug/.build-id/52/0e05878220fb2fc6d28ff46b63b3fd5d48e763.debug ..
+--38244--   .. build-id is valid
+--38244-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--38244--    object doesn't have a dynamic symbol table
+--38244-- Scheduler: using generic scheduler lock implementation.
+--38244-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==38244== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-38244-by-zato-1-on-???
+==38244== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-38244-by-zato-1-on-???
+==38244== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-38244-by-zato-1-on-???
+==38244== 
+==38244== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==38244== don't want to do, unless you know exactly what you're doing,
+==38244== or are doing some strange experiment):
+==38244==   /usr/bin/vgdb --pid=38244 ...command...
+==38244== 
+==38244== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==38244==   /path/to/gdb ./build/GOBLIN
+==38244== and then give GDB the following command
+==38244==   target remote | /usr/bin/vgdb --pid=38244
+==38244== --pid is optional if only one valgrind process is running
+==38244== 
+--38244-- REDIR: 0x4028b00 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c2e1a (???)
+--38244-- REDIR: 0x40272b0 (ld-linux-x86-64.so.2:index) redirected to 0x580c2e34 (???)
+--38244-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--38244-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==38244== WARNING: new redirection conflicts with existing -- ignoring it
+--38244--     old: 0x04028b00 (strlen              ) R-> (0000.0) 0x580c2e1a ???
+--38244--     new: 0x04028b00 (strlen              ) R-> (2007.0) 0x0484f340 strlen
+--38244-- REDIR: 0x40274e0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4850460 (strcmp)
+--38244-- REDIR: 0x4026910 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4853cd0 (mempcpy)
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libcharacters.so
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/librender.so
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libnet.so
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3.so.0.2.25
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libengine.so
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libbuttons.so
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libutil.so
+--38244-- Reading syms from /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33
+--38244-- Reading syms from /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+--38244-- Reading syms from /usr/lib/x86_64-linux-gnu/libc.so.6
+--38244--   Considering /usr/lib/debug/.build-id/27/4eec488d230825a136fa9c4d85370fed7a0a5e.debug ..
+--38244--   .. build-id is valid
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3_image.so.0.2.5
+--38244-- Reading syms from /home/zato-1/school/GoblinColosseum/game/build/libSDL3_ttf.so.0.2.3
+--38244-- Reading syms from /usr/lib/x86_64-linux-gnu/libm.so.6
+--38244-- REDIR: 0x4028ca0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x484fc90 (strncmp)
+--38244-- REDIR: 0x504a050 (libc.so.6:strnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x504a0e0 (libc.so.6:strpbrk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50481a0 (libc.so.6:strcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50613b0 (libc.so.6:wcsnlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5047290 (libc.so.6:memset) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5060b20 (libc.so.6:wcslen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50cc3f0 (libc.so.6:__memcpy_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5047200 (libc.so.6:memrchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5061350 (libc.so.6:wcsncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5046720 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x505f8e0 (libc.so.6:wcschr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5048090 (libc.so.6:index) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x504a110 (libc.so.6:rindex) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x505f990 (libc.so.6:wcscmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50474b0 (libc.so.6:stpncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x506deb0 (libc.so.6:wmemchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049ef0 (libc.so.6:strncmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5047510 (libc.so.6:strcasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049310 (libc.so.6:strcspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50608f0 (libc.so.6:wcscpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5048020 (libc.so.6:strcat) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049df0 (libc.so.6:strncasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5048110 (libc.so.6:strchrnul) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5046630 (libc.so.6:bcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50492a0 (libc.so.6:strcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50475b0 (libc.so.6:strcasecmp_l) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049cc0 (libc.so.6:strlen) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049f90 (libc.so.6:strncpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x506df30 (libc.so.6:wmemcmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50cc510 (libc.so.6:__memmove_chk) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==38244== WARNING: new redirection conflicts with existing -- ignoring it
+--38244--     old: 0x0511da10 (__memcpy_chk_avx_una) R-> (2030.0) 0x04853dd0 __memcpy_chk
+--38244--     new: 0x0511da10 (__memcpy_chk_avx_una) R-> (2024.0) 0x04853740 __memmove_chk
+--38244-- REDIR: 0x5047440 (libc.so.6:stpcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5046fc0 (libc.so.6:memmove) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+==38244== Preferring higher priority redirection:
+--38244--     old: 0x0511da40 (__memcpy_avx_unalign) R-> (2018.0) 0x04851580 __memcpy_avx_unaligned_erms
+--38244--     new: 0x0511da40 (__memcpy_avx_unalign) R-> (2018.1) 0x04852d60 memmove
+--38244-- REDIR: 0x50465b0 (libc.so.6:memchr) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x504a2e0 (libc.so.6:strspn) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x50470e0 (libc.so.6:mempcpy) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5049d50 (libc.so.6:strncasecmp) redirected to 0x483d1c0 (_vgnU_ifunc_wrapper)
+--38244-- REDIR: 0x5122630 (libc.so.6:__strrchr_avx2) redirected to 0x484ed20 (rindex)
+--38244-- REDIR: 0x5120780 (libc.so.6:__strlen_avx2) redirected to 0x484f220 (strlen)
+--38244-- REDIR: 0x511d2e0 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4852480 (bcmp)
+--38244-- REDIR: 0x5121860 (libc.so.6:__strncmp_avx2) redirected to 0x484fab0 (strncmp)
+--38244-- REDIR: 0x5042650 (libc.so.6:malloc) redirected to 0x48467b0 (malloc)
+--38244-- REDIR: 0x511da40 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4852d60 (memmove)
+--38244-- REDIR: 0x511da00 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x48538d0 (mempcpy)
+--38244-- REDIR: 0x5042d30 (libc.so.6:free) redirected to 0x4849820 (free)
+==38244== 
+==38244== HEAP SUMMARY:
+==38244==     in use at exit: 0 bytes in 0 blocks
+==38244==   total heap usage: 3 allocs, 3 frees, 75,776 bytes allocated
+==38244== 
+==38244== All heap blocks were freed -- no leaks are possible
+==38244== 
+==38244== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
