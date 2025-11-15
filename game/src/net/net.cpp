@@ -479,6 +479,26 @@ int NetEngine::updateLocalAddress(int s) {
   return 1;
 }
 
+sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
+  // Set connection settings
+  struct sockaddr_in out_addr;
+  out_addr.sin_family = AF_INET;
+  out_addr.sin_port = htons(cur_addr.port);
+
+  // std::cout << "[TEMP] Copying \"" << cur_addr.getIPv4().c_str() << "\" into buffer\n";
+  // Pull ipv4 addr from cur_addr
+  char out_addr_buf[CLIENT_CONTENTS_SIZE] = "";
+  strcpy(out_addr_buf, cur_addr.getIPv4().c_str());
+  // Convert IPv4 and IPv6 addresses from text to binary form
+  if (inet_pton(AF_INET, out_addr_buf, &out_addr.sin_addr) < 0) {
+    std::stringstream ss;
+    ss << "[Error] Invalid address / Address not supported: " 
+    << cur_addr.getIPv4().c_str() << std::endl;
+    ANSI_ESCAPES.printError(ss.str());
+  }
+  return out_addr;
+}
+
 int NetEngine::initPeerSocket() {
   if (peer_sock > 0) { close(peer_sock); peer_sock = -1; }
   if (server_sock < 0) {
@@ -488,23 +508,6 @@ int NetEngine::initPeerSocket() {
     if (peer_sock < 0) { return (peer_sock = -1); }
   } else {
     updateLocalAddress(server_sock);
-  }
-
-  // Set connection settings
-  struct sockaddr_in loc_addr;
-  loc_addr.sin_family = AF_INET;
-  loc_addr.sin_port = htons(my_local_addr.port);
-  // std::cout << "[TEMP] Copying \"" << my_local_addr.getIPv4().c_str() << "\" into buffer\n";
-  // Pull ipv4 addr from my_local_addr
-  char loc_addr_name_buf[CLIENT_CONTENTS_SIZE] = "";
-  strcpy(loc_addr_name_buf, my_local_addr.getIPv4().c_str());
-  // Convert IPv4 and IPv6 addresses from text to binary form
-  if (inet_pton(AF_INET, loc_addr_name_buf, &loc_addr.sin_addr) < 0) {
-    std::stringstream ss;
-    ss << "[Error] Invalid address / Address not supported: " 
-    << my_local_addr.getIPv4().c_str() << std::endl;
-    ANSI_ESCAPES.printError(ss.str());
-    return (peer_sock = -1); 
   }
 
   // current port used for outbound to server
@@ -517,7 +520,6 @@ int NetEngine::initPeerSocket() {
     ANSI_ESCAPES.printError("[Error] Failed to get socket fd for peer.\n");
     return (peer_sock = -1);
   }
-  std::cout << "[TEMP] Socket: " << peer_sock << "\n";
 
   // Enable safe reuse of port
   int opt = 1;
@@ -534,12 +536,7 @@ int NetEngine::initPeerSocket() {
     return (peer_sock = -1);
   }
 
-  // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
-  // if (connect(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
-  //   ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
-  //   close(peer_sock);
-  //   return (peer_sock = -1);
-  // }
+  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
 
   // Bind to the same local address as was used for server comms
   if (bind(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
@@ -618,6 +615,9 @@ int NetEngine::peerConnect() {
     return -1;
   }
 
+  struct sockaddr_in peer_sockaddr_pub = convertClientAddrInfoToSockAddr(peer_addr_public);
+  struct sockaddr_in peer_sockaddr_priv = convertClientAddrInfoToSockAddr(peer_addr_public);
+
   // Attempt connection max_attempts times
   size_t n_attempts = 0, max_attempts = 15;
   while (n_attempts < max_attempts) {
@@ -626,15 +626,19 @@ int NetEngine::peerConnect() {
     n_attempts++;
     std::cout << "[PEER-CONNECT] Attempt #" << n_attempts << "...\n";
 
-    // Attempt connection to peer's public endpoint
-    if ((peer_sock = attemptSinglePeerConnection(peer_addr_public)) >= 0) {
+  // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
+    if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_pub, sizeof(peer_sockaddr_pub)) < 0) {
+      ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
       return peer_sock;
     }
+    //TODO:Send the startup packet a few times here
+
 
     // Attempt connection to peer's private endpoint
-    if ((peer_sock = attemptSinglePeerConnection(peer_addr_private)) >= 0) {
+    if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_priv, sizeof(peer_sockaddr_priv)) < 0) {
       return peer_sock;
     }
+    //TODO:Send the startup packet a few times here
 
     // Wait 1s between connection attempts after the first
     if (n_attempts) { crossPlatformSleep(1000); }
