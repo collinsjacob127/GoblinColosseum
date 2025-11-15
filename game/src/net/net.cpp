@@ -1016,12 +1016,6 @@ int NetEngine::testNetClient() {
   timer.start();
   ssize_t result;
 
-  //TODO: Update initpeersocket to happen DURING server connection, not after (?)
-  std::cout << "[TEMP] Testing initialization of peer socket\n";
-  initPeerSocket();
-  std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
-  std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
-
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
   result = initializeServerCommunication();
