@@ -91,7 +91,7 @@ int main() {
       continue;
     }
 
-    std::cout << std::flush << std::endl;
+    std::cout << std::flush << ANSI_ESCAPES.white_fg << std::endl;
 
     switch (in_pkt.packet_type) {
       case (0): {
