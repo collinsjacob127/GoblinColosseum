@@ -75,13 +75,6 @@ int main() {
     socklen_t addr_len = sizeof(new_address);
     if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
       continue;
-    } else {
-      std::cout << ANSI_ESCAPES.white_fg; // White
-      // Accept succeeded
-      if (ENABLE_SERVER_DEBUG) {
-        std::cout << "\n[Debug] Client connected via socket " << client_socket 
-        << " on port " << ntohs(new_address.sin_port) << std::endl; 
-      }
     }
 
     // Guarantee server notif message shows between all handlings
@@ -94,6 +87,7 @@ int main() {
     int response = -1;
 
     if (in_pkt.packet_type == 10) {
+      close(client_socket);
       continue;
     }
 
@@ -163,6 +157,7 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_SERVER_ERROR) {
+        std::cout << std::flush;
         std::stringstream ss;
         ss << "[Error] Failed to receive packet from socket %d" << s << std::endl;
         ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.red_fg);
