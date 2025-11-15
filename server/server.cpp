@@ -92,11 +92,14 @@ int main() {
 
     // Respond to the packet
     int response = -1;
+
+    if (in_pkt.packet_type == 10) {
+      continue;
+    }
+
+    std::cout << std::flush << std::endl;
+
     switch (in_pkt.packet_type) {
-      case (10): {
-        response = 969; // Empty packet, ignore
-        break;
-      }
       case (0): {
         response = initializePlayer(in_pkt, client_socket);
         break;
@@ -119,26 +122,25 @@ int main() {
       }
       default: {
         if (ENABLE_SERVER_ERROR) {
-          ANSI_ESCAPES.printError("\n[Error] Invalid packet type received.\n");
+          ANSI_ESCAPES.printError("[Error] Invalid packet type received.\n");
         }
       }
     }
 
     if (response < 0 && ENABLE_SERVER_ERROR) {
-      ANSI_ESCAPES.printError("\n[Error] Server response indicated some failure.\n");
+      ANSI_ESCAPES.printError("[Error] Server response indicated some failure.\n");
     }
 
     // Close the connection
     close(client_socket);
 
-    if (response != 969) { std::cout << std::flush << std::endl; }
     if (n_clients != registry.size()) {
       n_clients = registry.size();
       std::cout << ANSI_ESCAPES.cyan_fg;
       std::cout << "[The registry has " << n_clients << " entries.]" << std::endl;
       std::cout << ANSI_ESCAPES.white_fg;
     }
-    if (response != 969) { std::cout << std::endl; }
+    std::cout << std::endl;
   }
 
   // Close the server's socket

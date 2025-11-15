@@ -371,7 +371,7 @@ int NetEngine::serverConnect() {
       std::cerr << "[Error] Connection Failed" << std::endl;
     return -1;
   } else {
-    printf("[Log] Connected to server\n");
+    printf("[Log] Connected to server via socket %d\n", server_sock);
   }
 
   return 0;
