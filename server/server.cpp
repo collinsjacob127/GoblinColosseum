@@ -76,11 +76,10 @@ int main() {
     if ((client_socket = accept(listen_socket, (struct sockaddr*)&new_address, &addr_len)) < 0) {
       continue;
     } else {
-      std::cout << "\n";
       std::cout << ANSI_ESCAPES.white_fg; // White
       // Accept succeeded
       if (ENABLE_SERVER_DEBUG) {
-        std::cout << "[Debug] Client connected via socket " << client_socket 
+        std::cout << "\n[Debug] Client connected via socket " << client_socket 
         << " on port " << ntohs(new_address.sin_port) << std::endl; 
       }
     }
@@ -132,15 +131,14 @@ int main() {
     // Close the connection
     close(client_socket);
 
+    if (response != 969) { std::cout << std::endl; }
     if (n_clients != registry.size()) {
       n_clients = registry.size();
       std::cout << ANSI_ESCAPES.cyan_fg;
       std::cout << "[The registry has " << n_clients << " entries.]" << std::endl;
       std::cout << ANSI_ESCAPES.white_fg;
     }
-    if (response != 969) {
-      std::cout << std::endl;
-    }
+    if (response != 969) { std::cout << std::endl; }
   }
 
   // Close the server's socket
