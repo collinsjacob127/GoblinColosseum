@@ -456,7 +456,7 @@ int NetEngine::updateLocalAddress(int s) {
 
   // Print out the new addr
   if (p != NULL) {
-    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
+    // std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
   } else {
     ANSI_ESCAPES.printError("[Error] Failed to retrieve local IPv4 addr\n");
     return -1;
@@ -475,6 +475,7 @@ int NetEngine::updateLocalAddress(int s) {
   ss << (int)(((unsigned char*)&my_local_addr.addr)[0]);
   ss << ":" << my_local_addr.port;
   my_local_addr.rep_str = ss.str();
+  // std::cout << "[Log] Local IPv4 saved as: " << my_local_addr.rep_str << std::endl;
   return 1;
 }
 
@@ -493,9 +494,12 @@ int NetEngine::initPeerSocket() {
   struct sockaddr_in loc_addr;
   loc_addr.sin_family = AF_INET;
   loc_addr.sin_port = htons(my_local_addr.port);
-  const char* loc_ipv4_addr = "127.0.0.1";
+  // std::cout << "[TEMP] Copying \"" << my_local_addr.getIPv4().c_str() << "\" into buffer\n";
+  // Pull ipv4 addr from my_local_addr
+  char loc_addr_name_buf[CLIENT_CONTENTS_SIZE] = "";
+  strcpy(loc_addr_name_buf, my_local_addr.getIPv4().c_str());
   // Convert IPv4 and IPv6 addresses from text to binary form
-  if (inet_pton(AF_INET, loc_ipv4_addr, &loc_addr.sin_addr) < 0) {
+  if (inet_pton(AF_INET, loc_addr_name_buf, &loc_addr.sin_addr) < 0) {
     std::stringstream ss;
     ss << "[Error] Invalid address / Address not supported: " 
     << my_local_addr.getIPv4().c_str() << std::endl;
@@ -515,7 +519,7 @@ int NetEngine::initPeerSocket() {
   }
   std::cout << "[TEMP] Socket: " << peer_sock << "\n";
 
-  // Enable safe reuse of server port
+  // Enable safe reuse of port
   int opt = 1;
   if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
     perror("[Error] setsockopt\n");
@@ -531,15 +535,18 @@ int NetEngine::initPeerSocket() {
   }
 
   // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
-  if (connect(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
+  // if (connect(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
+  //   ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
+  //   close(peer_sock);
+  //   return (peer_sock = -1);
+  // }
+
+  // Bind to the same local address as was used for server comms
+  if (bind(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
+    ANSI_ESCAPES.printError("[Error] Failed to bind\n");
     close(peer_sock);
     return (peer_sock = -1);
   }
-
-  // if (bind(peer_sock, rp->ai_addr, rp->ai_addrlen) < 0) {
-  //   ANSI_ESCAPES.printError("[Error] Failed to bind\n");
-  // }
 
   if (updateLocalAddress(peer_sock) < 0) {
     return (peer_sock = -1);
