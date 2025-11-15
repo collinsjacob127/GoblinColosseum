@@ -493,8 +493,9 @@ int NetEngine::initPeerSocket() {
   struct sockaddr_in loc_addr;
   loc_addr.sin_family = AF_INET;
   loc_addr.sin_port = htons(my_local_addr.port);
+  const char* loc_ipv4_addr = my_local_addr.getIPv4().c_str();
   // Convert IPv4 and IPv6 addresses from text to binary form
-  if (inet_pton(AF_INET, my_local_addr.getIPv4().c_str(), &loc_addr.sin_addr) < 0) {
+  if (inet_pton(AF_INET, loc_ipv4_addr, &loc_addr.sin_addr) < 0) {
     std::stringstream ss;
     ss << "[Error] Invalid address / Address not supported: " 
     << my_local_addr.getIPv4().c_str() << std::endl;

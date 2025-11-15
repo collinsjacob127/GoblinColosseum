@@ -131,7 +131,7 @@ int main() {
     // Close the connection
     close(client_socket);
 
-    if (response != 969) { std::cout << std::endl; }
+    if (response != 969) { std::cout << std::flush << std::endl; }
     if (n_clients != registry.size()) {
       n_clients = registry.size();
       std::cout << ANSI_ESCAPES.cyan_fg;
