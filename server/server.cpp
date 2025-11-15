@@ -95,7 +95,7 @@ int main() {
     int response = -1;
     switch (in_pkt.packet_type) {
       case (10): {
-        response = 1; // Empty packet, ignore
+        response = 969; // Empty packet, ignore
         break;
       }
       case (0): {
@@ -138,7 +138,9 @@ int main() {
       std::cout << "[The registry has " << n_clients << " entries.]" << std::endl;
       std::cout << ANSI_ESCAPES.white_fg;
     }
-    std::cout << std::endl;
+    if (response != 969) {
+      std::cout << std::endl;
+    }
   }
 
   // Close the server's socket
@@ -170,6 +172,9 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
     }
     if (total_bytes_in == 0) {
       return ClientPacket(10, 0, 0, "");
+    }
+    if (total_bytes_in < n_bytes && bytes_in == 0) {
+      return ClientPacket(69, 0, 0, "");
     }
   }
 
