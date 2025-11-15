@@ -174,6 +174,7 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
       return ClientPacket(10, 0, 0, "");
     }
     if (total_bytes_in < n_bytes && bytes_in == 0) {
+      ANSI_ESCAPES.printError("[Error] Received packet of incorrect size\n");
       return ClientPacket(69, 0, 0, "");
     }
   }
