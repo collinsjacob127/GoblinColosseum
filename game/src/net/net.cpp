@@ -350,18 +350,16 @@ NetEngine::~NetEngine() {
 }
 
 int NetEngine::serverConnect() {
-  struct sockaddr_in serv_addr;
-
   // Creating socket file descriptor
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    std::cerr << "[Error] Socket creation error" << std::endl;
+    ANSI_ESCAPES.printError("[Error] Socket creation error\n");
     return -1;
   }
 
   // Set connection settings
+  struct sockaddr_in serv_addr;
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(SERVER_PORT);
-
   // Convert IPv4 and IPv6 addresses from text to binary form
   if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
     std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
@@ -441,6 +439,154 @@ void NetEngine::serverDisconnect() {
       std::cout << "[Log] Disconnected from server.\n";
     }
   }
+}
+
+int NetEngine::updateLocalAddress(int s) {
+  // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
+
+  // Use getsockname to read our local ipv4 addr
+  struct sockaddr_in loc_addr;
+  socklen_t name_len = sizeof(loc_addr);
+  int err = getsockname(s, (struct sockaddr*)&loc_addr, &name_len);
+
+  // Convert provided ipv4 addr
+  char buf[80] = "";
+  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
+  buf[79] = '\0';
+
+  // Print out the new addr
+  if (p != NULL) {
+    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
+  } else {
+    ANSI_ESCAPES.printError("[Error] Failed to retrieve local IPv4 addr\n");
+    return -1;
+  }
+
+  // Update my_local_addr
+  my_local_addr.addr = unpacku32((unsigned char*)&loc_addr.sin_addr);
+  my_local_addr.port = ntohs(loc_addr.sin_port);
+  std::stringstream ss;
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[3]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[2]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[1]);
+  ss << ".";
+  ss << (int)(((unsigned char*)&my_local_addr.addr)[0]);
+  ss << ":" << my_local_addr.port;
+  my_local_addr.rep_str = ss.str();
+  return 1;
+}
+
+int NetEngine::initPeerSocket() {
+  updateLocalAddress(server_sock);
+  peer_sock = -1;
+
+  struct addrinfo hints;
+  struct addrinfo *rp, *result;
+
+  /* Build address data structure */
+  std::cout << "[TEMP] memset hints\n";
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_protocol = 0;
+  hints.ai_flags = AI_V4MAPPED;
+
+  // Set connection settings (initially server- must change to peer once addr received)
+  struct sockaddr_in serv_addr;
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(SERVER_PORT);
+  // Convert IPv4 and IPv6 addresses from text to binary form
+  if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
+    ANSI_ESCAPES.printError("[Error] Invalid address/ Address not supported\n");
+    return -1;
+  }
+
+  // Define range of ports to search
+  uint16_t some_port = 51753; // random port
+  uint16_t max_port = std::numeric_limits<uint16_t>::max();
+
+  std::cout << "[TEMP] port finding loop\n";
+  /* Get local address info and good port */
+  while (some_port < max_port) {
+    // Get c-str of port number
+    std::stringstream ss;
+    ss << some_port;
+
+    // Check if port is unused, saving addr info to hints & result
+    if ((peer_sock = getaddrinfo(NULL, ss.str().c_str(), &hints, &result)) != 0) {
+      // fprintf(stderr, "stream-talk-server: getaddrinfo: %s\n", gai_strerror(s));
+      some_port++;
+      continue;
+    } else { 
+      break; 
+    }
+  }
+
+  // Reset, previous assignment doesn't matter, not sure why 
+  // beej did that besides warning suppression
+  peer_sock = -1;
+
+  // Verify did not check until end of range
+  if (some_port == max_port) { 
+    return -1;
+  }
+
+  std::cout << "[TEMP] sock retrieval loop (port " << some_port << ")\n";
+  // Get a socket for it, now
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+    // Get a UDP socket
+    if ((peer_sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1) {
+      continue;
+    }
+    // if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    //   continue;
+    // }
+    std::cout << "[TEMP] Socket: " << peer_sock << "\n";
+
+    int opt = 1;
+
+    // Enable safe reuse of server port
+    if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+      perror("[Error] setsockopt\n");
+      close(peer_sock);
+      continue;
+    }
+
+    // Set non-blocking
+    if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+      perror("[Error] fcntl\n");
+      close(peer_sock);
+      continue;
+    }
+
+    // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
+    if (connect(peer_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+      ANSI_ESCAPES.printError("[Error] Connection Failed\n");
+      close(peer_sock);
+      continue;
+    }
+
+    if (!bind(peer_sock, rp->ai_addr, rp->ai_addrlen)) {
+      break;
+    } else {
+      ANSI_ESCAPES.printError("[Error] Failed to bind\n");
+    }
+
+  }
+
+  // if (rp == NULL) {
+  //   perror("stream-talk-server: bind");
+  //   return -1;
+  // }
+  freeaddrinfo(result);
+
+  if (updateLocalAddress(peer_sock) < 0) {
+    return -1;
+  }
+
+  return peer_sock;
 }
 
 int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
@@ -572,9 +718,6 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
 
   // - Maybe reimplement ARQ for sending inputs
 
-  // - 1111111 as frame number to indiciate bad packet
-  // instead of inputs it will then contain the actual frame number needed
-
   // bind() - Guarantee my own port # maybe bad
 
   // Ensure full packet is read
@@ -603,43 +746,6 @@ void NetEngine::peerDisconnect() {
       std::cout << "[Log] Disconnected from peer.\n";
     }
   }
-}
-
-int NetEngine::updateLocalAddress(int s) {
-  // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
-
-  // Use getsockname to read our local ipv4 addr
-  struct sockaddr_in loc_addr;
-  socklen_t name_len = sizeof(loc_addr);
-  int err = getsockname(s, (struct sockaddr*)&loc_addr, &name_len);
-
-  // Convert provided ipv4 addr
-  char buf[80] = "";
-  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
-  buf[79] = '\0';
-
-  // Print out the new addr
-  if (p != NULL) {
-    std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
-  } else {
-    ANSI_ESCAPES.printError("[Error] Failed to retrieve local IPv4 addr\n");
-    return -1;
-  }
-
-  // Update my_local_addr
-  my_local_addr.addr = unpacku32((unsigned char*)&loc_addr.sin_addr);
-  my_local_addr.port = ntohs(loc_addr.sin_port);
-  std::stringstream ss;
-  ss << (int)(((unsigned char*)&my_local_addr.addr)[3]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&my_local_addr.addr)[2]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&my_local_addr.addr)[1]);
-  ss << ".";
-  ss << (int)(((unsigned char*)&my_local_addr.addr)[0]);
-  ss << ":" << my_local_addr.port;
-  my_local_addr.rep_str = ss.str();
-  return 1;
 }
 
 void crossPlatformSleep(uint32_t milliseconds) {
@@ -948,6 +1054,12 @@ int NetEngine::testNetClient() {
   Timer timer;
   timer.start();
   ssize_t result;
+
+  std::cout << "[TEMP] Testing initialization of peer socket\n";
+  initPeerSocket();
+  std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
+  std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
+  return -1;
 
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";

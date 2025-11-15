@@ -196,6 +196,8 @@ constexpr size_t PEER_INPUTS_PACKET_SIZE = 0; //TODO: Update this
 
 /**
  * @brief Packet for p2p input send/recv once the game has started.
+ * @note - 1111111 as frame number to indiciate bad packet
+ * @note instead of inputs it will then contain the actual frame number needed
  */
 struct NetInputs {
   uint16_t frame_n = 0;

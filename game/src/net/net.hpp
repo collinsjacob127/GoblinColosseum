@@ -49,6 +49,7 @@ typedef SSIZE_T ssize_t;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h> // addrinfo
 #include <fcntl.h> // For nonblocking
 #include <memory>
 
@@ -94,8 +95,8 @@ class NetEngine {
 
   // Peers both listen and send to eachother
   int peer_sock = -1;
-  int peer_sock_listen = -1;
-  int peer_sock_send = -1;
+  // int peer_sock_listen = -1;
+  // int peer_sock_send = -1;
 
   NetEngine();
   ~NetEngine();
@@ -182,9 +183,20 @@ class NetEngine {
  private:
 
   /**
-   * @brief Function to connect to the game's server
+   * @brief Function to update my_local_addr based on the current connection
+   * @return 1 on success, -1 on failure
+   * @note References this forum post https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
    */
-  int serverConnect();
+  int updateLocalAddress(int s);
+
+  /**
+   * @brief Function to create a socket for the peer.
+   * @note Sets peer_sock to the returned value.
+   * @note Updates my_local_addr with the address bound
+   * to this socket.
+   * @note MUST BE DONE WHILE CONNECTED TO SERVER
+   */
+  int initPeerSocket();
 
   /**
    * @brief Attempt a UDP connection to a peer provided one of thier addresses
@@ -215,6 +227,16 @@ class NetEngine {
   PeerSetupPacket recvPeerSetupPacket();
 
   /**
+   * @brief Function to disconnect from a peer
+   */
+  void peerDisconnect();
+
+  /**
+   * @brief Function to connect to the game's server
+   */
+  int serverConnect();
+
+  /**
    * @brief Function to parse and send a ClientPacket to the server
    * @return Returns bytes sent or -1 on error
    */
@@ -231,18 +253,6 @@ class NetEngine {
    * @brief Function to disconnect from the server
    */
   void serverDisconnect();
-
-  /**
-   * @brief Function to disconnect from a peer
-   */
-  void peerDisconnect();
-
-  /**
-   * @brief Function to update my_local_addr based on the current connection
-   * @return 1 on success, -1 on failure
-   * @note References this forum post https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
-   */
-  int updateLocalAddress(int s);
 };
 
 void crossPlatformSleep(uint32_t milliseconds);
