@@ -70,6 +70,17 @@ clientAddrInfo::clientAddrInfo(uint32_t in_addr, uint16_t in_port) {
   rep_str = ss.str();
 }
 
+std::string clientAddrInfo::getIPv4() {
+  size_t colon_pos;
+  std::stringstream ss;
+  if ((colon_pos = rep_str.find(':')) == std::string::npos) {
+    ss << "[Error] Error converting IP address: " << rep_str << std::endl; 
+    ANSI_ESCAPES.printError(ss.str());
+    return "X.X.X.X";
+  }
+  return ss.str().substr(0, colon_pos);
+}
+
 /**
  * P2P PACKET DEFINITIONS
  */

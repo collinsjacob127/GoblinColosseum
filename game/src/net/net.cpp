@@ -434,11 +434,11 @@ ServerPacket NetEngine::recvServerPacket(int s) {
 void NetEngine::serverDisconnect() {
   if (server_sock > 0) {
     close(server_sock);
-    server_sock = -1;
     if(ENABLE_NETCODE_LOG) {
       std::cout << "[Log] Disconnected from server.\n";
     }
   }
+  server_sock = -1;
 }
 
 int NetEngine::updateLocalAddress(int s) {
@@ -479,111 +479,68 @@ int NetEngine::updateLocalAddress(int s) {
 }
 
 int NetEngine::initPeerSocket() {
-  updateLocalAddress(server_sock);
-  peer_sock = -1;
+  if (server_sock < 0) {
+    if (serverConnect() < 0) { return (peer_sock = -1); }
+    peer_sock = updateLocalAddress(server_sock);
+    serverDisconnect();
+    if (peer_sock < 0) { return (peer_sock = -1); }
+  } else {
+    updateLocalAddress(server_sock);
+  }
 
-  struct addrinfo hints;
-  struct addrinfo *rp, *result;
-
-  /* Build address data structure */
-  std::cout << "[TEMP] memset hints\n";
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_DGRAM;
-  hints.ai_protocol = 0;
-  hints.ai_flags = AI_V4MAPPED;
-
-  // Set connection settings (initially server- must change to peer once addr received)
-  struct sockaddr_in serv_addr;
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(SERVER_PORT);
+  // Set connection settings
+  struct sockaddr_in loc_addr;
+  loc_addr.sin_family = AF_INET;
+  loc_addr.sin_port = htons(my_local_addr.port);
   // Convert IPv4 and IPv6 addresses from text to binary form
-  if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
-    ANSI_ESCAPES.printError("[Error] Invalid address/ Address not supported\n");
-    return -1;
-  }
-
-  // Define range of ports to search
-  uint16_t some_port = 51753; // random port
-  uint16_t max_port = std::numeric_limits<uint16_t>::max();
-
-  std::cout << "[TEMP] port finding loop\n";
-  /* Get local address info and good port */
-  while (some_port < max_port) {
-    // Get c-str of port number
+  if (inet_pton(AF_INET, my_local_addr.getIPv4().c_str(), &loc_addr.sin_addr) < 0) {
     std::stringstream ss;
-    ss << some_port;
-
-    // Check if port is unused, saving addr info to hints & result
-    if ((peer_sock = getaddrinfo(NULL, ss.str().c_str(), &hints, &result)) != 0) {
-      // fprintf(stderr, "stream-talk-server: getaddrinfo: %s\n", gai_strerror(s));
-      some_port++;
-      continue;
-    } else { 
-      break; 
-    }
+    ss << "[Error] Invalid address / Address not supported: " 
+    << my_local_addr.getIPv4().c_str() << std::endl;
+    ANSI_ESCAPES.printError(ss.str());
+    return (peer_sock = -1); 
   }
 
-  // Reset, previous assignment doesn't matter, not sure why 
-  // beej did that besides warning suppression
-  peer_sock = -1;
+  // current port used for outbound to server
+  uint16_t some_port = unpacku16((unsigned char*)&my_local_addr.port); 
+  std::stringstream ss;
+  ss << some_port;
 
-  // Verify did not check until end of range
-  if (some_port == max_port) { 
-    return -1;
+  // Get a UDP socket
+  if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    ANSI_ESCAPES.printError("[Error] Failed to get socket fd for peer.\n");
+    return (peer_sock = -1);
+  }
+  std::cout << "[TEMP] Socket: " << peer_sock << "\n";
+
+  // Enable safe reuse of server port
+  int opt = 1;
+  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    perror("[Error] setsockopt\n");
+    close(peer_sock);
+    return (peer_sock = -1);
   }
 
-  std::cout << "[TEMP] sock retrieval loop (port " << some_port << ")\n";
-  // Get a socket for it, now
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-    // Get a UDP socket
-    if ((peer_sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1) {
-      continue;
-    }
-    // if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-    //   continue;
-    // }
-    std::cout << "[TEMP] Socket: " << peer_sock << "\n";
-
-    int opt = 1;
-
-    // Enable safe reuse of server port
-    if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-      perror("[Error] setsockopt\n");
-      close(peer_sock);
-      continue;
-    }
-
-    // Set non-blocking
-    if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
-      perror("[Error] fcntl\n");
-      close(peer_sock);
-      continue;
-    }
-
-    // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
-    if (connect(peer_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-      ANSI_ESCAPES.printError("[Error] Connection Failed\n");
-      close(peer_sock);
-      continue;
-    }
-
-    if (!bind(peer_sock, rp->ai_addr, rp->ai_addrlen)) {
-      break;
-    } else {
-      ANSI_ESCAPES.printError("[Error] Failed to bind\n");
-    }
-
+  // Set non-blocking
+  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+    perror("[Error] fcntl\n");
+    close(peer_sock);
+    return (peer_sock = -1);
   }
 
-  // if (rp == NULL) {
-  //   perror("stream-talk-server: bind");
-  //   return -1;
+  // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
+  if (connect(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
+    ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
+    close(peer_sock);
+    return (peer_sock = -1);
+  }
+
+  // if (bind(peer_sock, rp->ai_addr, rp->ai_addrlen) < 0) {
+  //   ANSI_ESCAPES.printError("[Error] Failed to bind\n");
   // }
-  freeaddrinfo(result);
 
   if (updateLocalAddress(peer_sock) < 0) {
-    return -1;
+    return (peer_sock = -1);
   }
 
   return peer_sock;
@@ -876,8 +833,8 @@ ssize_t NetEngine::createLobby() {
     return -1;
   }
 
-  // Update local addr info for send to server
-  if (updateLocalAddress(server_sock) < 0) {
+  // Update local addr info for server send AND initialize socket for p2p
+  if (initPeerSocket() < 0) {
     serverDisconnect();
     return -1;
   }
@@ -942,8 +899,9 @@ ssize_t NetEngine::joinLobby() {
     return -1;
   } 
   
-  // Update local addr info for send to server
-  if (updateLocalAddress(server_sock) < 0) {
+  // Update local addr info for server send AND initialize socket for p2p
+  if (initPeerSocket() < 0) {
+    serverDisconnect();
     return -1;
   }
 
@@ -1055,11 +1013,11 @@ int NetEngine::testNetClient() {
   timer.start();
   ssize_t result;
 
+  //TODO: Update initpeersocket to happen DURING server connection, not after (?)
   std::cout << "[TEMP] Testing initialization of peer socket\n";
   initPeerSocket();
   std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
   std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
-  return -1;
 
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
@@ -1164,6 +1122,9 @@ int NetEngine::testNetClient() {
 
   // Close peer connection
   peerDisconnect();
+
+  std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
+  std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
 
   std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
   << timer.duration() << "s\n";

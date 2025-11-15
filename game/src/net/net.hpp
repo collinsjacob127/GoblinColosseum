@@ -71,8 +71,8 @@ typedef SSIZE_T ssize_t;
 
 
 // IPV4 addr of the server
-// constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
-constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
+constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+// constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
 constexpr int SERVER_PORT = 53243;
 
 /**
@@ -194,7 +194,7 @@ class NetEngine {
    * @note Sets peer_sock to the returned value.
    * @note Updates my_local_addr with the address bound
    * to this socket.
-   * @note MUST BE DONE WHILE CONNECTED TO SERVER
+   * @note CANNOT BE DONE WHILE CONNECTED TO SERVER
    */
   int initPeerSocket();
 

@@ -56,6 +56,10 @@ struct clientAddrInfo {
   clientAddrInfo(){}
   clientAddrInfo(uint32_t in_addr, uint16_t in_port);
   clientAddrInfo(std::string ipv4_str);
+  /**
+   * @brief Returns just the ipv4 section without the colon or port
+   */
+  std::string getIPv4();
 };
 
 class MatchmakingPacket {
