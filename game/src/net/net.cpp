@@ -493,7 +493,7 @@ int NetEngine::initPeerSocket() {
   struct sockaddr_in loc_addr;
   loc_addr.sin_family = AF_INET;
   loc_addr.sin_port = htons(my_local_addr.port);
-  const char* loc_ipv4_addr = my_local_addr.getIPv4().c_str();
+  const char* loc_ipv4_addr = "127.0.0.1";
   // Convert IPv4 and IPv6 addresses from text to binary form
   if (inet_pton(AF_INET, loc_ipv4_addr, &loc_addr.sin_addr) < 0) {
     std::stringstream ss;
