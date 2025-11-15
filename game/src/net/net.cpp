@@ -479,6 +479,7 @@ int NetEngine::updateLocalAddress(int s) {
 }
 
 int NetEngine::initPeerSocket() {
+  if (peer_sock > 0) { close(peer_sock); peer_sock = -1; }
   if (server_sock < 0) {
     if (serverConnect() < 0) { return (peer_sock = -1); }
     peer_sock = updateLocalAddress(server_sock);
@@ -542,6 +543,7 @@ int NetEngine::initPeerSocket() {
   if (updateLocalAddress(peer_sock) < 0) {
     return (peer_sock = -1);
   }
+  std::cout << "[Log] Peer Socket after initPeerSocket(): " << peer_sock << std::endl;
 
   return peer_sock;
 }
