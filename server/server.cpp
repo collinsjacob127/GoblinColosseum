@@ -94,6 +94,10 @@ int main() {
     // Respond to the packet
     int response = -1;
     switch (in_pkt.packet_type) {
+      case (10): {
+        response = 1; // Empty packet, ignore
+        break;
+      }
       case (0): {
         response = initializePlayer(in_pkt, client_socket);
         break;
@@ -163,6 +167,9 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
         perror("");
       }
       return ClientPacket(0, 0, 0, "");
+    }
+    if (total_bytes_in == 0) {
+      return ClientPacket(10, 0, 0, "");
     }
   }
 
