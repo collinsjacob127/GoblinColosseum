@@ -206,20 +206,6 @@ class NetEngine {
   int initPeerSocket();
 
   /**
-   * @brief Attempt a UDP connection to a peer provided one of thier addresses
-   * @return -1 on failure, fd on success.
-   */
-  int attemptSinglePeerConnection(clientAddrInfo address);
-
-  /**
-   * @brief Function to connect to a peer
-   * @return -1 on failure, otherwise socket fd
-   * @note Attempts connections to both public and private
-   * addresses of the peer until one succeeds.
-   */
-  int peerConnect();
-
-  /**
    * @brief Function to send a setup packet to the peer
    * @return Returns bytes sent or -1 on error 
    * @note For TCP Holepunch, this will very likely error

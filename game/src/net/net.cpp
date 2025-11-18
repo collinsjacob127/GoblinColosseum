@@ -558,103 +558,6 @@ int NetEngine::initPeerSocket() {
   return peer_sock;
 }
 
-int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
-  // unix_peer_addr.sin_family = AF_INET;
-
-  // Set addr info in UNIX net addr struct
-  struct sockaddr_in unix_peer_addr;
-  unix_peer_addr.sin_family = AF_INET;
-  packi32((unsigned char*)&unix_peer_addr.sin_addr.s_addr, address.addr);
-  packi16((unsigned char*)&unix_peer_addr.sin_port, address.port);
-  // unix_peer_addr.sin_port = htons(address.port);
-
-  // Creating socket file descriptor
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Debug] Creating socket\n";
-  }
-  // Set socket with UDP
-  if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_DGRAM, 0)) < 0) {
-    COLORS.printError("[Error] Socket creation error\n");
-    perror("socket");
-    return -1;
-  }
-
-  int opt = 1;
-  // Enable safe reuse of port
-  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("setsockopt");
-    close(peer_sock);
-    return -1;
-  }
-
-  // Set non-blocking
-  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
-    perror("fcntl");
-    close(peer_sock);
-    return -1;
-  }
-
-  // Connect to the server
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Debug] Requesting connection to " << address.rep_str << "\n";
-  }
-  if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
-    COLORS.printError("[Error] Connection Failed\n");
-    return -1;
-  } else {
-    printf("[Log] Connected to peer via socket %d!\n", peer_sock);
-  }
-
-  return peer_sock;
-}
-
-int NetEngine::peerConnect() {
-  // Verify peer addrs
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[PEER-CONNECT] Attempting connection with peer:" << std::endl;
-    std::cout << "  [ADDR] Public: " << peer_addr_public.rep_str << std::endl;
-    std::cout << "  [ADDR] Private: " << peer_addr_private.rep_str << std::endl;
-  }
-  if (peer_addr_public.addr == 0 || peer_addr_private.addr == 0) {
-    std::cout << "Peer connection failed; Peer addr not yet set.\n";
-    return -1;
-  }
-
-  struct sockaddr_in peer_sockaddr_pub = convertClientAddrInfoToSockAddr(peer_addr_public);
-  struct sockaddr_in peer_sockaddr_priv = convertClientAddrInfoToSockAddr(peer_addr_public);
-
-  // Attempt connection max_attempts times
-  size_t n_attempts = 0, max_attempts = 15;
-  while (n_attempts < max_attempts) {
-    if (!continue_program) { exit(0); }
-
-    n_attempts++;
-    std::cout << "[PEER-CONNECT] Attempt #" << n_attempts << "...\n";
-
-    // Link socket to peer's public address
-    if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_pub, sizeof(peer_sockaddr_pub)) < 0) {
-      COLORS.printError("[Error] Connect call Failed\n");
-      return peer_sock;
-    }
-    
-    
-
-
-
-    // Link socket to peer's private address
-    if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_priv, sizeof(peer_sockaddr_priv)) < 0) {
-      return peer_sock;
-    }
-
-
-    // Wait 1s between connection attempts after the first
-    if (n_attempts) { crossPlatformSleep(1000); }
-  }
-
-  // Return peer socket
-  return peer_sock;
-}
-
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (peer_sock <= 0) {
     COLORS.printError("[Error] Invalid peer connection!\n");
@@ -1029,7 +932,31 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   bool received_anything = false;
   bool peer_received_us = false;
 
-  //TODO: Make sure they send one more after connection established (another send after loop)
+  // Initial first send, expected to be dropped
+  if (sendPeerSetupPacket(*pkt_to_send, peer_addr_public) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet.\n");
+    peerDisconnect();
+    return PeerSetupPacket();
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
+      << (pkt_to_send->connection_established ? "true" : "false") << std::endl;
+    }
+  }
+  // Attempt send to priv
+  if (sendPeerSetupPacket(*pkt_to_send, peer_addr_private) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet.\n");
+    peerDisconnect();
+    return PeerSetupPacket();
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
+      << (pkt_to_send->connection_established ? "true" : "false") << std::endl;
+    }
+  }
+
   // TODO: Check potential issue with bind interfering with message receipt? Bind to public?
   size_t n_attempts = 0, max_attempts = 10;
   // Switch between attempting connections with public & private addrs
