@@ -105,9 +105,9 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
         std::stringstream ss;
-        ss << "[Error] Failed to send packet: ";
-        ss << out_pkt.getStringFromBuffer(buf, pkt_size);
-        perror(ss.str().c_str());
+        perror("[Error] Failed to send packet: ");
+        ss << out_pkt.getStringFromBuffer(buf, pkt_size) << std::endl;
+        COLORS.printInColor(ss.str(), COLORS.cyan_fg);
       }
       return bytes_sent;
     }
@@ -175,87 +175,42 @@ void NetEngine::serverDisconnect() {
   }
 }
 
-int NetEngine::peerConnect() {
-  // Verify good peer_addr struct
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "Attempting connection with peer @" << peer_addr.rep_str
-    << ":" << peer_addr.port << std::endl;
-  }
-  if (peer_addr.addr == 0) {
-    std::cout << "Peer connection failed; Peer addr not yet set.\n";
-    return -1;
-  }
-
-  // Reset the socket etc.
-  WSADATA wsaData;
-  PeerSocket = INVALID_SOCKET;
-  struct addrinfo *result = NULL, *ptr = NULL, hints;
-  int iResult;
-
-  // Initialize Winsock
-  iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-  if (iResult != 0) {
-    printf("WSAStartup failed with error: %d\n", iResult);
-    return -1;
-  }
-  
-  ZeroMemory( &hints, sizeof(hints) );
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = IPPROTO_TCP;
-
-  // Must convert port # to const char*
-  char port_buf[6];
-  snprintf(port_buf, sizeof(port_buf), "%u", peer_addr.port);
-  port_buf[5] = '\0';
-
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "Connecting to peer on port " << port_buf << std::endl;
+//TODO: Fix this
+int NetEngine::updateLocalAddress(int s) {
+  // safe to cast SOCKET to int: https://www.openssl.org/docs/man3.0/man3/SSL_set_fd.html
+  SOCKET this_sock;
+  if ((int)ServerSocket == s) {
+    this_sock = ServerSocket;
+  } else if ((int)PeerSocket == s) {
+    this_sock = PeerSocket;
   }
 
-  // Resolve the peer addr & port
-  iResult = getaddrinfo(peer_addr.rep_str.c_str(), port_buf, &hints, &result);
-  if ( iResult != 0 ) {
-    printf("getaddrinfo failed with error: %d\n", iResult);
-    WSACleanup();
-    return -1;
-  }
+  sockaddr_in loc_addr;
+  socklen_t name_len = sizeof(loc_addr);
 
-  // Attempt to connect to an address until one succeeds
-  for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
-    // Create a SOCKET for connecting to peer
-    PeerSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-    if (PeerSocket == INVALID_SOCKET) {
-      printf("socket failed with error: %ld\n", WSAGetLastError());
-      WSACleanup();
-      return -1;
-    }
 
-    // Connect to server.
-    iResult = connect(PeerSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
-      closesocket(PeerSocket);
-      PeerSocket = INVALID_SOCKET;
-      continue;
-    }
-    break;
-  }
-
-  freeaddrinfo(result);
-
-  // Verify valid socket
-  if (PeerSocket == INVALID_SOCKET) {
-    printf("connection failed with error: %ld\n", WSAGetLastError());
-    WSACleanup();
-    return -1;
-  }
-
-  // Set and return socket
-  peer_sock = (int)PeerSocket;
-  return (int)PeerSocket;
+  return -1;
 }
 
-ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
+//TODO: Fix this
+sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
+  return sockaddr_in();
+}
+
+//TODO: Fix this
+clientAddrInfo convertSockAddrToClientAddrInfo(sockaddr_in cur_addr) {
+  clientAddrInfo out_addr(cur_addr.sin_addr.S_un.S_addr, cur_addr.sin_port);
+  return out_addr;
+}
+
+//TODO: Fix this
+int NetEngine::initPeerSocket() {
+  // SOCKET can safely be cast to / from int
+  return -1;
+}
+
+//TODO: Fix this
+ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (PeerSocket == INVALID_SOCKET) {
     printf("Unable to connect to server!\n");
     WSACleanup();
@@ -283,11 +238,15 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   return total_bytes_sent;
 }
 
-PeerSetupPacket NetEngine::recvPeerSetupPacket() {
+//TODO: Fix this
+std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
+  //TODO: delete this ig
+  clientAddrInfo peer_addr_tmp(0, 0);  // = convertSockAddrToClientAddrInfo(peer_sock)
+
   if (PeerSocket == INVALID_SOCKET) {
     printf("[Error] Unable to connect to server!\n");
     WSACleanup();
-    return PeerSetupPacket();
+    return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
   }
 
   char buf[PEER_SETUP_PACKET_SIZE] = "";
@@ -295,6 +254,7 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
   }
+
 
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
@@ -306,15 +266,15 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
         std::cout << "[Error] Recv failure error message: "
         << std::system_category().message(WSAGetLastError()) << std::endl;
       }
-      return PeerSetupPacket();
+      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
     }
   }
 
   // Convert to ClientPacket
   PeerSetupPacket in_pkt(buf, pkt_size);
-  return in_pkt;
+  // clientAddrInfo peer_addr_tmp();  // = convertSockAddrToClientAddrInfo(peer_sock)
+  return std::pair<PeerSetupPacket,clientAddrInfo>(in_pkt, peer_addr_tmp);
 }
-
 
 void NetEngine::peerDisconnect() {
   if (PeerSocket != INVALID_SOCKET) {
@@ -386,12 +346,11 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
   while (total_bytes_sent < pkt_size) {
-    bytes_sent = send(server_sock, buf, pkt_size-total_bytes_sent, 0);
+    bytes_sent = send(server_sock, buf+total_bytes_sent, pkt_size-total_bytes_sent, 0);
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to send packet:\n");
-        perror("");
         std::stringstream ss;
         ss << out_pkt.getStringFromBuffer(buf, pkt_size);
         std::cout << std::flush << COLORS.cyan_fg;
@@ -414,7 +373,7 @@ ServerPacket NetEngine::recvServerPacket(int s) {
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0;
   while (total_bytes_in < SERVER_PACKET_N_BYTES) {
-    bytes_in = recv(s, buf, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    bytes_in = recv(s, buf+total_bytes_in, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
@@ -1061,6 +1020,14 @@ int NetEngine::testNetClient() {
   Timer timer;
   timer.start();
   ssize_t result;
+
+  serverConnect();
+  updateLocalAddress(ServerSocket);
+  serverDisconnect();
+
+  std::cout << my_local_addr.rep_str << std::endl;
+
+  return -1;
 
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
