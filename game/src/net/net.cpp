@@ -352,7 +352,7 @@ NetEngine::~NetEngine() {
 int NetEngine::serverConnect() {
   // Creating socket file descriptor
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Socket creation error\n");
+    COLORS.printError("[Error] Socket creation error\n");
     return -1;
   }
 
@@ -390,13 +390,13 @@ ssize_t NetEngine::sendClientPacket(ClientPacket out_pkt) {
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        ANSI_ESCAPES.printError("[Error] Failed to send packet:\n");
+        COLORS.printError("[Error] Failed to send packet:\n");
         perror("");
         std::stringstream ss;
         ss << out_pkt.getStringFromBuffer(buf, pkt_size);
-        std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+        std::cout << std::flush << COLORS.cyan_fg;
         std::cout << ss.str().c_str();
-        std::cout << ANSI_ESCAPES.white_fg;
+        std::cout << COLORS.white_fg;
       }
       return bytes_sent;
     }
@@ -420,7 +420,7 @@ ServerPacket NetEngine::recvServerPacket(int s) {
       if (ENABLE_NETCODE_ERROR) {
         std::stringstream ss;
         ss << "[Error] Failed to receive packet from %d" << s << std::endl;
-        ANSI_ESCAPES.printError(ss.str());
+        COLORS.printError(ss.str());
       }
       return ServerPacket(0, 0, 0, "");
     }
@@ -458,7 +458,7 @@ int NetEngine::updateLocalAddress(int s) {
   if (p != NULL) {
     // std::cout << "[Log] Local IPv4 is: " << buf << ":" << ntohs(loc_addr.sin_port) << std::endl;
   } else {
-    ANSI_ESCAPES.printError("[Error] Failed to retrieve local IPv4 addr\n");
+    COLORS.printError("[Error] Failed to retrieve local IPv4 addr\n");
     return -1;
   }
 
@@ -494,7 +494,7 @@ sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
     std::stringstream ss;
     ss << "[Error] Invalid address / Address not supported: " 
     << cur_addr.getIPv4().c_str() << std::endl;
-    ANSI_ESCAPES.printError(ss.str());
+    COLORS.printError(ss.str());
   }
   return out_addr;
 }
@@ -517,7 +517,7 @@ int NetEngine::initPeerSocket() {
 
   // Get a UDP socket
   if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to get socket fd for peer.\n");
+    COLORS.printError("[Error] Failed to get socket fd for peer.\n");
     return (peer_sock = -1);
   }
 
@@ -540,7 +540,7 @@ int NetEngine::initPeerSocket() {
 
   // Bind to the same local address as was used for server comms
   if (bind(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to bind\n");
+    COLORS.printError("[Error] Failed to bind\n");
     close(peer_sock);
     return (peer_sock = -1);
   }
@@ -569,7 +569,7 @@ int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
   }
   // Set socket with UDP
   if ((peer_sock = socket(unix_peer_addr.sin_family, SOCK_DGRAM, 0)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Socket creation error\n");
+    COLORS.printError("[Error] Socket creation error\n");
     perror("socket");
     return -1;
   }
@@ -594,7 +594,7 @@ int NetEngine::attemptSinglePeerConnection(clientAddrInfo address) {
     std::cout << "[Debug] Requesting connection to " << address.rep_str << "\n";
   }
   if (connect(peer_sock, (struct sockaddr*)&unix_peer_addr, sizeof(unix_peer_addr)) < 0) {
-    ANSI_ESCAPES.printError("[Error] Connection Failed\n");
+    COLORS.printError("[Error] Connection Failed\n");
     return -1;
   } else {
     printf("[Log] Connected to peer via socket %d!\n", peer_sock);
@@ -628,7 +628,7 @@ int NetEngine::peerConnect() {
 
   // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
     if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_pub, sizeof(peer_sockaddr_pub)) < 0) {
-      ANSI_ESCAPES.printError("[Error] Connect call Failed\n");
+      COLORS.printError("[Error] Connect call Failed\n");
       return peer_sock;
     }
     //TODO:Send the startup packet a few times here
@@ -650,7 +650,7 @@ int NetEngine::peerConnect() {
 
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   if (peer_sock <= 0) {
-    ANSI_ESCAPES.printError("[Error] Invalid peer connection!\n");
+    COLORS.printError("[Error] Invalid peer connection!\n");
     peerDisconnect();
     return -1;
   }
@@ -698,7 +698,7 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        ANSI_ESCAPES.printError("[Error] Failed to receive peer setup packet\n");
+        COLORS.printError("[Error] Failed to receive peer setup packet\n");
       }
       return PeerSetupPacket();
     }
@@ -745,7 +745,7 @@ void NetEngine::getLocalUserName() {
     ss << "[Error] Invalid username: " << usr_name << std::endl;
     ss << "[Error] Username must be 1-24 characters (" 
     << usr_name.size() << " is invalid.)" << std::endl;
-    ANSI_ESCAPES.printError(ss.str());
+    COLORS.printError(ss.str());
 
     usr_name = "";
     std::getline(std::cin, usr_name);
@@ -765,13 +765,13 @@ void NetEngine::setLocalUserName(std::string user_name) {
     ss << "Net engine failed to set username (" << user_name << ") ";
     ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_SIZE-1 << ")";
     ss << std::endl;
-    ANSI_ESCAPES.printError(ss.str());
+    COLORS.printError(ss.str());
   }
 }
 
 int NetEngine::getLocalJoinOrCreate() {
   int selection = -1;
-  std::cout << std::flush << ANSI_ESCAPES.brt_white_fg;
+  std::cout << std::flush << COLORS.brt_white_fg;
   std::cout << "Select JOIN or CREATE:" << std::endl;
   std::cout << "[0] JOIN" << std::endl;
   std::cout << "[1] CREATE" << std::endl;
@@ -781,12 +781,12 @@ int NetEngine::getLocalJoinOrCreate() {
     std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
     std::cin >> selection;
   }
-  std::cout << ANSI_ESCAPES.white_fg;
+  std::cout << COLORS.white_fg;
   return selection;
 }
 
 void NetEngine::printLobbyList() {
-  std::cout << std::flush << ANSI_ESCAPES.brt_white_fg;
+  std::cout << std::flush << COLORS.brt_white_fg;
   std::cout << "\n[-- AVAILABLE LOBBIES BELOW --]\n";
 
   for (size_t i = 0; i < lobby_list.size(); ++i) {
@@ -796,26 +796,26 @@ void NetEngine::printLobbyList() {
   }
 
   if (lobby_list.size() <= 0) {
-    std::cout << ANSI_ESCAPES.yellow_fg;
+    std::cout << COLORS.yellow_fg;
     std::cout << "[Warning] There are currently no open lobbies.\n";
-    std::cout << ANSI_ESCAPES.white_fg << std::flush;
+    std::cout << COLORS.white_fg << std::flush;
   }
 
-  std::cout << ANSI_ESCAPES.white_fg;
+  std::cout << COLORS.white_fg;
 }
 
 ssize_t NetEngine::initializeServerCommunication() {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
+    COLORS.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
   ClientPacket out_pkt(0, 0, 0, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
+    COLORS.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -827,9 +827,9 @@ ssize_t NetEngine::initializeServerCommunication() {
   }
   if (ENABLE_PACKET_INSPECTION) {
     std::cout << "[Packet] Server Packet Received:\n";
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << in_pkt.getStringFromSelf();
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 
   session_id = in_pkt.session_id;
@@ -842,7 +842,7 @@ ssize_t NetEngine::createLobby() {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
+    COLORS.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -856,7 +856,7 @@ ssize_t NetEngine::createLobby() {
   ClientPacket out_pkt(1, session_id, 0, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
+    COLORS.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -868,9 +868,9 @@ ssize_t NetEngine::createLobby() {
   }
   if (ENABLE_PACKET_INSPECTION) {
     std::cout << "[Packet] Server Packet Received:\n";
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << in_pkt.getStringFromSelf();
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 
   lobby_id = in_pkt.lobby_id;
@@ -883,7 +883,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   // 1. Bind server connection to the returned socket
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
+    COLORS.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -891,7 +891,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
   ClientPacket out_pkt(2, min_idx, max_idx, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send lobby creation pkt to server\n");
+    COLORS.printError("[Error] Failed to send lobby creation pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -908,7 +908,7 @@ ssize_t NetEngine::getLobbies(size_t min_idx, size_t max_idx) {
 ssize_t NetEngine::joinLobby() {
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
+    COLORS.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   } 
@@ -922,7 +922,7 @@ ssize_t NetEngine::joinLobby() {
   ClientPacket out_pkt(3, session_id, lobby_id, my_local_addr.rep_str.c_str());
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send lobby join pkt to server\n");
+    COLORS.printError("[Error] Failed to send lobby join pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -934,9 +934,9 @@ ssize_t NetEngine::joinLobby() {
   }
   if (ENABLE_PACKET_INSPECTION) {
     std::cout << "[Packet] Server Packet Received:\n";
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << in_pkt.getStringFromSelf();
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 
   lobby_id = in_pkt.lobby_id;
@@ -955,7 +955,7 @@ ssize_t NetEngine::getPeerAddr() {
   // Connect to server
   int result = serverConnect();
   if (server_sock < 0 || result < 0) {
-    ANSI_ESCAPES.printError("[Error] Server connect request failed\n");
+    COLORS.printError("[Error] Server connect request failed\n");
     serverDisconnect();
     return -1;
   }
@@ -964,7 +964,7 @@ ssize_t NetEngine::getPeerAddr() {
   ClientPacket out_pkt(4, session_id, lobby_id, username);
   ssize_t bytes_sent = sendClientPacket(out_pkt);
   if (bytes_sent < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send lobby join pkt to server\n");
+    COLORS.printError("[Error] Failed to send lobby join pkt to server\n");
     serverDisconnect();
     return -1;
   }
@@ -989,7 +989,7 @@ ssize_t NetEngine::getPeerAddr() {
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
   // Connect and verify
   if (peerConnect() < 0) {
-    ANSI_ESCAPES.printError("[Error] Peer connection failed.\n");
+    COLORS.printError("[Error] Peer connection failed.\n");
     peerDisconnect();
     return PeerSetupPacket();
   }
@@ -997,7 +997,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // Send info to peer
   PeerSetupPacket out_pkt(game_dur_f, character_id, username);
   if (sendPeerSetupPacket(out_pkt) < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to send peer setup packet.\n");
+    COLORS.printError("[Error] Failed to send peer setup packet.\n");
     peerDisconnect();
     return PeerSetupPacket();
   } else {
@@ -1010,7 +1010,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // Get info from peer
   PeerSetupPacket in_pkt = recvPeerSetupPacket();
   if ((std::string)in_pkt.user_name == "") {
-    ANSI_ESCAPES.printError("[Error] Failed to receive peer setup packet\n");
+    COLORS.printError("[Error] Failed to receive peer setup packet\n");
     peerDisconnect();
     return PeerSetupPacket();
   }
@@ -1031,7 +1031,7 @@ int NetEngine::testNetClient() {
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
   result = initializeServerCommunication();
   if (result < 0) {
-    ANSI_ESCAPES.printError("[Error] Failed to initialize server connection\n");
+    COLORS.printError("[Error] Failed to initialize server connection\n");
     serverDisconnect();
     return -1;
   }
@@ -1044,7 +1044,7 @@ int NetEngine::testNetClient() {
     std::cout << "\n[Log] Requesting the server to create a lobby for us...\n";
     result = createLobby();
     if (result < 0) {
-      ANSI_ESCAPES.printError("[Error] Failed to create lobby\n");
+      COLORS.printError("[Error] Failed to create lobby\n");
       serverDisconnect();
       return -1;
     }
@@ -1059,7 +1059,7 @@ int NetEngine::testNetClient() {
     std::cout << "\n[Log] Requesting list of lobbies...\n";
     result = getLobbies(min_idx, max_idx);
     if (result < 0) {
-      ANSI_ESCAPES.printError("[Error] Failed to get lobby list\n");
+      COLORS.printError("[Error] Failed to get lobby list\n");
       return -1;
     }
 
@@ -1120,7 +1120,7 @@ int NetEngine::testNetClient() {
   }
 
   // Display success statement
-  ANSI_ESCAPES.printSuccess("\nSuccessfully got peer addr from server!\n");
+  COLORS.printSuccess("\nSuccessfully got peer addr from server!\n");
 
   // Initiate p2p (udp holepunch - https://bford.info/pub/net/p2pnat/)
 

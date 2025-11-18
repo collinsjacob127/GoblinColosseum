@@ -22,7 +22,7 @@ clientAddrInfo::clientAddrInfo(std::string ipv4_str) {
   if ((colon_pos = ipv4_str.find(':')) == std::string::npos) {
     std::stringstream ss;
     ss << "[Error] Error converting IP address: " << ipv4_str << std::endl; 
-    ANSI_ESCAPES.printError(ss.str());
+    COLORS.printError(ss.str());
     return;
   }
 
@@ -75,7 +75,7 @@ std::string clientAddrInfo::getIPv4() {
   if ((colon_pos = rep_str.find(':')) == std::string::npos) {
     std::stringstream ss;
     ss << "[Error] Error converting IP address: " << rep_str << std::endl; 
-    ANSI_ESCAPES.printError(ss.str());
+    COLORS.printError(ss.str());
     return "X.X.X.X";
   }
   std::string out_str = rep_str.substr(0, colon_pos);
@@ -118,7 +118,7 @@ PeerSetupPacket::PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_na
 
 PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
   if (n_bytes != PEER_SETUP_PACKET_SIZE) {
-    ANSI_ESCAPES.printError("[Error] Invalid packet received for parsing. Bad size.\n");
+    COLORS.printError("[Error] Invalid packet received for parsing. Bad size.\n");
     return;
   }
 
@@ -145,12 +145,12 @@ PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
 void PeerSetupPacket::printContents() {
   user_name[MAX_USERNAME_SIZE-1] = '\0';
   if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << "[Packet] PeerSetupPacket Contents:" << std::endl;
     std::cout << "  [Contents] Max # Frames: " << max_n_frames << std::endl;
     std::cout << "  [Contents] Character ID: " << (int)character_id << std::endl;
     std::cout << "  [Contents] Username: " << user_name << std::endl;
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 }
 
@@ -179,9 +179,9 @@ ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {
   memcpy(buf + cur_index, contents, contents_size);
 
   if (ENABLE_CLIENTPACKET_INSPECTION){
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << getStringFromBuffer(buf, pkt_size);
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 
   return pkt_size;
@@ -387,13 +387,13 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
 
   // Print
   if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << "[Packet] Packing Peer Address:" << std::endl;
     std::cout << "  [Contents] Type: " << packet_type << std::endl;
     std::cout << "  [Contents] SID: " << session_id << std::endl;
     std::cout << "  [Contents] LID: " << lobby_id << std::endl;
     std::cout << "  [Contents] Addr: " << peer_addr.rep_str << std::endl;
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
 }
 
@@ -451,14 +451,14 @@ std::pair<clientAddrInfo, clientAddrInfo> ServerPacket::parseAddrInfo() {
 
   // Print
   if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << std::flush << ANSI_ESCAPES.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << "[Packet] Parsing Peer Address:" << std::endl;
     std::cout << "  [Contents] Type: " << packet_type << std::endl;
     std::cout << "  [Contents] SID: " << session_id << std::endl;
     std::cout << "  [Contents] LID: " << lobby_id << std::endl;
     std::cout << "  [Contents] Pub addr: " << peer_addr_pub.rep_str << std::endl;
     std::cout << "  [Contents] Priv addr: " << peer_addr_priv.rep_str << std::endl;
-    std::cout << ANSI_ESCAPES.white_fg;
+    std::cout << COLORS.white_fg;
   }
   return std::pair<clientAddrInfo,clientAddrInfo>(peer_addr_pub,peer_addr_priv);
 }

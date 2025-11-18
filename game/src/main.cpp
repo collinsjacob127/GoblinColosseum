@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     return_val = net_engine.testNetClient();
   }
 
-  ANSI_ESCAPES.printSuccess("\nClient program exited normally\n");
+  COLORS.printSuccess("\nClient program exited normally\n");
 
   return 0;
 
@@ -246,13 +246,13 @@ int startLocalGame(RenderEngine* renderer) {
 
 void handleUnexpectedClosure(int signal_num) {
   if (!continue_program) { exit(0); }
-  std::cout << std::flush << ANSI_ESCAPES.red_fg;
+  std::cout << std::flush << COLORS.red_fg;
   std::cout << "\nRecieved SIGINT.\n";
   continue_program = false;
   // net_engine.~NetEngine();
   // renderer.~RenderEngine();
-  std::cout << std::flush << ANSI_ESCAPES.green_fg;
+  std::cout << std::flush << COLORS.green_fg;
   std::cout << "Exiting safely...\n";
-  std::cout << ANSI_ESCAPES.white_fg;
+  std::cout << COLORS.white_fg;
   exit(0);
 }

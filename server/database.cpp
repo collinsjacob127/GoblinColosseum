@@ -64,7 +64,7 @@ Registry::~Registry() {
   if (ENABLE_REGISTRY_LOG) {
     std::stringstream ss;
     ss << "[Registry] Deleted " << n_removed << " entries from session map\n";
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
+    COLORS.printInColor(ss.str(), COLORS.cyan_fg);
   }
 
   session_map.clear();
@@ -164,7 +164,7 @@ uint64_t Registry::setNewId(PlayerEntry* player, TYPE_ID_SPECIFIER id_type) {
     std::stringstream ss;
     ss << "[Registry] Player \"" << player->user_name << "\" has obtained "
     << getIdTypeName(id_type) << " " << rand_n << std::endl;
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
+    COLORS.printInColor(ss.str(), COLORS.cyan_fg);
   }
 
   return rand_n;
@@ -202,7 +202,7 @@ void Registry::clearId(uint64_t id, TYPE_ID_SPECIFIER id_type) {
     std::stringstream ss;
     ss << "[RegistryDBG] Map " << getIdTypeName(id_type) << " has removed " 
     << n_erased << " entries" << std::endl;
-    ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.cyan_fg);
+    COLORS.printInColor(ss.str(), COLORS.cyan_fg);
   }
 }
 

@@ -282,14 +282,14 @@ ServerPacket::ServerPacket(uint8_t type, uint64_t sid, uint64_t lid, clientAddrI
 
   // Print packed contents
   if (ENABLE_CLIENTPACKET_INSPECTION) {
-    std::cout << ANSI_ESCAPES.cyan_fg;
+    std::cout << COLORS.cyan_fg;
     std::cout << "[Packet] Packing Peer Address:" << std::endl;
     std::cout << " [Contents] Type: " << (int)packet_type << std::endl;
     std::cout << " [Contents] SID: " << session_id << std::endl;
     std::cout << " [Contents] LID: " << lobby_id << std::endl;
     std::cout << " [Contents] Pub addr: " << peer_addr_pub.rep_str << std::endl;
     std::cout << " [Contents] Priv addr: " << peer_addr_priv.rep_str << std::endl;
-    std::cout << ANSI_ESCAPES.white_fg << std::flush;
+    std::cout << COLORS.white_fg << std::flush;
   }
 }
 

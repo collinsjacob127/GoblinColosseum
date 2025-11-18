@@ -60,8 +60,8 @@ int main() {
     if (ENABLE_AWAITING_NEW_PACKETS_NOTIF && cur_time_hs != prev_time_hs) {
       prev_time_hs = cur_time_hs;
       std::cout << std::flush;
-      std::cout << ANSI_ESCAPES.carriage_return;
-      std::cout << ANSI_ESCAPES.brt_magenta_fg;
+      std::cout << COLORS.carriage_return;
+      std::cout << COLORS.brt_magenta_fg;
       std::cout << "[Server Awaiting New Messages - Runtime: "
       << server_timer.duration() << "s]";
     }
@@ -91,7 +91,7 @@ int main() {
       continue;
     }
 
-    std::cout << std::flush << ANSI_ESCAPES.white_fg << std::endl;
+    std::cout << std::flush << COLORS.white_fg << std::endl;
 
     switch (in_pkt.packet_type) {
       case (0): {
@@ -116,13 +116,13 @@ int main() {
       }
       default: {
         if (ENABLE_SERVER_ERROR) {
-          ANSI_ESCAPES.printError("[Error] Invalid packet type received.\n");
+          COLORS.printError("[Error] Invalid packet type received.\n");
         }
       }
     }
 
     if (response < 0 && ENABLE_SERVER_ERROR) {
-      ANSI_ESCAPES.printError("[Error] Server response indicated some failure.\n");
+      COLORS.printError("[Error] Server response indicated some failure.\n");
     }
 
     // Close the connection
@@ -130,9 +130,9 @@ int main() {
 
     if (n_clients != registry.size()) {
       n_clients = registry.size();
-      std::cout << ANSI_ESCAPES.cyan_fg;
+      std::cout << COLORS.cyan_fg;
       std::cout << "[The registry has " << n_clients << " entries.]" << std::endl;
-      std::cout << ANSI_ESCAPES.white_fg;
+      std::cout << COLORS.white_fg;
     }
     std::cout << std::endl;
   }
@@ -160,7 +160,7 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
         std::cout << std::flush;
         std::stringstream ss;
         ss << "[Error] Failed to receive packet from socket %d" << s << std::endl;
-        ANSI_ESCAPES.printInColor(ss.str(), ANSI_ESCAPES.red_fg);
+        COLORS.printInColor(ss.str(), COLORS.red_fg);
         perror("");
       }
       return ClientPacket(0, 0, 0, "");
@@ -169,7 +169,7 @@ ClientPacket recvClientPacket(ssize_t n_bytes, int s) {
       return ClientPacket(10, 0, 0, "");
     }
     if (total_bytes_in < n_bytes && bytes_in == 0) {
-      ANSI_ESCAPES.printError("[Error] Received packet of incorrect size\n");
+      COLORS.printError("[Error] Received packet of incorrect size\n");
       return ClientPacket(69, 0, 0, "");
     }
   }
@@ -192,7 +192,7 @@ ssize_t sendServerPacket(ServerPacket out_pkt, int s) {
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_SERVER_ERROR) {
-        ANSI_ESCAPES.printInColor("[Error] Failed to send packet.\n", ANSI_ESCAPES.red_fg);
+        COLORS.printInColor("[Error] Failed to send packet.\n", COLORS.red_fg);
         perror("");
       }
       return bytes_sent;
@@ -215,7 +215,7 @@ int initializePlayer(ClientPacket in_pkt, int client_sock) {
   // Send session ID back to player
   ServerPacket out_pkt(in_pkt.packet_type, session_id, 0, "Session ID Sent");
   if (sendServerPacket(out_pkt, client_sock) < 0 || bad_username) {
-    ANSI_ESCAPES.printInColor("[Error] Failed to initialize client\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Failed to initialize client\n", COLORS.red_fg);
     // Failed to send, remove them from the session
     registry.clearId(session_id, SESSION_ID_SPECIFIER);
     return -1; 
@@ -239,7 +239,7 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid session ID");
-    ANSI_ESCAPES.printError("[Error] Invalid session ID\n");
+    COLORS.printError("[Error] Invalid session ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Player doesn't exist in registry
   }
@@ -251,7 +251,7 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby created");
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
-    ANSI_ESCAPES.printError("[Error] Response failed to send\n");
+    COLORS.printError("[Error] Response failed to send\n");
     return -1; 
   }
 
@@ -269,7 +269,7 @@ int createLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
     std::stringstream ss;
     ss << "[Log] Client \"" << cur_player->user_name
     << "\" successfully created lobby with id: " << cur_player->lobby_id << std::endl;
-    ANSI_ESCAPES.printSuccess(ss.str());
+    COLORS.printSuccess(ss.str());
     ss << std::flush;
     std::cout << "[Log] Address of player \"" << cur_player->user_name << "\" marked as:\n";
     std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
@@ -291,7 +291,7 @@ int sendLobbies(ClientPacket in_pkt, int client_sock) {
 
   // Verify valid inputs
   if (n_requested_lobbies > MAX_N_REQUESTED_LOBBIES) {
-    ANSI_ESCAPES.printInColor( "[Error] User lobby index request mismatch\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor( "[Error] User lobby index request mismatch\n", COLORS.red_fg);
     sendServerPacket(ServerPacket(in_pkt.packet_type, 0, 0, ""), client_sock);
   }
 
@@ -325,7 +325,7 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   if (!(cur_player =registry.getPlayer(session_id, SESSION_ID_SPECIFIER))) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid session ID");
-    ANSI_ESCAPES.printError("[Error] Invalid session ID\n");
+    COLORS.printError("[Error] Invalid session ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Player doesn't exist in registry
   }
@@ -339,13 +339,13 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   PlayerEntry *lobby_owner;
   if (!(lobby_owner = registry.getPlayer(lobby_id, LOBBY_ID_SPECIFIER))) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Invalid lobby ID");
-    ANSI_ESCAPES.printError("[Error] Invalid lobby ID\n");
+    COLORS.printError("[Error] Invalid lobby ID\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Lobby DNE
   }
   if (lobby_owner->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "Lobby already full.");
-    ANSI_ESCAPES.printError("[Error] Lobby already full\n");
+    COLORS.printError("[Error] Lobby already full\n");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Lobby full
   }
@@ -353,7 +353,7 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
   // Send lobby ID to player
   ServerPacket out_pkt(in_pkt.packet_type, session_id, lobby_id, "Lobby joined");
   if (sendServerPacket(out_pkt, client_sock) < 0) {
-    ANSI_ESCAPES.printError("[Error] Response failed to send\n");
+    COLORS.printError("[Error] Response failed to send\n");
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
     return -1; 
   }
@@ -379,7 +379,7 @@ int joinLobby(ClientPacket in_pkt, int client_sock, sockaddr_in client_addr) {
     std::stringstream ss;
     ss << "[Log] Client \"" << cur_player->user_name
     << "\" successfully joined lobby \"" << lobby_owner->user_name << "\"\n";
-    ANSI_ESCAPES.printSuccess(ss.str());
+    COLORS.printSuccess(ss.str());
     ss << std::flush;
     std::cout << "[Log] Address of player \"" << cur_player->user_name << "\" marked as:\n";
     std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
@@ -402,7 +402,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    ANSI_ESCAPES.printInColor("[Error] Client not in registry\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Client not in registry\n", COLORS.red_fg);
     return -1; // Player doesn't exist in registry
   }
 
@@ -415,13 +415,13 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (!(lobby_owner = registry.getPlayer(lobby_id, LOBBY_ID_SPECIFIER))) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    ANSI_ESCAPES.printInColor("[Error] Requested lobby DNE\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Requested lobby DNE\n", COLORS.red_fg);
     return -1; // Lobby DNE
   }
   if (!lobby_owner->match_made || !cur_player->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    ANSI_ESCAPES.printInColor("[Error] Match has not yet been made.\n", ANSI_ESCAPES.yellow_fg);
+    COLORS.printInColor("[Error] Match has not yet been made.\n", COLORS.yellow_fg);
     return 1; // Match not made
   }
 
@@ -431,7 +431,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // Invalid peer
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    ANSI_ESCAPES.printInColor("[Error] Peer requested by client DNE\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Peer requested by client DNE\n", COLORS.red_fg);
     return -1; // Peer DNE
   }
 
@@ -439,7 +439,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (cur_peer->peer_session_id != cur_player->session_id
     || cur_player->peer_session_id != cur_peer->session_id
     ) {
-    ANSI_ESCAPES.printInColor("[Error] Matchmaking peer session ID mismatch\n" , ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Matchmaking peer session ID mismatch\n" , COLORS.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
@@ -450,7 +450,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
       || cur_player->player_addr_public.addr == 0
       || cur_peer->player_addr_public.addr == 0
       || cur_peer->player_addr_private.addr == 0) {
-    ANSI_ESCAPES.printInColor("[Error] Players addrs not yet set\n" , ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Players addrs not yet set\n" , COLORS.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
@@ -467,7 +467,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
 
   if (sendServerPacket(out_pkt, client_sock) < 0) {
     registry.clearId(lobby_id, LOBBY_ID_SPECIFIER);
-    ANSI_ESCAPES.printInColor("[Error] Failed to send packet to client\n", ANSI_ESCAPES.red_fg);
+    COLORS.printInColor("[Error] Failed to send packet to client\n", COLORS.red_fg);
     return -1; 
   }
 
@@ -475,11 +475,11 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     std::stringstream ss; 
     ss << "[Log] Successfully sent peer addrs to ";
     ss << cur_player->user_name << std::endl;
-    ANSI_ESCAPES.printSuccess(ss.str());
-    std::cout << ANSI_ESCAPES.cyan_fg;
+    COLORS.printSuccess(ss.str());
+    std::cout << COLORS.cyan_fg;
     std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
     std::cout << " [PRIV ADDR] " << cur_player->player_addr_private.rep_str << std::endl;
-    std::cout << ANSI_ESCAPES.white_fg << std::flush;
+    std::cout << COLORS.white_fg << std::flush;
   }
 
   // Check if finished
@@ -576,10 +576,10 @@ void disconnectClient(int fd) {
 
 void handleSigint(int signal_num) {
   // Print interruption message
-  std::cout << std::flush << std::endl << ANSI_ESCAPES.yellow_fg << std::flush;
+  std::cout << std::flush << std::endl << COLORS.yellow_fg << std::flush;
   fprintf(stderr, "\n[WARN] Server Interrupted (Received signal %d)\n", signal_num);
 
-  std::cout << ANSI_ESCAPES.green_fg;
+  std::cout << COLORS.green_fg;
   std::cout << "[Log] Disconnecting all clients and shutting down server.\n";
 
   // Close all sockets
@@ -587,6 +587,6 @@ void handleSigint(int signal_num) {
 
   std::cout << "[Log] Server shutting down safely.\n";
   std::cout << "[Log] Removing " << registry.size()
-  << " entries from lobby." << ANSI_ESCAPES.white_fg << std::endl;
+  << " entries from lobby." << COLORS.white_fg << std::endl;
   exit(EXIT_SUCCESS);
 }
