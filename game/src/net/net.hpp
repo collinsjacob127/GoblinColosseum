@@ -69,6 +69,7 @@ typedef SSIZE_T ssize_t;
 #define ENABLE_NETCODE_LOG true
 #define ENABLE_PACKET_INSPECTION true
 
+#define ENABLE_DENSE_PACKET_INSPECTION true
 
 // IPV4 addr of the server
 constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
