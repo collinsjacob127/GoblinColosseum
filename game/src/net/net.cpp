@@ -1022,11 +1022,10 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   PeerSetupPacket in_pkt_good;
 
   bool received_anything = false;
-  bool sent_post_established = false;
 
   //TODO: Make sure they send one more after connection established (another send after loop)
   // TODO: Check potential issue with bind interfering with message receipt? Bind to public?
-  size_t n_attempts = 0, max_attempts = 20;
+  size_t n_attempts = 0, max_attempts = 3;
   // Switch between attempting connections with public & private addrs
   while (n_attempts < max_attempts && !peer_connection_established) {
     n_attempts++;
@@ -1062,13 +1061,13 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 
     std::cout << std::endl;
 
-    if (received_anything && sent_post_established) {
+    if (received_anything) {
       peer_connection_established = true;
-      COLORS.printSuccess("[Log] Finished initializing peer packets. Connection should be fully established.\n");
-      return in_pkt;
+      // COLORS.printSuccess("[Log] Finished initializing peer packets. Connection should be fully established.\n");
+      break;
     }
 
-    crossPlatformSleep(500);
+    crossPlatformSleep(1000);
 
     // Check received from peer's public addr
     std::pair<PeerSetupPacket, clientAddrInfo> received_info = recvPeerSetupPacket();
