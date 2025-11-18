@@ -1024,7 +1024,8 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   bool received_anything = false;
   bool sent_post_established = false;
 
-  //TODO: Make sure they keep sending until 
+  //TODO: Make sure they send one more after connection established (another send after loop)
+  // TODO: Check potential issue with bind interfering with message receipt? Bind to public?
   size_t n_attempts = 0, max_attempts = 20;
   // Switch between attempting connections with public & private addrs
   while (n_attempts < max_attempts && !peer_connection_established) {
