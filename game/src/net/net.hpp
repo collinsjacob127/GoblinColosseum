@@ -89,6 +89,8 @@ class NetEngine {
   clientAddrInfo my_local_addr;
   clientAddrInfo peer_addr_private;
   clientAddrInfo peer_addr_public;
+  bool peer_connection_established = false;
+  clientAddrInfo peer_addr_final;
 
   // Server connection is 2-way on this socket
   int server_sock = -1;
@@ -177,6 +179,8 @@ class NetEngine {
    * @brief Function to initialize a game between two peers
    * after setup via server.
    * @return The packet received from the peer
+   * @note Repeatedly attempts to send & recv the initialization packets
+   * to & from the peer's public & private addresses
    */
   PeerSetupPacket initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id);
 
@@ -218,13 +222,13 @@ class NetEngine {
    * @note For TCP Holepunch, this will very likely error
    * the first time, and must be sent twice.
    */
-  ssize_t sendPeerSetupPacket(PeerSetupPacket);
+  ssize_t sendPeerSetupPacket(PeerSetupPacket, clientAddrInfo);
 
   /**
    * @brief Function to receive a peer setup packet
    * @return The packet received. All default values on failure.
    */
-  PeerSetupPacket recvPeerSetupPacket();
+  std::pair<PeerSetupPacket,clientAddrInfo> recvPeerSetupPacket();
 
   /**
    * @brief Function to disconnect from a peer

@@ -499,6 +499,11 @@ sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
   return out_addr;
 }
 
+clientAddrInfo convertSockAddrToClientAddrInfo(struct sockaddr_in cur_addr) {
+  clientAddrInfo out_addr(cur_addr.sin_addr.s_addr, cur_addr.sin_port);
+  return out_addr;
+}
+
 int NetEngine::initPeerSocket() {
   if (peer_sock > 0) { close(peer_sock); peer_sock = -1; }
   if (server_sock < 0) {
@@ -650,7 +655,7 @@ int NetEngine::peerConnect() {
   return peer_sock;
 }
 
-ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
+ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (peer_sock <= 0) {
     COLORS.printError("[Error] Invalid peer connection!\n");
     peerDisconnect();
@@ -659,10 +664,19 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
 
   ssize_t pkt_size = PEER_SETUP_PACKET_SIZE;
 
+  struct sockaddr_in peer_sockaddr = convertClientAddrInfoToSockAddr(some_addr);
+
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
   while (total_bytes_sent < pkt_size) {
-    bytes_sent = send(peer_sock, out_pkt.packet_buf+total_bytes_sent, pkt_size-total_bytes_sent, 0);
+    bytes_sent = sendto(
+      peer_sock, // fd
+      out_pkt.packet_buf+total_bytes_sent,  // buffer
+      pkt_size-total_bytes_sent, // bytes to send
+      0, // flags
+      (struct sockaddr*)&peer_sockaddr, // sockaddr
+      sizeof(peer_sockaddr)// socklen
+    );
     total_bytes_sent += bytes_sent;
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
@@ -676,7 +690,7 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt) {
   return total_bytes_sent;
 }
 
-PeerSetupPacket NetEngine::recvPeerSetupPacket() {
+std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
   }
@@ -693,22 +707,32 @@ PeerSetupPacket NetEngine::recvPeerSetupPacket() {
 
   // bind() - Guarantee my own port # maybe bad
 
+  struct sockaddr_in peer_sockaddr;
+  socklen_t sockaddr_len = sizeof(peer_sockaddr);
+
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
   while (total_bytes_in < pkt_size) {
-    bytes_in = recv(peer_sock, in_buf+total_bytes_in, pkt_size-total_bytes_in, 0);
+    bytes_in = recvfrom(
+      peer_sock, // fd
+      in_buf+total_bytes_in,  // buffer
+      pkt_size-total_bytes_in, // bytes to send
+      0, // flags
+      (struct sockaddr*)&peer_sockaddr, // sockaddr
+      &sockaddr_len// socklen
+    );
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to receive peer setup packet\n");
       }
-      return PeerSetupPacket();
+      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),convertSockAddrToClientAddrInfo(peer_sockaddr));
     }
   }
 
   // Convert to ClientPacket
   PeerSetupPacket in_pkt(in_buf, pkt_size);
-  return in_pkt;
+  return std::pair<PeerSetupPacket,clientAddrInfo>(in_pkt,convertSockAddrToClientAddrInfo(peer_sockaddr));
 }
 
 void NetEngine::peerDisconnect() {
@@ -989,36 +1013,71 @@ ssize_t NetEngine::getPeerAddr() {
 }
 
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
-  // Connect and verify
-  if (peerConnect() < 0) {
-    COLORS.printError("[Error] Peer connection failed.\n");
-    peerDisconnect();
-    return PeerSetupPacket();
-  }
+  // Packet for initializing peer communication
+  PeerSetupPacket out_pkt(false, game_dur_f, character_id, username); // Sent BEFORE connected
+  PeerSetupPacket good_pkt(true, game_dur_f, character_id, username); // Sent AFTER connected
+  PeerSetupPacket *pkt_to_send = &out_pkt;
 
-  // Send info to peer
-  PeerSetupPacket out_pkt(false, game_dur_f, character_id, username);
-  if (sendPeerSetupPacket(out_pkt) < 0) {
-    COLORS.printError("[Error] Failed to send peer setup packet.\n");
-    peerDisconnect();
-    return PeerSetupPacket();
-  } else {
-    if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Successfully sent peer setup packet" << std::endl;
-      out_pkt.printContents();
+  PeerSetupPacket in_pkt;
+
+  clientAddrInfo cur_peer_addr = peer_addr_public;
+  bool received_anything = false;
+
+  size_t n_attempts = 0, max_attempts = 15;
+  // Switch between attempting connections with public & private addrs
+  while (n_attempts < max_attempts && !peer_connection_established) {
+    if (received_anything) { 
+      // Don't switch addr after received_anything
+      pkt_to_send = &good_pkt; 
+    } else {
+      // Switch between public & private addrs
+      cur_peer_addr = ((n_attempts % 2) == 0) ? peer_addr_public : peer_addr_private;
     }
-  }
 
-  // Get info from peer
-  PeerSetupPacket in_pkt = recvPeerSetupPacket();
-  if ((std::string)in_pkt.user_name == "") {
-    COLORS.printError("[Error] Failed to receive peer setup packet\n");
-    peerDisconnect();
-    return PeerSetupPacket();
-  }
-  if (ENABLE_PEERPACKET_INSPECTION) {
-    std::cout << "[Log] Successfully received peer setup packet" << std::endl;
-    in_pkt.printContents();
+    // Attempt send
+    if (sendPeerSetupPacket(*pkt_to_send, cur_peer_addr) < 0) {
+      // UDP send should never fail
+      COLORS.printError("[Error] Failed to send peer setup packet.\n");
+      peerDisconnect();
+      return PeerSetupPacket();
+    } else {
+      if (ENABLE_PEERPACKET_INSPECTION) {
+        std::cout << "[Log] Successfully sent peer setup packet" << std::endl;
+        out_pkt.printContents();
+      }
+    }
+
+    crossPlatformSleep(100);
+
+    // Check received from peer's public addr
+    std::pair<PeerSetupPacket, clientAddrInfo> received_info = recvPeerSetupPacket();
+    // Parse received packet & addr
+    in_pkt = received_info.first;
+    clientAddrInfo tmp_recvd_addr = (received_info.second);
+
+    // Check address of incoming packet
+    if (tmp_recvd_addr.addr == peer_addr_public.addr) {
+      peer_connection_established = true;
+      COLORS.printSuccess("[Log] Received packet from peer public addr\n");
+    } else if (tmp_recvd_addr.addr == peer_addr_private.addr) {
+      peer_connection_established = true;
+      COLORS.printSuccess("[Log] Received packet from peer private addr\n");
+    } else {
+      // Address did not match either expected, begone
+      COLORS.printWarning("[Warn] Received packet from unknown address, discarding\n");
+      continue;
+    }
+
+    if (in_pkt.connection_established) {
+      peer_addr_final = cur_peer_addr;
+      in_pkt.printContents();
+      return in_pkt;
+    } else if ((std::string)in_pkt.user_name == "") {
+      COLORS.printWarning("[Warn] Peer initialization packet received containing invalid username.\n");
+    } else { 
+      received_anything = true; 
+      continue;
+    }
   }
   return in_pkt; 
 }
