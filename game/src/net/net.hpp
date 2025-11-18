@@ -72,7 +72,8 @@ typedef SSIZE_T ssize_t;
 #define ENABLE_DENSE_PACKET_INSPECTION true
 
 // IPV4 addr of the server
-constexpr char *SERVER_ADDR = (char*)"192.168.1.100";
+// constexpr char *SERVER_ADDR = (char*)"192.168.1.100"; // Server PC
+constexpr char *SERVER_ADDR = (char*)"192.168.1.133"; // Server PC
 // constexpr char *SERVER_ADDR = (char*)"127.0.0.1";
 constexpr int SERVER_PORT = 53243;
 

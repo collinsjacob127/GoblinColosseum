@@ -1095,14 +1095,18 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       received_anything = true;
       in_pkt_good = in_pkt;    // Set our outgoing packet to established
       peer_addr_final = peer_addr_public; // Addr matches, set as final addr
-      COLORS.printSuccess("[Log] Received packet from peer public addr:\n");
+      std::stringstream ss;
+      ss << "[Log] Received packet from peer public addr: " << tmp_recvd_addr.rep_str << "\n";
+      COLORS.printSuccess(ss.str());
       in_pkt.printContents();
     } else if (tmp_recvd_addr.addr == peer_addr_private.addr) {
       // Address matches peer private
       received_anything = true;
       in_pkt_good = in_pkt;    // Set our outgoing packet to established
       peer_addr_final = peer_addr_private; // Addr matches, set as final addr
-      COLORS.printSuccess("[Log] Received packet from peer private addr:\n");
+      std::stringstream ss;
+      ss << "[Log] Received packet from peer private addr: " << tmp_recvd_addr.rep_str << "\n";
+      COLORS.printSuccess(ss.str());
       in_pkt.printContents();
     } else {
       // Address did not match either expected, begone
@@ -1233,7 +1237,8 @@ int NetEngine::testNetClient() {
   initializePeerCommunication((uint16_t)(60*60*5), CHARACTER_ID_HUNKO);
 
   std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
-  std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
+  std::cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
+  std::cout << "[TEMP] Peer addr final: " << peer_addr_final.rep_str << std::endl;
 
   // Close peer connection
   peerDisconnect();
