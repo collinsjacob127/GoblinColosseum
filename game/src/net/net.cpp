@@ -1024,6 +1024,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   bool received_anything = false;
   bool sent_post_established = false;
 
+  //TODO: Make sure they keep sending until 
   size_t n_attempts = 0, max_attempts = 20;
   // Switch between attempting connections with public & private addrs
   while (n_attempts < max_attempts && !peer_connection_established) {
@@ -1042,7 +1043,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     } else {
       if (ENABLE_PEERPACKET_INSPECTION) {
         std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
-        << ((pkt_to_send->connection_established == 0) ? "true" : "false") << std::endl;
+        << ((pkt_to_send->connection_established == 1) ? "true" : "false") << std::endl;
       }
     }
     // Attempt send to priv
@@ -1054,7 +1055,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     } else {
       if (ENABLE_PEERPACKET_INSPECTION) {
         std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
-        << ((pkt_to_send->connection_established == 0) ? "true" : "false") << std::endl;
+        << ((pkt_to_send->connection_established == 1) ? "true" : "false") << std::endl;
       }
     }
 
@@ -1214,11 +1215,11 @@ int NetEngine::testNetClient() {
   std::cout << "\n[Log] Initializing peer communication\n";
   initializePeerCommunication((uint16_t)(60*60*5), CHARACTER_ID_HUNKO);
 
-  // Close peer connection
-  peerDisconnect();
-
   std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
   std:: cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
+
+  // Close peer connection
+  peerDisconnect();
 
   std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
   << timer.duration() << "s\n";

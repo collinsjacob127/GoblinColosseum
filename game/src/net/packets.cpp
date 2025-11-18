@@ -137,7 +137,7 @@ PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
   unsigned char* buf_ptr = (unsigned char*)local_buf;
 
   // Copy connection established
-  connection_established = (uint8_t)buf_ptr[0] == 1 ? true : false;
+  connection_established = ((uint8_t)buf_ptr[0] == 1) ? true : false;
   buf_ptr += sizeof(uint8_t);
   // Copy max n frames
   max_n_frames = unpacku16(buf_ptr);
@@ -159,7 +159,7 @@ void PeerSetupPacket::printContents() {
   if (ENABLE_PEERPACKET_INSPECTION) {
     std::cout << std::flush << COLORS.cyan_fg;
     std::cout << "[Packet] PeerSetupPacket Contents:" << std::endl;
-    std::cout << "  [Contents] Connection Established: " << (connection_established ? "true" : "false") << std::endl;
+    std::cout << "  [Contents] Connection Established: " << ((connection_established == 1) ? "true" : "false") << std::endl;
     std::cout << "  [Contents] Max # Frames: " << max_n_frames << std::endl;
     std::cout << "  [Contents] Character ID: " << (int)character_id << std::endl;
     std::cout << "  [Contents] Username: " << user_name << std::endl;
