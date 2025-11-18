@@ -1073,7 +1073,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       break;
     }
 
-    crossPlatformSleep(2000);
+    crossPlatformSleep(200);
 
     // Check received from peer's public addr
     std::pair<PeerSetupPacket, clientAddrInfo> received_info = recvPeerSetupPacket();
@@ -1224,7 +1224,7 @@ int NetEngine::testNetClient() {
     if (!bad_addrs) { break; }
 
     // Repeatedly ask the server, waiting 3s in-between
-    crossPlatformSleep(3000);
+    crossPlatformSleep(100);
   }
 
   // Display success statement
