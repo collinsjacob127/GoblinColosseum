@@ -1021,7 +1021,6 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   PeerSetupPacket in_pkt;
   PeerSetupPacket in_pkt_good;
 
-  clientAddrInfo cur_peer_addr = peer_addr_public;
   bool received_anything = false;
   bool sent_post_established = false;
 
@@ -1032,27 +1031,42 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     if (received_anything) { 
       // Don't switch addr after received_anything
       pkt_to_send = &good_pkt; 
-    } else {
-      // Switch between public & private addrs
-      cur_peer_addr = ((n_attempts % 2) == 0) ? peer_addr_public : peer_addr_private;
     }
 
-    // Attempt send
-    if (sendPeerSetupPacket(*pkt_to_send, cur_peer_addr) < 0) {
+    // Attempt send to pub
+    if (sendPeerSetupPacket(*pkt_to_send, peer_addr_public) < 0) {
       // UDP send should never fail
       COLORS.printError("[Error] Failed to send peer setup packet.\n");
       peerDisconnect();
       return PeerSetupPacket();
     } else {
       if (ENABLE_PEERPACKET_INSPECTION) {
-        std::cout << "[Log] Successfully sent peer setup packet" << std::endl;
-        out_pkt.printContents();
+        std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
+        << ((pkt_to_send->connection_established == 0) ? "true" : "false") << std::endl;
+      }
+    }
+    // Attempt send to priv
+    if (sendPeerSetupPacket(*pkt_to_send, peer_addr_private) < 0) {
+      // UDP send should never fail
+      COLORS.printError("[Error] Failed to send peer setup packet.\n");
+      peerDisconnect();
+      return PeerSetupPacket();
+    } else {
+      if (ENABLE_PEERPACKET_INSPECTION) {
+        std::cout << "[Log] Successfully sent peer setup packet with connection established: " 
+        << ((pkt_to_send->connection_established == 0) ? "true" : "false") << std::endl;
       }
     }
 
-    crossPlatformSleep(250);
-
     std::cout << std::endl;
+
+    if (received_anything && sent_post_established) {
+      peer_connection_established = true;
+      COLORS.printSuccess("[Log] Finished initializing peer packets. Connection should be fully established.\n");
+      return in_pkt;
+    }
+
+    crossPlatformSleep(500);
 
     // Check received from peer's public addr
     std::pair<PeerSetupPacket, clientAddrInfo> received_info = recvPeerSetupPacket();
@@ -1063,16 +1077,14 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     // Check address of incoming packet
     if (tmp_recvd_addr.addr == peer_addr_public.addr) {
       // Address matches peer public
-      peer_connection_established = true;
-      cur_peer_addr = peer_addr_public;
-      in_pkt_good = in_pkt;
+      received_anything = true;
+      peer_addr_final = peer_addr_public;
       COLORS.printSuccess("[Log] Received packet from peer public addr:\n");
       in_pkt.printContents();
     } else if (tmp_recvd_addr.addr == peer_addr_private.addr) {
       // Address matches peer private
-      peer_connection_established = true;
-      cur_peer_addr = peer_addr_private;
-      in_pkt_good = in_pkt;
+      received_anything = true;
+      peer_addr_final = peer_addr_private;
       COLORS.printSuccess("[Log] Received packet from peer private addr:\n");
       in_pkt.printContents();
     } else {
@@ -1081,18 +1093,15 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       continue;
     }
 
+    // Check contents of incoming packet
     if (in_pkt.connection_established) {
-      peer_addr_final = cur_peer_addr;
+      sent_post_established = true;
       received_anything = true;
+      in_pkt_good = in_pkt;
     } else if ((std::string)in_pkt.user_name == "") {
       COLORS.printWarning("[Warn] Peer initialization packet received containing invalid username.\n");
     } else { 
       received_anything = true; 
-    }
-    if (received_anything && sent_post_established) {
-      peer_connection_established = true;
-      COLORS.printSuccess("[Log] Finished initializing peer packets. Connection should be fully established.\n");
-      return in_pkt_good;
     }
   }
   return in_pkt; 
