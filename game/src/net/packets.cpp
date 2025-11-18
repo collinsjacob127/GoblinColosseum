@@ -91,7 +91,12 @@ PeerSetupPacket::PeerSetupPacket() {
   packet_buf[PEER_SETUP_PACKET_SIZE-1] = (unsigned char)'\0';
 }
 
-PeerSetupPacket::PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_name) {
+PeerSetupPacket::PeerSetupPacket(bool estab, uint16_t n_f, uint8_t char_id, std::string u_name) {
+  connection_established = estab;
+  uint8_t connection_rep = 0;
+  if (connection_established) {
+    connection_rep = 1;
+  }
   max_n_frames = n_f;
   character_id = char_id;
 
@@ -99,7 +104,11 @@ PeerSetupPacket::PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_na
   // we're writing to.
   unsigned char* buf_ptr = (unsigned char*)packet_buf;
 
-  // First place max n frames
+  // First, place connection establishment bool
+  memcpy(buf_ptr, &connection_rep, sizeof(connection_rep));
+  buf_ptr += sizeof(connection_rep);
+
+  // Next, place max n frames
   packi16(buf_ptr, n_f);
   buf_ptr += sizeof(n_f);
   // Next put character ID
@@ -127,6 +136,9 @@ PeerSetupPacket::PeerSetupPacket(char* net_buf, size_t n_bytes) {
   memcpy(local_buf, net_buf, n_bytes);
   unsigned char* buf_ptr = (unsigned char*)local_buf;
 
+  // Copy connection established
+  connection_established = (uint8_t)buf_ptr[0] == 1 ? true : false;
+  buf_ptr += sizeof(uint8_t);
   // Copy max n frames
   max_n_frames = unpacku16(buf_ptr);
   buf_ptr += sizeof(max_n_frames);
@@ -147,6 +159,7 @@ void PeerSetupPacket::printContents() {
   if (ENABLE_PEERPACKET_INSPECTION) {
     std::cout << std::flush << COLORS.cyan_fg;
     std::cout << "[Packet] PeerSetupPacket Contents:" << std::endl;
+    std::cout << "  [Contents] Connection Established: " << (connection_established ? "true" : "false") << std::endl;
     std::cout << "  [Contents] Max # Frames: " << max_n_frames << std::endl;
     std::cout << "  [Contents] Character ID: " << (int)character_id << std::endl;
     std::cout << "  [Contents] Username: " << user_name << std::endl;

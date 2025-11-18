@@ -176,7 +176,7 @@ PEER-PEER COMMUNICATION PACKETS
 // Max SIZE of username
 // Number of allowed characters in usernames is then MAX_USERNAME_SIZE-1
 constexpr size_t MAX_USERNAME_SIZE = 25;
-constexpr size_t PEER_SETUP_PACKET_SIZE = sizeof(uint16_t) + sizeof(uint8_t) + MAX_USERNAME_SIZE;
+constexpr size_t PEER_SETUP_PACKET_SIZE = 1 + sizeof(uint16_t) + sizeof(uint8_t) + MAX_USERNAME_SIZE;
 
 /**
  * @brief Packet for initializing the p2p communications
@@ -184,13 +184,14 @@ constexpr size_t PEER_SETUP_PACKET_SIZE = sizeof(uint16_t) + sizeof(uint8_t) + M
  * @note Also contains all necessary player information
  */
 struct PeerSetupPacket {
+  bool connection_established = false;
   uint16_t max_n_frames = 0;
   uint8_t character_id = 0;
   char user_name[MAX_USERNAME_SIZE] = "";
-  char packet_buf[PEER_SETUP_PACKET_SIZE];
+  char packet_buf[PEER_SETUP_PACKET_SIZE] = "";
 
   PeerSetupPacket();
-  PeerSetupPacket(uint16_t n_f, uint8_t char_id, std::string u_name);
+  PeerSetupPacket(bool estab, uint16_t n_f, uint8_t char_id, std::string u_name);
   PeerSetupPacket(char* net_buf, size_t n_bytes);
 
   void printContents();

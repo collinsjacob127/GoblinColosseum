@@ -626,19 +626,21 @@ int NetEngine::peerConnect() {
     n_attempts++;
     std::cout << "[PEER-CONNECT] Attempt #" << n_attempts << "...\n";
 
-  // Connect to server initially (REMEMBER TO CONNECT TO PEER ONCE ADDRESS IS RECEIVED)
+    // Link socket to peer's public address
     if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_pub, sizeof(peer_sockaddr_pub)) < 0) {
       COLORS.printError("[Error] Connect call Failed\n");
       return peer_sock;
     }
-    //TODO:Send the startup packet a few times here
+    
+    
 
 
-    // Attempt connection to peer's private endpoint
+
+    // Link socket to peer's private address
     if (connect(peer_sock, (struct sockaddr*)&peer_sockaddr_priv, sizeof(peer_sockaddr_priv)) < 0) {
       return peer_sock;
     }
-    //TODO:Send the startup packet a few times here
+
 
     // Wait 1s between connection attempts after the first
     if (n_attempts) { crossPlatformSleep(1000); }
@@ -995,7 +997,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   }
 
   // Send info to peer
-  PeerSetupPacket out_pkt(game_dur_f, character_id, username);
+  PeerSetupPacket out_pkt(false, game_dur_f, character_id, username);
   if (sendPeerSetupPacket(out_pkt) < 0) {
     COLORS.printError("[Error] Failed to send peer setup packet.\n");
     peerDisconnect();
