@@ -194,7 +194,8 @@ sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
   out_addr.sin_family = AF_INET;
   out_addr.sin_port = htons(cur_addr.port);
 
-  std::cout << "[TEMP] Copying \"" << cur_addr.getIPv4().c_str() << "\" into buffer\n";
+  // std::cout << "[TEMP] Copying \"" << cur_addr.getIPv4().c_str() << "\" into buffer\n";
+
   // Pull ipv4 addr from cur_addr
   char out_addr_buf[CLIENT_CONTENTS_SIZE] = "";
   strcpy(out_addr_buf, cur_addr.getIPv4().c_str());
@@ -336,21 +337,29 @@ int NetEngine::initPeerSocket() {
 //TODO: Fix this DEFINITELY
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (PeerSocket == INVALID_SOCKET) {
-    printf("Unable to connect to server!\n");
-    WSACleanup();
+    printf("Unable to connect to peer!\n");
     return -1;
   }
 
   ssize_t pkt_size = PEER_SETUP_PACKET_SIZE;
 
+  struct sockaddr_in peer_sockaddr = convertClientAddrInfoToSockAddr(some_addr);
+
   // Ensure full packet is sent
   ssize_t bytes_sent = 0, total_bytes_sent = 0;
   while (total_bytes_sent < pkt_size) {
-    bytes_sent = send(PeerSocket, out_pkt.packet_buf+total_bytes_sent, pkt_size-total_bytes_sent, 0);
+    bytes_sent = (ssize_t)sendto(
+      PeerSocket, 
+      out_pkt.packet_buf+total_bytes_sent, 
+      pkt_size-total_bytes_sent, 
+      0,
+      (sockaddr *)&peer_sockaddr, 
+      sizeof(peer_sockaddr));
     total_bytes_sent += bytes_sent;
-    if (bytes_sent < 0) {
+    if (bytes_sent == SOCKET_ERROR) {
+      peerDisconnect();
       if (ENABLE_NETCODE_ERROR) {
-        std::cout << "[Error] Failed to send packet: " << std::endl;
+        COLORS.printError("[Error] Failed to send packet:\n");
         out_pkt.printContents();
         printWindowsError("send peer setup packet");
       }
@@ -374,27 +383,40 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
 
   char buf[PEER_SETUP_PACKET_SIZE] = "";
 
+  struct sockaddr_in peer_sockaddr;
+  int sockaddr_len = (int) sizeof(peer_sockaddr);
+
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
   }
 
-
   // Ensure full packet is read
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
   while (total_bytes_in < pkt_size) {
-    bytes_in = recv(ServerSocket, buf+total_bytes_in, SERVER_PACKET_N_BYTES-total_bytes_in, 0);
+    bytes_in = (ssize_t)recvfrom(
+      ServerSocket, 
+      buf+total_bytes_in, 
+      SERVER_PACKET_N_BYTES-total_bytes_in, 
+      0,
+      (sockaddr *)&peer_sockaddr,
+      &sockaddr_len);
     total_bytes_in += bytes_in;
-    if (bytes_in < 0) {
-      if (ENABLE_NETCODE_ERROR) {
-        printWindowsError("recv peer setup packet");
-      }
+    if (bytes_in == SOCKET_ERROR) {
+      COLORS.printError("[Error] Failed to recv packet\n");
+      // printWindowsError("recv peer setup packet");
+      // peerDisconnect();
+      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
+    }
+    // This may be unnecessary
+    if (bytes_in == 0 && total_bytes_in != pkt_size) {
+      COLORS.printError("[Error] Received malformed packet from peer.\n");
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
     }
   }
 
   // Convert to ClientPacket
   PeerSetupPacket in_pkt(buf, pkt_size);
-  // clientAddrInfo peer_addr_tmp();  // = convertSockAddrToClientAddrInfo(peer_sock)
+  peer_addr_tmp = convertSockAddrToClientAddrInfo(peer_sockaddr);
   return std::pair<PeerSetupPacket,clientAddrInfo>(in_pkt, peer_addr_tmp);
 }
 
@@ -695,7 +717,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
       pkt_size-total_bytes_in, // bytes to send
       0, // flags
       (struct sockaddr*)&peer_sockaddr, // sockaddr
-      &sockaddr_len// socklen
+      &sockaddr_len // socklen
     );
     total_bytes_in += bytes_in;
     if (ENABLE_DENSE_PACKET_INSPECTION) {
@@ -706,7 +728,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to receive peer setup packet\n");
       }
-      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),convertSockAddrToClientAddrInfo(peer_sockaddr));
+      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),clientAddrInfo(0,0));
     }
   }
 
