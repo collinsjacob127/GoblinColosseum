@@ -333,7 +333,7 @@ int NetEngine::initPeerSocket() {
   return peer_sock;
 }
 
-//TODO: Fix this (?)
+//TODO: Fix this DEFINITELY
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (PeerSocket == INVALID_SOCKET) {
     printf("Unable to connect to server!\n");
@@ -361,7 +361,7 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
   return total_bytes_sent;
 }
 
-//TODO: Fix this
+//TODO: Fix this DEFINITELY 
 std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   //TODO: delete this ig
   clientAddrInfo peer_addr_tmp(0, 0);  // = convertSockAddrToClientAddrInfo(peer_sock)
