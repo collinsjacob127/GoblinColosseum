@@ -1028,6 +1028,13 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   bool received_anything = false;
   bool peer_received_us = false;
 
+  COLORS.printInColor("[Log] --TESTING P2P INITIALIZATION--\n", COLORS.brt_magenta_fg);
+  std::stringstream addr_log;
+  addr_log << " [LOC PRIV ADDR]: " << my_local_addr.rep_str << std::endl;
+  addr_log << " [RMT PRIV ADDR]: " << peer_addr_private.rep_str << std::endl;
+  addr_log << " [RMT PUB  ADDR]: " << peer_addr_public.rep_str << std::endl;
+  COLORS.printInColor(addr_log.str(), COLORS.brt_cyan_fg);
+
   // Initial first send, expected to be dropped
   if (sendPeerSetupPacket(*pkt_to_send, peer_addr_public) < 0) {
     // UDP send should never fail
