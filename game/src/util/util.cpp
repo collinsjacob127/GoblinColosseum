@@ -58,6 +58,12 @@ double Timer::duration() {
     return static_cast<double>(ns) / 1e9;
 }
 
+void crossPlatformSleep(uint32_t milliseconds) {
+  Timer sleep_timer;
+  sleep_timer.start();
+  while (sleep_timer.duration() * 1000 <= milliseconds) { continue; }
+}
+
 BoxEntity::BoxEntity() {};
 BoxEntity::BoxEntity(float x_, float y_, float w_, float h_) {
   x = x_;

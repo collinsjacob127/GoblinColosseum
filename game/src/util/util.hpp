@@ -108,6 +108,8 @@ class Timer {
   bool has_started;
 };
 
+void crossPlatformSleep(uint32_t milliseconds);
+
 struct Coordinate {
   float x = 0.0;
   float y = 0.0;

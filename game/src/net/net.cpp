@@ -209,10 +209,10 @@ sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
   }
 
   // Print the converted address 
-  std::stringstream ss;
-  ss << "[TEMP] Address converted from ClientAddrInfo to SockAddr: " 
-  << convertSockAddrToClientAddrInfo(out_addr).rep_str << std::endl;
-  COLORS.printSuccess(ss.str());
+  // std::stringstream ss;
+  // ss << "[TEMP] Address converted from ClientAddrInfo to SockAddr: " 
+  // << convertSockAddrToClientAddrInfo(out_addr).rep_str << std::endl;
+  // COLORS.printSuccess(ss.str());
 
   return out_addr;
 }
@@ -259,14 +259,20 @@ int NetEngine::initPeerSocket() {
     // Verify server connection succeeded
     if (serverConnect() < 0) { peerDisconnect(); return -1; }
     // Update local addr
-    peer_sock = updateLocalAddress(server_sock);
+    if (updateLocalAddress(server_sock) < 0) {
+      COLORS.printError("[Error] Failed to update local address while initializing peer socket\n");
+      serverDisconnect();
+      return -1;
+    }
     // Don't change server connection state outside this function
     serverDisconnect();
-    if (peer_sock < 0) { return (peer_sock = -1); }
   } else {
     // Already connected to server, just update addr
     std::cout << "[TEMP] (initPeerSocket) Already connected to server, continuing...\n";
-    updateLocalAddress(server_sock);
+    if (updateLocalAddress(server_sock) < 0) {
+      COLORS.printError("[Error] Failed to update local address while initializing peer socket\n");
+      return -1;
+    }
   }
 
   // Get a UDP socket
@@ -428,10 +434,6 @@ void NetEngine::peerDisconnect() {
     PeerSocket = INVALID_SOCKET;
   }
   peer_sock = -1; 
-}
-
-void crossPlatformSleep(uint32_t milliseconds) {
-  Sleep(milliseconds);
 }
 
 #else
@@ -748,10 +750,6 @@ void NetEngine::peerDisconnect() {
   }
 }
 
-void crossPlatformSleep(uint32_t milliseconds) {
-  usleep(1000 * milliseconds);
-}
-
 #endif
 
 /**
@@ -1061,7 +1059,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   }
 
   // TODO: Check potential issue with bind interfering with message receipt? Bind to public?
-  size_t n_attempts = 0, max_attempts = 10;
+  size_t n_attempts = 0, max_attempts = 30;
   // Switch between attempting connections with public & private addrs
   while (n_attempts < max_attempts && !peer_connection_established) {
     n_attempts++;
@@ -1110,6 +1108,11 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     // Parse received packet & addr
     in_pkt = received_info.first;
     clientAddrInfo tmp_recvd_addr = received_info.second;
+
+    if (tmp_recvd_addr.addr == 0) { 
+      COLORS.printWarning("[Warn] Packet not yet received...\n");
+      continue; 
+    }
 
     if (ENABLE_DENSE_PACKET_INSPECTION) {
       std::cout << std::flush << COLORS.cyan_fg;
@@ -1160,7 +1163,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 }
 
 int NetEngine::testNetClient() {
-  std::cout << "\n[Log] Running linux netcode" << std::endl;
+  COLORS.printInColor("\n[Log] Running network test...\n", COLORS.brt_magenta_fg);
   Timer timer;
   timer.start();
   ssize_t result;
