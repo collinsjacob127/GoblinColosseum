@@ -40,8 +40,8 @@ void handleUnexpectedClosure(int signal_num);
 
 int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
-  std::signal(SIGABRT, handleUnexpectedClosure);
-  std::signal(SIGTERM, handleUnexpectedClosure);
+  // std::signal(SIGABRT, handleUnexpectedClosure);
+  // std::signal(SIGTERM, handleUnexpectedClosure);
 
   /*
   START NET TEST 
@@ -246,9 +246,9 @@ int startLocalGame(RenderEngine* renderer) {
 
 void handleUnexpectedClosure(int signal_num) {
   if (!continue_program) { exit(0); }
+  continue_program = false;
   std::cout << std::flush << COLORS.red_fg;
   std::cout << "\nRecieved SIGINT.\n";
-  continue_program = false;
   // net_engine.~NetEngine();
   // renderer.~RenderEngine();
   std::cout << std::flush << COLORS.green_fg;

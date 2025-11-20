@@ -19,6 +19,11 @@ NetEngine::NetEngine() {
 NetEngine::~NetEngine() {
   serverDisconnect();
   peerDisconnect();
+  // Cleanup Windows
+  if (WSACleanup() != 0) {
+    std::cerr << "[Error] WSA Cleanup threw error: "
+    << std::system_category().message(WSAGetLastError()) << std::endl;
+  }
 }
 
 int NetEngine::serverConnect() {
@@ -167,15 +172,43 @@ void NetEngine::serverDisconnect() {
     // cleanup socket
     shutdown(ServerSocket, SD_BOTH);
     closesocket(ServerSocket);
-  }
-  // Cleanup Windows
-  if (WSACleanup() != 0) {
-    std::cout << "WSA Cleanup in serverDisconnect threw error: "
-    << std::system_category().message(WSAGetLastError()) << std::endl;
+    ServerSocket = INVALID_SOCKET;
+    server_sock = -1;
   }
 }
 
-//TODO: Fix this
+clientAddrInfo convertSockAddrToClientAddrInfo(sockaddr_in cur_addr) {
+  return clientAddrInfo(cur_addr.sin_addr.S_un.S_addr, cur_addr.sin_port);
+}
+
+sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
+  // Set connection settings
+  struct sockaddr_in out_addr;
+  out_addr.sin_family = AF_INET;
+  out_addr.sin_port = htons(cur_addr.port);
+
+  std::cout << "[TEMP] Copying \"" << cur_addr.getIPv4().c_str() << "\" into buffer\n";
+  // Pull ipv4 addr from cur_addr
+  char out_addr_buf[CLIENT_CONTENTS_SIZE] = "";
+  strcpy(out_addr_buf, cur_addr.getIPv4().c_str());
+
+  // Convert IPv4 and IPv6 addresses from text to binary form
+  if (inet_pton(AF_INET, out_addr_buf, &out_addr.sin_addr) < 0) {
+    std::stringstream ss;
+    ss << "[Error] Invalid address / Address not supported: " 
+    << cur_addr.getIPv4().c_str() << std::endl;
+    COLORS.printError(ss.str());
+  }
+
+  // Print the converted address 
+  std::stringstream ss;
+  ss << "[TEMP] Address converted from ClientAddrInfo to SockAddr: " 
+  << convertSockAddrToClientAddrInfo(out_addr).rep_str << std::endl;
+  COLORS.printSuccess(ss.str());
+
+  return out_addr;
+}
+
 int NetEngine::updateLocalAddress(int s) {
   // safe to cast SOCKET to int: https://www.openssl.org/docs/man3.0/man3/SSL_set_fd.html
   SOCKET this_sock;
@@ -185,27 +218,90 @@ int NetEngine::updateLocalAddress(int s) {
     this_sock = PeerSocket;
   }
 
+  // Read local ipv4 address
   sockaddr_in loc_addr;
   socklen_t name_len = sizeof(loc_addr);
+  int err = getsockname(this_sock, (struct sockaddr*)&loc_addr, &name_len);
 
+  // Convert ipv4 addr to c-str
+  char buf[80] = "";
+  const char* p = inet_ntop(AF_INET, &loc_addr.sin_addr, buf, 80);
+  buf[79] = '\0';
+
+  // Verify good addr
+  if (!p) {
+    COLORS.printError("[Error] Failed to retrieve local IPv4 addr\n");
+    return -1;
+  }
+
+  // Build clientAddrInfo
+  my_local_addr = convertSockAddrToClientAddrInfo(loc_addr);
+  // std::cout << "[TEMP] Local IPv4 saved as: " << my_local_addr.rep_str << std::endl;
 
   return -1;
 }
 
 //TODO: Fix this
-sockaddr_in convertClientAddrInfoToSockAddr(clientAddrInfo cur_addr) {
-  return sockaddr_in();
-}
-
-//TODO: Fix this
-clientAddrInfo convertSockAddrToClientAddrInfo(sockaddr_in cur_addr) {
-  clientAddrInfo out_addr(cur_addr.sin_addr.S_un.S_addr, cur_addr.sin_port);
-  return out_addr;
-}
-
-//TODO: Fix this
 int NetEngine::initPeerSocket() {
-  // SOCKET can safely be cast to / from int
+  // Ensure peer socket NOT initialized yet
+  if (peer_sock > 0) { peerDisconnect(); }
+
+  // Check if already connected to server
+  if (server_sock < 0) {
+    // Verify server connection succeeded
+    if (serverConnect() < 0) { peerDisconnect(); return -1; }
+    // Update local addr
+    peer_sock = updateLocalAddress(server_sock);
+    // Don't change server connection state outside this function
+    serverDisconnect();
+    if (peer_sock < 0) { return (peer_sock = -1); }
+  } else {
+    // Already connected to server, just update addr
+    updateLocalAddress(server_sock);
+  }
+
+  // current port used for outbound to server
+  uint16_t some_port = unpacku16((unsigned char*)&my_local_addr.port); 
+  // std::stringstream ss;
+  // ss << some_port;
+
+  // Get a UDP socket
+  if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    COLORS.printError("[Error] Failed to get socket fd for peer.\n");
+    return (peer_sock = -1);
+  }
+
+  // Enable safe reuse of port
+  int opt = 1;
+  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    perror("[Error] setsockopt\n");
+    close(peer_sock);
+    return (peer_sock = -1);
+  }
+
+  // Set non-blocking
+  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+    perror("[Error] fcntl\n");
+    close(peer_sock);
+    return (peer_sock = -1);
+  }
+
+  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
+
+  // Bind to the same local address as was used for server comms
+  if (bind(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
+    COLORS.printError("[Error] Failed to bind\n");
+    close(peer_sock);
+    return (peer_sock = -1);
+  }
+
+  if (updateLocalAddress(peer_sock) < 0) {
+    return (peer_sock = -1);
+  }
+  std::cout << "[Log] Peer Socket after initPeerSocket(): " << peer_sock << std::endl;
+
+  return peer_sock;
+
   return -1;
 }
 
@@ -281,12 +377,9 @@ void NetEngine::peerDisconnect() {
     // cleanup socket
     shutdown(PeerSocket, SD_BOTH);
     closesocket(PeerSocket);
+    PeerSocket = INVALID_SOCKET;
   }
-  // Cleanup Windows
-  if (WSACleanup() != 0) {
-    std::cout << "WSA Cleanup in peerDisconnect threw error: "
-    << std::system_category().message(WSAGetLastError()) << std::endl;
-  }
+  peer_sock = -1; 
 }
 
 void crossPlatformSleep(uint32_t milliseconds) {
@@ -476,8 +569,8 @@ int NetEngine::initPeerSocket() {
 
   // current port used for outbound to server
   uint16_t some_port = unpacku16((unsigned char*)&my_local_addr.port); 
-  std::stringstream ss;
-  ss << some_port;
+  // std::stringstream ss;
+  // ss << some_port;
 
   // Get a UDP socket
   if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -632,13 +725,13 @@ void NetEngine::getLocalUserName() {
   || usr_name.size() > MAX_USERNAME_SIZE-1
   || usr_name == "LIST"
   || usr_name == "CREATE") {
-    if (!continue_program) { exit(0); }
+    crossPlatformSleep(100);
+    if (!continue_program) { exit(EXIT_FAILURE); }
 
-    std::stringstream ss;
-    ss << "[Error] Invalid username: " << usr_name << std::endl;
-    ss << "[Error] Username must be 1-24 characters (" 
+    std::cout << "[Error] Invalid username: " << usr_name << std::endl;
+    std::cout << "[Error] Username must be 1-24 characters (" 
     << usr_name.size() << " is invalid.)" << std::endl;
-    COLORS.printError(ss.str());
+    // COLORS.printError(ss.str());
 
     usr_name = "";
     std::getline(std::cin, usr_name);
@@ -670,7 +763,8 @@ int NetEngine::getLocalJoinOrCreate() {
   std::cout << "[1] CREATE" << std::endl;
   std::cin >> selection;
   while (selection != 0 && selection != 1) {
-    if (!continue_program) { exit(0); }
+    crossPlatformSleep(100);
+    if (!continue_program) { exit(EXIT_FAILURE); }
     std::cout << std::endl << "Invalid option selected. Please enter 0 or 1." << std::endl;
     std::cin >> selection;
   }
@@ -1021,11 +1115,14 @@ int NetEngine::testNetClient() {
   timer.start();
   ssize_t result;
 
+  std::cout << "[TEMP] Testing local addr record & save\n";
   serverConnect();
-  updateLocalAddress(ServerSocket);
+  updateLocalAddress(server_sock);
   serverDisconnect();
 
-  std::cout << my_local_addr.rep_str << std::endl;
+  std::stringstream ss;
+  ss << "\nRetrieved local addr as: " << my_local_addr.rep_str << std::endl;
+  COLORS.printSuccess(ss.str());
 
   return -1;
 
@@ -1081,6 +1178,7 @@ int NetEngine::testNetClient() {
     // Retrieve and verify user input
     int selected_idx = -1;
     while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
+      crossPlatformSleep(100);
       if (!continue_program) { exit(0); }
       std::cin >> selected_idx;
       std::cout << std::flush;
@@ -1107,7 +1205,7 @@ int NetEngine::testNetClient() {
 
   // Continuously request addr of matched peer
   while (bad_addrs) {
-    if (!continue_program) { exit(0); }
+    if (!continue_program) { exit(EXIT_FAILURE); }
     std::cout << "\n[Log] Requesting peer addr (" << timer.duration() << "s)" << std::endl;
 
     // Check if someone has connected to the server
@@ -1118,7 +1216,7 @@ int NetEngine::testNetClient() {
     if (!bad_addrs) { break; }
 
     // Repeatedly ask the server, waiting 3s in-between
-    crossPlatformSleep(100);
+    crossPlatformSleep(1500);
   }
 
   // Display success statement

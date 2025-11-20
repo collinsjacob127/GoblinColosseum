@@ -19,7 +19,8 @@
 
 // This makes while statements safe with the signal handler
 #include <atomic>
-std::atomic<bool> continue_program(true);
+static volatile std::atomic<bool> continue_program(true);
+// volatile std::atomic<bool> continue_program(true);
 
 #ifdef _WIN32
 
@@ -59,6 +60,7 @@ typedef SSIZE_T ssize_t;
 #include <string.h>
 #include <sstream>
 #include <cstring>
+// #include <cstdlib> // atexit
 
 #include "engine.hpp"
 #include "util.hpp"
