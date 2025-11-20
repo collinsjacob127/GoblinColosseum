@@ -10,6 +10,12 @@
 /**
  * NET ENGINE WINDOWS DEFINITIONS
  */
+void printWindowsError(std::string context_name) {
+  std::cout << std::flush << COLORS.red_fg;
+  std::cout << "[Error] \"" << context_name << "\" threw error: ";
+  std::cout << std::system_category().message(WSAGetLastError());
+  std::cout << COLORS.white_fg << std::endl;
+}
 
 NetEngine::NetEngine() {
   server_sock = -1;
@@ -20,6 +26,7 @@ NetEngine::~NetEngine() {
   serverDisconnect();
   peerDisconnect();
   // Cleanup Windows
+  std::cout << "[Log] Performing WSA Cleanup...\n";
   if (WSACleanup() != 0) {
     std::cerr << "[Error] WSA Cleanup threw error: "
     << std::system_category().message(WSAGetLastError()) << std::endl;
@@ -238,16 +245,16 @@ int NetEngine::updateLocalAddress(int s) {
   my_local_addr = convertSockAddrToClientAddrInfo(loc_addr);
   // std::cout << "[TEMP] Local IPv4 saved as: " << my_local_addr.rep_str << std::endl;
 
-  return -1;
+  return 1;
 }
 
-//TODO: Fix this
 int NetEngine::initPeerSocket() {
   // Ensure peer socket NOT initialized yet
   if (peer_sock > 0) { peerDisconnect(); }
 
   // Check if already connected to server
   if (server_sock < 0) {
+    std::cout << "[TEMP] (initPeerSocket) Not connected to server, connecting...\n";
     // Verify server connection succeeded
     if (serverConnect() < 0) { peerDisconnect(); return -1; }
     // Update local addr
@@ -257,55 +264,76 @@ int NetEngine::initPeerSocket() {
     if (peer_sock < 0) { return (peer_sock = -1); }
   } else {
     // Already connected to server, just update addr
+    std::cout << "[TEMP] (initPeerSocket) Already connected to server, continuing...\n";
     updateLocalAddress(server_sock);
   }
 
-  // current port used for outbound to server
-  uint16_t some_port = unpacku16((unsigned char*)&my_local_addr.port); 
-  // std::stringstream ss;
-  // ss << some_port;
-
   // Get a UDP socket
-  if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  if ((PeerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
     COLORS.printError("[Error] Failed to get socket fd for peer.\n");
     return (peer_sock = -1);
   }
+  // Update peer_sock fd
+  peer_sock = (int)PeerSocket;
+
+  // Values to set options with
+  int iOptVal = 0;
+  int iOptLen = sizeof(int);
+  BOOL bOptVal = FALSE;
+  int bOptLen = sizeof(BOOL);
+
+  // Get current valid outbound local address
+  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
+  // Bind to the same local address as was used for server comms
+  if (bind(PeerSocket, (SOCKADDR *)&loc_addr, sizeof(loc_addr)) != NO_ERROR) {
+    printWindowsError("bind");
+    peerDisconnect();
+    return -1;
+  }
 
   // Enable safe reuse of port
-  int opt = 1;
-  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("[Error] setsockopt\n");
-    close(peer_sock);
-    return (peer_sock = -1);
+  // Missing SO_REUSEPORT - winsock doesn't have it, hopefully that's alright
+  // SO_CONDITIONAL_ACCEPT is worth looking into
+  // so is SO_RCVTIMEO & SO_SNDTIMEO
+  bOptVal = TRUE;
+  if (setsockopt(PeerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&bOptVal, bOptLen) == SOCKET_ERROR) {
+    printWindowsError("setsockopt - SO_REUSEADDR");
+    peerDisconnect();
+    return -1;
+  }
+
+  if (getsockopt(PeerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&iOptVal, &iOptLen) == SOCKET_ERROR) {
+    printWindowsError("getsockopt for SO_REUSEADDR");
+    peerDisconnect();
+    return -1;
+  } else {
+    std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
   }
 
   // Set non-blocking
-  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
-    perror("[Error] fcntl\n");
-    close(peer_sock);
-    return (peer_sock = -1);
+  u_long iMode = 1; // disable blocking
+  if (ioctlsocket(peer_sock, FIONBIO, &iMode) != NO_ERROR) {
+    std::stringstream ss;
+    printWindowsError("ioctlsocket");
+    peerDisconnect();
+    return -1;
   }
 
-  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
-
-  // Bind to the same local address as was used for server comms
-  if (bind(peer_sock, (struct sockaddr*)&loc_addr, sizeof(loc_addr)) < 0) {
-    COLORS.printError("[Error] Failed to bind\n");
-    close(peer_sock);
-    return (peer_sock = -1);
-  }
+  // TEMP log
+  if (iMode == 0) { COLORS.printError("[Log] Peer socket initialized with blocking ON\n"); } 
+  else { COLORS.printSuccess("[Log] Peer socket initialized with blocking OFF\n"); }
 
   if (updateLocalAddress(peer_sock) < 0) {
-    return (peer_sock = -1);
+    std::cout << "[Error] Failed to update local address while initializing peer socket\n";
+    peerDisconnect();
+    return -1;
   }
   std::cout << "[Log] Peer Socket after initPeerSocket(): " << peer_sock << std::endl;
 
   return peer_sock;
-
-  return -1;
 }
 
-//TODO: Fix this
+//TODO: Fix this (?)
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (PeerSocket == INVALID_SOCKET) {
     printf("Unable to connect to server!\n");
@@ -324,8 +352,7 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
       if (ENABLE_NETCODE_ERROR) {
         std::cout << "[Error] Failed to send packet: " << std::endl;
         out_pkt.printContents();
-        std::cout << "[Error] Send failure error message: "
-        << std::system_category().message(WSAGetLastError()) << std::endl;
+        printWindowsError("send peer setup packet");
       }
       return bytes_sent;
     }
@@ -359,8 +386,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
     total_bytes_in += bytes_in;
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        std::cout << "[Error] Recv failure error message: "
-        << std::system_category().message(WSAGetLastError()) << std::endl;
+        printWindowsError("recv peer setup packet");
       }
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
     }
@@ -566,11 +592,6 @@ int NetEngine::initPeerSocket() {
   } else {
     updateLocalAddress(server_sock);
   }
-
-  // current port used for outbound to server
-  uint16_t some_port = unpacku16((unsigned char*)&my_local_addr.port); 
-  // std::stringstream ss;
-  // ss << some_port;
 
   // Get a UDP socket
   if ((peer_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -1115,16 +1136,14 @@ int NetEngine::testNetClient() {
   timer.start();
   ssize_t result;
 
-  std::cout << "[TEMP] Testing local addr record & save\n";
-  serverConnect();
-  updateLocalAddress(server_sock);
-  serverDisconnect();
-
-  std::stringstream ss;
-  ss << "\nRetrieved local addr as: " << my_local_addr.rep_str << std::endl;
-  COLORS.printSuccess(ss.str());
-
-  return -1;
+  // std::cout << "[TEMP] Testing local addr record & save\n";
+  // serverConnect();
+  // updateLocalAddress(server_sock);
+  // serverDisconnect();
+  // std::stringstream ss;
+  // ss << "\nRetrieved local addr as: " << my_local_addr.rep_str << std::endl;
+  // COLORS.printSuccess(ss.str());
+  // return -1;
 
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
