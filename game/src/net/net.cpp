@@ -797,8 +797,8 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   while (bytes_in != 0) {
     bytes_in = recvfrom(
       peer_sock, // fd
-      NULL,  // buffer
-      std::numeric_limits<size_t>::max(), // bytes to send
+      in_buf,  // buffer
+      pkt_size, // bytes to send
       MSG_PEEK, // flags
       (struct sockaddr*)&peer_sockaddr, // sockaddr
       &sockaddr_len // socklen
