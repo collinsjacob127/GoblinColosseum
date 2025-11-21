@@ -503,18 +503,18 @@ int NetEngine::serverConnect() {
 
   // Enable safe reuse of port
   int opt = 1;
-  if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+  if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
     perror("[Error] setsockopt\n");
     serverDisconnect();
     return -1;
   }
 
-  // Set non-blocking
-  if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0) {
-    perror("[Error] fcntl\n");
-    serverDisconnect();
-    return -1;
-  }
+  // // Set non-blocking
+  // if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0) {
+  //   perror("[Error] fcntl\n");
+  //   serverDisconnect();
+  //   return -1;
+  // }
 
   // Connect to the server
   if (connect(server_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
