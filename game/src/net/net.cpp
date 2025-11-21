@@ -20,6 +20,15 @@ void printWindowsError(std::string context_name) {
 NetEngine::NetEngine() {
   server_sock = -1;
   peer_sock = -1;
+  ServerSocket = INVALID_SOCKET;
+  PeerSocket = INVALID_SOCKET;
+
+  // Initialize Winsock
+  WSADATA wsaData;
+  int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+  if (iResult != 0) {
+    printf("WSAStartup failed with error: %d\n", iResult);
+  }
 }
 
 NetEngine::~NetEngine() {
@@ -34,17 +43,9 @@ NetEngine::~NetEngine() {
 }
 
 int NetEngine::serverConnect() {
-  WSADATA wsaData;
   ServerSocket = INVALID_SOCKET;
   struct addrinfo *result = NULL, *ptr = NULL, hints;
   int iResult;
-
-  // Initialize Winsock
-  iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-  if (iResult != 0) {
-    printf("WSAStartup failed with error: %d\n", iResult);
-    return -1;
-  }
   
   ZeroMemory( &hints, sizeof(hints) );
   hints.ai_family = AF_UNSPEC;
@@ -75,8 +76,32 @@ int NetEngine::serverConnect() {
       return -1;
     }
 
+    // Values to set options with
+    int iOptVal = 0;
+    int iOptLen = sizeof(int);
+    BOOL bOptVal = TRUE;
+    int bOptLen = sizeof(BOOL);
+
+    // Enable safe reuse of port
+    // Missing SO_REUSEPORT - winsock doesn't have it, hopefully that's alright
+    // SO_CONDITIONAL_ACCEPT is worth looking into
+    // so is SO_RCVTIMEO & SO_SNDTIMEO
+    if (setsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&bOptVal, bOptLen) == SOCKET_ERROR) {
+      printWindowsError("setsockopt - SO_REUSEADDR");
+      peerDisconnect();
+      return -1;
+    }
+
+    if (getsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&iOptVal, &iOptLen) == SOCKET_ERROR) {
+      printWindowsError("getsockopt for SO_REUSEADDR");
+      peerDisconnect();
+      return -1;
+    } else {
+      std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
+    }
+
     // Connect to server.
-    iResult = connect( ServerSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+    iResult = connect(ServerSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
       closesocket(ServerSocket);
       ServerSocket = INVALID_SOCKET;
@@ -276,27 +301,27 @@ int NetEngine::initPeerSocket() {
   }
 
   // Get a UDP socket
-  if ((PeerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
+  if ((PeerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
     COLORS.printError("[Error] Failed to get socket fd for peer.\n");
     return (peer_sock = -1);
   }
   // Update peer_sock fd
   peer_sock = (int)PeerSocket;
 
+  // Get current valid outbound local address
+  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
+
+  COLORS.printInColor("[Log] --Logging Socket Initialization--\n", COLORS.brt_magenta_fg);
+  std::stringstream log_sock_init;
+  log_sock_init << "My local addr: " << my_local_addr.rep_str << std::endl;
+  log_sock_init << "In loc_addr sockaddr: " << convertSockAddrToClientAddrInfo(loc_addr).rep_str << std::endl;
+  COLORS.printInColor(log_sock_init.str(), COLORS.brt_cyan_fg);
+
   // Values to set options with
   int iOptVal = 0;
   int iOptLen = sizeof(int);
   BOOL bOptVal = FALSE;
   int bOptLen = sizeof(BOOL);
-
-  // Get current valid outbound local address
-  struct sockaddr_in loc_addr = convertClientAddrInfoToSockAddr(my_local_addr);
-  // Bind to the same local address as was used for server comms
-  if (bind(PeerSocket, (SOCKADDR *)&loc_addr, sizeof(loc_addr)) != NO_ERROR) {
-    printWindowsError("bind");
-    peerDisconnect();
-    return -1;
-  }
 
   // Enable safe reuse of port
   // Missing SO_REUSEPORT - winsock doesn't have it, hopefully that's alright
@@ -316,6 +341,14 @@ int NetEngine::initPeerSocket() {
   } else {
     std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
   }
+
+  // Bind to the same local address as was used for server comms
+  if (bind(PeerSocket, (SOCKADDR *)&loc_addr, sizeof(loc_addr)) != NO_ERROR) {
+    printWindowsError("bind");
+    peerDisconnect();
+    return -1;
+  }
+
 
   // Set non-blocking
   u_long iMode = 1; // disable blocking
@@ -467,6 +500,21 @@ int NetEngine::serverConnect() {
   if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
     std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
     return -1;
+  }
+
+  // Enable safe reuse of port
+  int opt = 1;
+  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    perror("[Error] setsockopt\n");
+    close(peer_sock);
+    return (peer_sock = -1);
+  }
+
+  // Set non-blocking
+  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+    perror("[Error] fcntl\n");
+    close(peer_sock);
+    return (peer_sock = -1);
   }
 
   // Connect to the server
