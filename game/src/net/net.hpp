@@ -216,6 +216,13 @@ class NetEngine {
   ssize_t sendPeerSetupPacket(PeerSetupPacket, clientAddrInfo);
 
   /**
+   * @brief Function to send peer setup packet to both the public and
+   * private addrs of peer.
+   * @return -1 on failure or 1 on success
+   */
+  ssize_t sendPeerSetupBoth(PeerSetupPacket out_pkt);
+
+  /**
    * @brief Function to receive a peer setup packet
    * @return The packet received. All default values on failure.
    */
