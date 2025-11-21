@@ -1191,15 +1191,20 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     }
 
     // Check contents of incoming packet
+    if ((std::string)in_pkt.user_name == "") {
+      COLORS.printWarning("[Warn] Peer initialization packet received containing invalid username.\n");
+      continue;
+    } 
+
+    // Notify when peer has received our packets
     if (in_pkt.connection_established) {
       // May need to clear socket fd here for fresh packets going forward
       COLORS.printSuccess("[Log] Peer has received our packets!\n");
+      peer_connection_established = true;
       break;
-    } else if ((std::string)in_pkt.user_name == "") {
-      COLORS.printWarning("[Warn] Peer initialization packet received containing invalid username.\n");
-    } else { 
-      out_pkt = PeerSetupPacket(true, game_dur_f, character_id, username);
     }
+
+    out_pkt = PeerSetupPacket(true, game_dur_f, character_id, username);
   }
   if (peer_addr_final.addr == 0) { 
     COLORS.printWarning("[Warn] Failed to initialize peer communication.\n");
