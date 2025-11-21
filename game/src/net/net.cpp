@@ -755,10 +755,6 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
       &sockaddr_len // socklen
     );
     total_bytes_in += bytes_in;
-    if (ENABLE_DENSE_PACKET_INSPECTION) {
-      std::cout << "[DENSE PACKET - RECV] Bytes received: " << total_bytes_in << std::endl;
-      std::cout << "[DENSE PACKET - RECV] Addr Len: " << sockaddr_len << std::endl;
-    }
     if (bytes_in < 0) {
       // if (ENABLE_NETCODE_ERROR) {
       //   COLORS.printError("[Error] Failed to receive peer setup packet: ");
@@ -1184,10 +1180,6 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 
     // Notify when peer has received our packets
     if (in_pkt.connection_established) {
-      if (peer_connection_established) { 
-        COLORS.printSuccess("[Log] Peer handshake finished\n");
-        break; 
-      }
       // May need to clear socket fd here for fresh packets going forward
       COLORS.printSuccess("[Log] Peer has received our packets!\n");
       peer_connection_established = true;
@@ -1201,9 +1193,15 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 
 int NetEngine::testNetClient() {
   COLORS.printInColor("\n[Log] Running network test...\n", COLORS.brt_magenta_fg);
+  ssize_t result;
   Timer timer;
   timer.start();
-  ssize_t result;
+
+  // crossPlatformSleep(150);
+  // double test_sleep_dur = timer.duration();
+  // std::stringstream test_sleep_log;
+  // test_sleep_log << "Sleep of 150ms completed in: " << test_sleep_dur << "s\n";
+  // COLORS.printInColor(test_sleep_log.str(), COLORS.brt_yellow_fg);
 
   // std::cout << "[TEMP] Testing local addr record & save\n";
   // serverConnect();
