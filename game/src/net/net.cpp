@@ -789,7 +789,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
 
   // bind() - Guarantee my own port # maybe bad
 
-  struct sockaddr_in peer_sockaddr;
+  struct sockaddr_in peer_sockaddr = {};
   socklen_t sockaddr_len = sizeof(peer_sockaddr);
 
   // First, peek at messages in queue and see how many are in queue
