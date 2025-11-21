@@ -1105,6 +1105,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     COLORS.printError("[Error] Peer socket initialization failed while trying to init peer comms\n");
     return PeerSetupPacket();
   }
+  peer_addr_final = clientAddrInfo(0,0);
 
   // Packet for initializing peer communication
   PeerSetupPacket out_pkt(false, game_dur_f, character_id, username); // Sent BEFORE connected
@@ -1186,15 +1187,16 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       continue;
     } 
 
+    // Only reaches here if received a good packet
+    out_pkt = PeerSetupPacket(true, game_dur_f, character_id, username);
+
     // Notify when peer has received our packets
     if (in_pkt.connection_established) {
+      if (peer_connection_established) { break; }
       // May need to clear socket fd here for fresh packets going forward
       COLORS.printSuccess("[Log] Peer has received our packets!\n");
       peer_connection_established = true;
-      break;
     }
-
-    out_pkt = PeerSetupPacket(true, game_dur_f, character_id, username);
   }
   if (peer_addr_final.addr == 0) { 
     COLORS.printWarning("[Warn] Failed to initialize peer communication.\n");
