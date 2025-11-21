@@ -389,36 +389,6 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
   return total_bytes_sent;
 }
 
-ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
-  // Initial first send, expected to be dropped
-  if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
-    // UDP send should never fail
-    COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
-    peerDisconnect();
-    return -1;
-  } else {
-    if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Sent peer with established = " 
-      << (out_pkt.connection_established ? "true" : "false") 
-      << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
-    }
-  }
-  // Attempt send to priv
-  if (sendPeerSetupPacket(out_pkt, peer_addr_private) < 0) {
-    // UDP send should never fail
-    COLORS.printError("[Error] Failed to send peer setup packet to priv addr.\n");
-    peerDisconnect();
-    return -1;
-  } else {
-    if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Sent peer with established = " 
-      << (out_pkt.connection_established ? "true" : "false") 
-      << " (priv = " << peer_addr_private.rep_str << ")" << std::endl;
-    }
-  }
-  return 1;
-}
-
 std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   //TODO: delete this ig
   clientAddrInfo peer_addr_tmp(0, 0);  // = convertSockAddrToClientAddrInfo(peer_sock)
@@ -451,7 +421,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
     total_bytes_in += bytes_in;
     if (bytes_in == SOCKET_ERROR) {
       // COLORS.printError("[Error] Failed to recv packet\n");
-      printWindowsError("recv peer setup packet");
+      // printWindowsError("recv peer setup packet");
       // peerDisconnect();
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
     }
@@ -753,36 +723,6 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
   return total_bytes_sent;
 }
 
-ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
-  // Initial first send, expected to be dropped
-  if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
-    // UDP send should never fail
-    COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
-    peerDisconnect();
-    return -1;
-  } else {
-    if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Sent peer with established = " 
-      << (out_pkt.connection_established ? "true" : "false") 
-      << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
-    }
-  }
-  // Attempt send to priv
-  if (sendPeerSetupPacket(out_pkt, peer_addr_private) < 0) {
-    // UDP send should never fail
-    COLORS.printError("[Error] Failed to send peer setup packet to priv addr.\n");
-    peerDisconnect();
-    return -1;
-  } else {
-    if (ENABLE_PEERPACKET_INSPECTION) {
-      std::cout << "[Log] Sent peer with established = " 
-      << (out_pkt.connection_established ? "true" : "false") 
-      << " (priv = " << peer_addr_private.rep_str << ")" << std::endl;
-    }
-  }
-  return 1;
-}
-
 std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   if (ENABLE_NETCODE_DEBUG) {
     std::cout << "[Debug] Beginning full recv\n";
@@ -820,10 +760,10 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
       std::cout << "[DENSE PACKET - RECV] Addr Len: " << sockaddr_len << std::endl;
     }
     if (bytes_in < 0) {
-      if (ENABLE_NETCODE_ERROR) {
-        COLORS.printError("[Error] Failed to receive peer setup packet: ");
-        perror("");
-      }
+      // if (ENABLE_NETCODE_ERROR) {
+      //   COLORS.printError("[Error] Failed to receive peer setup packet: ");
+      //   perror("");
+      // }
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),clientAddrInfo(0,0));
     }
   }
@@ -1110,6 +1050,56 @@ ssize_t NetEngine::getPeerAddr() {
   return bytes_sent;
 }
 
+ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
+  // Check if final addr found -> only send there
+  if (peer_addr_final.addr != 0) {
+    // Initial first send, expected to be dropped
+    if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
+      // UDP send should never fail
+      COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
+      peerDisconnect();
+      return -1;
+    } else {
+      if (ENABLE_PEERPACKET_INSPECTION) {
+        std::cout << "[Log] Sent peer with established = " 
+        << (out_pkt.connection_established ? "true" : "false") 
+        << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
+      }
+    }
+    return 1;
+  }
+
+  // Final addr NOT found, send to both
+
+  // Initial first send, expected to be dropped
+  if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
+    peerDisconnect();
+    return -1;
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Sent peer with established = " 
+      << (out_pkt.connection_established ? "true" : "false") 
+      << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
+    }
+  }
+  // Attempt send to priv
+  if (sendPeerSetupPacket(out_pkt, peer_addr_private) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet to priv addr.\n");
+    peerDisconnect();
+    return -1;
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Sent peer with established = " 
+      << (out_pkt.connection_established ? "true" : "false") 
+      << " (priv = " << peer_addr_private.rep_str << ")" << std::endl;
+    }
+  }
+  return 1;
+}
+
 PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id) {
   if (initPeerSocket() <= 0) {
     COLORS.printError("[Error] Peer socket initialization failed while trying to init peer comms\n");
@@ -1132,7 +1122,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // First outward packet to trick NAT into thinking we initialized
   sendPeerSetupBoth(out_pkt);
   // 3s delay so we should have received theirs by now
-  crossPlatformSleep(1000);
+  crossPlatformSleep(750);
   // send again - this one should go through
   sendPeerSetupBoth(out_pkt);
 
@@ -1155,7 +1145,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       // Nothing came through -> send again
       sendPeerSetupBoth(out_pkt);
       // Wait half a second before checking again
-      crossPlatformSleep(500);
+      crossPlatformSleep(250);
       continue; 
     }
 
@@ -1317,7 +1307,7 @@ int NetEngine::testNetClient() {
     if (!bad_addrs) { break; }
 
     // Repeatedly ask the server, waiting 1s in-between
-    crossPlatformSleep(1000);
+    crossPlatformSleep(500);
   }
 
   // Display success statement
