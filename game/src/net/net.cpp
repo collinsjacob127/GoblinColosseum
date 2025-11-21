@@ -497,6 +497,7 @@ int NetEngine::serverConnect() {
   // Convert IPv4 and IPv6 addresses from text to binary form
   if (inet_pton(AF_INET, SERVER_ADDR, &serv_addr.sin_addr) <= 0) {
     std::cerr << "[Error] Invalid address/ Address not supported" << std::endl;
+    serverDisconnect();
     return -1;
   }
 
@@ -504,20 +505,20 @@ int NetEngine::serverConnect() {
   int opt = 1;
   if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
     perror("[Error] setsockopt\n");
-    disconnectServer();
+    serverDisconnect();
     return -1;
   }
 
   // Set non-blocking
   if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0) {
     perror("[Error] fcntl\n");
-    disconnectServer();
+    serverDisconnect();
     return -1;
   }
 
   // Connect to the server
   if (connect(server_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-      std::cerr << "[Error] Connection Failed" << std::endl;
+    std::cerr << "[Error] Connection Failed" << std::endl;
     return -1;
   } else {
     printf("[Log] Connected to server via socket %d\n", server_sock);
