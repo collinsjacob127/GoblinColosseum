@@ -1132,7 +1132,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   // First outward packet to trick NAT into thinking we initialized
   sendPeerSetupBoth(out_pkt);
   // 3s delay so we should have received theirs by now
-  crossPlatformSleep(3000);
+  crossPlatformSleep(1000);
   // send again - this one should go through
   sendPeerSetupBoth(out_pkt);
 
@@ -1316,8 +1316,8 @@ int NetEngine::testNetClient() {
     bad_addrs = (peer_addr_public.addr == 0 && peer_addr_private.addr == 0);
     if (!bad_addrs) { break; }
 
-    // Repeatedly ask the server, waiting 3s in-between
-    crossPlatformSleep(1500);
+    // Repeatedly ask the server, waiting 1s in-between
+    crossPlatformSleep(1000);
   }
 
   // Display success statement

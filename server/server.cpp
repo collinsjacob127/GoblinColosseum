@@ -86,12 +86,16 @@ int main() {
     // Respond to the packet
     int response = -1;
 
+    // 10 is for non-sending connections
     if (in_pkt.packet_type == 10) {
       close(client_socket);
       continue;
     }
 
-    std::cout << std::flush << COLORS.white_fg << std::endl;
+    // 4 prints on an as-needed basis
+    if (in_pkt.packet_type != 4) {
+      std::cout << std::flush << COLORS.white_fg << std::endl;
+    }
 
     switch (in_pkt.packet_type) {
       case (0): {
@@ -112,6 +116,8 @@ int main() {
       }
       case (4): {
         response = sendPeerInfo(in_pkt, client_socket);
+        // Don't print if they're still just waiting
+        if (response == 2) { close(client_socket); continue; }
         break;
       }
       default: {
@@ -402,12 +408,14 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // User does not exist
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    COLORS.printInColor("[Error] Client not in registry\n", COLORS.red_fg);
+    COLORS.printInColor("\n[Error] Client requesting peer addr not in registry\n", COLORS.red_fg);
     return -1; // Player doesn't exist in registry
   }
 
-  if (ENABLE_SERVER_LOG) {
-    std::cout << "[Log] Client \"" << cur_player->user_name << "\" requests peer addr\n";
+  if (ENABLE_NOTIFY_PEER_ADDR_REQUEST) {
+    std::stringstream ss;
+    ss << "[Log] Client \"" << cur_player->user_name << "\" requests peer addr\n";
+    COLORS.printInColor(ss.str(), COLORS.white_fg);
   }
 
   // Get and verify lobby
@@ -415,14 +423,15 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (!(lobby_owner = registry.getPlayer(lobby_id, LOBBY_ID_SPECIFIER))) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    COLORS.printInColor("[Error] Requested lobby DNE\n", COLORS.red_fg);
+    COLORS.printInColor("\n[Error] Requested lobby DNE\n", COLORS.red_fg);
     return -1; // Lobby DNE
   }
   if (!lobby_owner->match_made || !cur_player->match_made) {
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    COLORS.printInColor("[Error] Match has not yet been made.\n", COLORS.yellow_fg);
-    return 1; // Match not made
+    if (ENABLE_NOTIFY_PEER_ADDR_REQUEST)
+      COLORS.printWarning("\n[Error] Match has not yet been made.\n");
+    return 2; // Match not made
   }
 
   // Get and verify peer
@@ -431,7 +440,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     // Invalid peer
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
-    COLORS.printInColor("[Error] Peer requested by client DNE\n", COLORS.red_fg);
+    COLORS.printInColor("\n[Error] Peer requested by client DNE\n", COLORS.red_fg);
     return -1; // Peer DNE
   }
 
@@ -439,7 +448,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
   if (cur_peer->peer_session_id != cur_player->session_id
     || cur_player->peer_session_id != cur_peer->session_id
     ) {
-    COLORS.printInColor("[Error] Matchmaking peer session ID mismatch\n" , COLORS.red_fg);
+    COLORS.printInColor("\n[Error] Matchmaking peer session ID mismatch\n" , COLORS.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
@@ -450,15 +459,17 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
       || cur_player->player_addr_public.addr == 0
       || cur_peer->player_addr_public.addr == 0
       || cur_peer->player_addr_private.addr == 0) {
-    COLORS.printInColor("[Error] Players addrs not yet set\n" , COLORS.red_fg);
+    COLORS.printInColor("\n[Error] Players addrs not yet set\n" , COLORS.red_fg);
     ServerPacket out_pkt(in_pkt.packet_type, 0, 0, "");
     sendServerPacket(out_pkt, client_sock);
     return -1; // Match not made
   }
 
   if (ENABLE_SERVER_LOG) {
-    std::cout << "[Log] Sending addr of " << cur_peer->user_name
+    std::stringstream ss;
+    ss << "\n[Log] Sending addr of " << cur_peer->user_name
     << " to " << cur_player->user_name << std::endl;
+    COLORS.printInColor(ss.str(), COLORS.white_fg);
   }
 
   // Send peer addrs to client
@@ -476,7 +487,7 @@ int sendPeerInfo(ClientPacket in_pkt, int client_sock) {
     ss << "[Log] Successfully sent peer addrs to ";
     ss << cur_player->user_name << std::endl;
     COLORS.printSuccess(ss.str());
-    std::cout << COLORS.cyan_fg;
+    std::cout << std::flush << COLORS.cyan_fg;
     std::cout << " [PUB  ADDR] " << cur_player->player_addr_public.rep_str << std::endl;
     std::cout << " [PRIV ADDR] " << cur_player->player_addr_private.rep_str << std::endl;
     std::cout << COLORS.white_fg << std::flush;

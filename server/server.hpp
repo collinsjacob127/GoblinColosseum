@@ -33,6 +33,7 @@
 #define ENABLE_SERVER_DEBUG false
 #define ENABLE_SERVER_ERROR true
 #define ENABLE_AWAITING_NEW_PACKETS_NOTIF true
+#define ENABLE_NOTIFY_PEER_ADDR_REQUEST false
 
 // constexpr uint16_t PEER_TO_PEER_PORT = 27017;
 constexpr char* SERVER_PORT = (char*)"53243";
