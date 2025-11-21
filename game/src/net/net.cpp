@@ -509,16 +509,10 @@ int NetEngine::serverConnect() {
     return -1;
   }
 
-  // // Set non-blocking
-  // if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0) {
-  //   perror("[Error] fcntl\n");
-  //   serverDisconnect();
-  //   return -1;
-  // }
-
   // Connect to the server
   if (connect(server_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-    std::cerr << "[Error] Connection Failed" << std::endl;
+    COLORS.printError("connect() failed in serverConnect()\n");
+    serverDisconnect();
     return -1;
   } else {
     printf("[Log] Connected to server via socket %d\n", server_sock);
