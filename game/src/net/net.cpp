@@ -1054,16 +1054,16 @@ ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
   // Check if final addr found -> only send there
   if (peer_addr_final.addr != 0) {
     // Initial first send, expected to be dropped
-    if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
+    if (sendPeerSetupPacket(out_pkt, peer_addr_final) < 0) {
       // UDP send should never fail
-      COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
+      COLORS.printError("[Error] Failed to send peer setup packet to FINAL addr.\n");
       peerDisconnect();
       return -1;
     } else {
       if (ENABLE_PEERPACKET_INSPECTION) {
         std::cout << "[Log] Sent peer with established = " 
         << (out_pkt.connection_established ? "true" : "false") 
-        << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
+        << " (FINAL = " << peer_addr_public.rep_str << ")" << std::endl;
       }
     }
     return 1;
@@ -1074,14 +1074,14 @@ ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
   // Initial first send, expected to be dropped
   if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
     // UDP send should never fail
-    COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
+    COLORS.printError("[Error] Failed to send peer setup packet to PUB addr.\n");
     peerDisconnect();
     return -1;
   } else {
     if (ENABLE_PEERPACKET_INSPECTION) {
       std::cout << "[Log] Sent peer with established = " 
       << (out_pkt.connection_established ? "true" : "false") 
-      << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
+      << " (PUB = " << peer_addr_public.rep_str << ")" << std::endl;
     }
   }
   // Attempt send to priv
@@ -1094,7 +1094,7 @@ ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
     if (ENABLE_PEERPACKET_INSPECTION) {
       std::cout << "[Log] Sent peer with established = " 
       << (out_pkt.connection_established ? "true" : "false") 
-      << " (priv = " << peer_addr_private.rep_str << ")" << std::endl;
+      << " (PRIV = " << peer_addr_private.rep_str << ")" << std::endl;
     }
   }
   return 1;
@@ -1106,6 +1106,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
     return PeerSetupPacket();
   }
   peer_addr_final = clientAddrInfo(0,0);
+  peer_connection_established = false;
 
   // Packet for initializing peer communication
   PeerSetupPacket out_pkt(false, game_dur_f, character_id, username); // Sent BEFORE connected
@@ -1150,18 +1151,9 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       continue; 
     }
 
-    if (ENABLE_DENSE_PACKET_INSPECTION) {
-      std::cout << std::flush << COLORS.cyan_fg;
-      std::cout << "[DENSE PACKET] Received packet from: " << tmp_recvd_addr.rep_str << "\n";
-      std::cout << "[DENSE PACKET] Packet contents: \n";
-      in_pkt.printContents();
-      std::cout << COLORS.white_fg;
-    }
-
     // Check address of incoming packet
     if (tmp_recvd_addr.addr == peer_addr_public.addr) {
       // Address matches peer public
-      in_pkt_good = in_pkt;    // Set our outgoing packet to established
       peer_addr_final = peer_addr_public; // Addr matches, set as final addr
       std::stringstream ss;
       ss << "[Log] Received packet from peer public addr: " << tmp_recvd_addr.rep_str << "\n";
@@ -1169,7 +1161,6 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
       in_pkt.printContents();
     } else if (tmp_recvd_addr.addr == peer_addr_private.addr) {
       // Address matches peer private
-      in_pkt_good = in_pkt;    // Set our outgoing packet to established
       peer_addr_final = peer_addr_private; // Addr matches, set as final addr
       std::stringstream ss;
       ss << "[Log] Received packet from peer private addr: " << tmp_recvd_addr.rep_str << "\n";
@@ -1189,10 +1180,14 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
 
     // Only reaches here if received a good packet
     out_pkt = PeerSetupPacket(true, game_dur_f, character_id, username);
+    sendPeerSetupBoth(out_pkt);
 
     // Notify when peer has received our packets
     if (in_pkt.connection_established) {
-      if (peer_connection_established) { break; }
+      if (peer_connection_established) { 
+        COLORS.printSuccess("[Log] Peer handshake finished\n");
+        break; 
+      }
       // May need to clear socket fd here for fresh packets going forward
       COLORS.printSuccess("[Log] Peer has received our packets!\n");
       peer_connection_established = true;
