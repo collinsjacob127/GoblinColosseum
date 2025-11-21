@@ -1154,6 +1154,7 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   size_t n_attempts = 0, max_attempts = 30;
   // Switch between attempting connections with public & private addrs
   while (n_attempts < max_attempts && !peer_connection_established) {
+    std::cout << std::endl; // May need to delete this (TEMP)
     n_attempts++;
 
     // Read from the socket
