@@ -250,7 +250,7 @@ int NetEngine::updateLocalAddress(int s) {
   }
 
   // Read local ipv4 address
-  sockaddr_in loc_addr;
+  sockaddr_in loc_addr = {};
   socklen_t name_len = sizeof(loc_addr);
   int err = getsockname(this_sock, (struct sockaddr*)&loc_addr, &name_len);
 
@@ -813,8 +813,8 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   }
 
   std::stringstream ss;
-  ss << "[PEER SETUP INFO] PeerSetupPacket Size is: " << PEER_SETUP_PACKET_SIZE << std::endl;
-  ss << "[PEER SETUP PEEK] There are " << total_bytes_in << " bytes in queue from ";
+  ss << "[PEER SETUP PEEK] There are " << total_bytes_in << " / " << PEER_SETUP_PACKET_SIZE 
+  << " bytes in queue from ";
   ss << convertSockAddrToClientAddrInfo(peer_sockaddr).rep_str << std::endl;
   COLORS.printInColor(ss.str(), COLORS.brt_cyan_fg);
 
@@ -836,7 +836,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
     }
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        COLORS.printError("[Error] Failed to receive peer setup packet");
+        COLORS.printError("[Error] Failed to receive peer setup packet: ");
         perror("");
       }
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),clientAddrInfo(0,0));
