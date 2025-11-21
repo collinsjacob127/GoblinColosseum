@@ -836,7 +836,8 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
     }
     if (bytes_in < 0) {
       if (ENABLE_NETCODE_ERROR) {
-        COLORS.printError("[Error] Failed to receive peer setup packet\n");
+        COLORS.printError("[Error] Failed to receive peer setup packet");
+        perror("");
       }
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),clientAddrInfo(0,0));
     }
