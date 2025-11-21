@@ -48,7 +48,7 @@ int NetEngine::serverConnect() {
   int iResult;
   
   ZeroMemory( &hints, sizeof(hints) );
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
 
@@ -75,29 +75,29 @@ int NetEngine::serverConnect() {
       return -1;
     }
 
-    // Values to set options with
-    int iOptVal = 0;
-    int iOptLen = sizeof(int);
-    BOOL bOptVal = TRUE;
-    int bOptLen = sizeof(BOOL);
+    // // Values to set options with
+    // int iOptVal = 0;
+    // int iOptLen = sizeof(int);
+    // BOOL bOptVal = TRUE;
+    // int bOptLen = sizeof(BOOL);
 
-    // Enable safe reuse of port
-    // Missing SO_REUSEPORT - winsock doesn't have it, hopefully that's alright
-    // SO_CONDITIONAL_ACCEPT is worth looking into
-    // so is SO_RCVTIMEO & SO_SNDTIMEO
-    if (setsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&bOptVal, bOptLen) == SOCKET_ERROR) {
-      printWindowsError("setsockopt - SO_REUSEADDR");
-      serverDisconnect();
-      return -1;
-    }
+    // // Enable safe reuse of port
+    // // Missing SO_REUSEPORT - winsock doesn't have it, hopefully that's alright
+    // // SO_CONDITIONAL_ACCEPT is worth looking into
+    // // so is SO_RCVTIMEO & SO_SNDTIMEO
+    // if (setsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&bOptVal, bOptLen) == SOCKET_ERROR) {
+    //   printWindowsError("setsockopt - SO_REUSEADDR");
+    //   serverDisconnect();
+    //   return -1;
+    // }
 
-    if (getsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&iOptVal, &iOptLen) == SOCKET_ERROR) {
-      printWindowsError("getsockopt for SO_REUSEADDR");
-      serverDisconnect();
-      return -1;
-    } else {
-      std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
-    }
+    // if (getsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&iOptVal, &iOptLen) == SOCKET_ERROR) {
+    //   printWindowsError("getsockopt for SO_REUSEADDR");
+    //   serverDisconnect();
+    //   return -1;
+    // } else {
+    //   std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
+    // }
 
     // Connect to server.
     iResult = connect(ServerSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
@@ -274,32 +274,16 @@ int NetEngine::updateLocalAddress(int s) {
 
 int NetEngine::initPeerSocket() {
   // Ensure peer socket NOT initialized yet
-  if (peer_sock > 0) { peerDisconnect(); }
+  if (peer_sock > 0 || PeerSocket != INVALID_SOCKET) { peerDisconnect(); }
 
-  // Check if already connected to server
-  if (server_sock < 0) {
-    std::cout << "[TEMP] (initPeerSocket) Not connected to server, connecting...\n";
-    // Verify server connection succeeded
-    if (serverConnect() < 0) { peerDisconnect(); return -1; }
-    // Update local addr
-    if (updateLocalAddress(server_sock) < 0) {
-      COLORS.printError("[Error] Failed to update local address while initializing peer socket\n");
-      serverDisconnect();
-      return -1;
-    }
-    // Don't change server connection state outside this function
-    serverDisconnect();
-  } else {
-    // Already connected to server, just update addr
-    std::cout << "[TEMP] (initPeerSocket) Already connected to server, continuing...\n";
-    if (updateLocalAddress(server_sock) < 0) {
-      COLORS.printError("[Error] Failed to update local address while initializing peer socket\n");
-      return -1;
-    }
-  }
+  // Verify my_local_addr has been set
+  if (my_local_addr.addr == 0) {
+    COLORS.printError("[Error] Attempted peer socket initialization without setting my_local_addr\n");
+    return -1;
+  } 
 
   // Get a UDP socket
-  if ((PeerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
+  if ((PeerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
     COLORS.printError("[Error] Failed to get socket fd for peer.\n");
     return (peer_sock = -1);
   }
@@ -340,17 +324,9 @@ int NetEngine::initPeerSocket() {
     std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
   }
 
-  // Bind to the same local address as was used for server comms
-  if (bind(PeerSocket, (SOCKADDR *)&loc_addr, sizeof(loc_addr)) != NO_ERROR) {
-    printWindowsError("bind");
-    peerDisconnect();
-    return -1;
-  }
-
-
   // Set non-blocking
   u_long iMode = 1; // disable blocking
-  if (ioctlsocket(peer_sock, FIONBIO, &iMode) != NO_ERROR) {
+  if (ioctlsocket(PeerSocket, FIONBIO, &iMode) != NO_ERROR) {
     std::stringstream ss;
     printWindowsError("ioctlsocket");
     peerDisconnect();
@@ -360,6 +336,13 @@ int NetEngine::initPeerSocket() {
   // TEMP log
   if (iMode == 0) { COLORS.printError("[Log] Peer socket initialized with blocking ON\n"); } 
   else { COLORS.printSuccess("[Log] Peer socket initialized with blocking OFF\n"); }
+
+  // Bind to the same local address as was used for server comms
+  if (bind(PeerSocket, (SOCKADDR *)&loc_addr, sizeof(loc_addr)) != NO_ERROR) {
+    printWindowsError("bind");
+    peerDisconnect();
+    return -1;
+  }
 
   if (updateLocalAddress(peer_sock) < 0) {
     std::cout << "[Error] Failed to update local address while initializing peer socket\n";
@@ -371,7 +354,6 @@ int NetEngine::initPeerSocket() {
   return peer_sock;
 }
 
-//TODO: Fix this DEFINITELY
 ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo some_addr) {
   if (PeerSocket == INVALID_SOCKET) {
     printf("Unable to connect to peer!\n");
@@ -407,7 +389,36 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
   return total_bytes_sent;
 }
 
-//TODO: Fix this DEFINITELY 
+ssize_t NetEngine::sendPeerSetupBoth(PeerSetupPacket out_pkt) {
+  // Initial first send, expected to be dropped
+  if (sendPeerSetupPacket(out_pkt, peer_addr_public) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet to pub addr.\n");
+    peerDisconnect();
+    return -1;
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Sent peer with established = " 
+      << (out_pkt.connection_established ? "true" : "false") 
+      << " (pub = " << peer_addr_public.rep_str << ")" << std::endl;
+    }
+  }
+  // Attempt send to priv
+  if (sendPeerSetupPacket(out_pkt, peer_addr_private) < 0) {
+    // UDP send should never fail
+    COLORS.printError("[Error] Failed to send peer setup packet to priv addr.\n");
+    peerDisconnect();
+    return -1;
+  } else {
+    if (ENABLE_PEERPACKET_INSPECTION) {
+      std::cout << "[Log] Sent peer with established = " 
+      << (out_pkt.connection_established ? "true" : "false") 
+      << " (priv = " << peer_addr_private.rep_str << ")" << std::endl;
+    }
+  }
+  return 1;
+}
+
 std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   //TODO: delete this ig
   clientAddrInfo peer_addr_tmp(0, 0);  // = convertSockAddrToClientAddrInfo(peer_sock)
@@ -420,7 +431,7 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
 
   char buf[PEER_SETUP_PACKET_SIZE] = "";
 
-  struct sockaddr_in peer_sockaddr;
+  struct sockaddr_in peer_sockaddr = {};
   int sockaddr_len = (int) sizeof(peer_sockaddr);
 
   if (ENABLE_NETCODE_DEBUG) {
@@ -431,16 +442,16 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
   while (total_bytes_in < pkt_size) {
     bytes_in = (ssize_t)recvfrom(
-      ServerSocket, 
+      PeerSocket, 
       buf+total_bytes_in, 
-      SERVER_PACKET_N_BYTES-total_bytes_in, 
+      pkt_size-total_bytes_in, 
       0,
       (sockaddr *)&peer_sockaddr,
       &sockaddr_len);
     total_bytes_in += bytes_in;
     if (bytes_in == SOCKET_ERROR) {
-      COLORS.printError("[Error] Failed to recv packet\n");
-      // printWindowsError("recv peer setup packet");
+      // COLORS.printError("[Error] Failed to recv packet\n");
+      printWindowsError("recv peer setup packet");
       // peerDisconnect();
       return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
     }
@@ -588,7 +599,7 @@ int NetEngine::updateLocalAddress(int s) {
   // Get local ipv4 https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
 
   // Use getsockname to read our local ipv4 addr
-  struct sockaddr_in loc_addr;
+  struct sockaddr_in loc_addr = {};
   socklen_t name_len = sizeof(loc_addr);
   int err = getsockname(s, (struct sockaddr*)&loc_addr, &name_len);
 
