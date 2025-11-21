@@ -512,13 +512,13 @@ int NetEngine::serverConnect() {
     return -1;
   }
 
-  // Enable safe reuse of port
-  int opt = 1;
-  if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
-    perror("[Error] setsockopt\n");
-    serverDisconnect();
-    return -1;
-  }
+  // // Enable safe reuse of port
+  // int opt = 1;
+  // if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
+  //   perror("[Error] setsockopt\n");
+  //   serverDisconnect();
+  //   return -1;
+  // }
 
   // Connect to the server
   if (connect(server_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
@@ -803,34 +803,8 @@ std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
   struct sockaddr_in peer_sockaddr = {};
   socklen_t sockaddr_len = sizeof(peer_sockaddr);
 
-  // First, peek at messages in queue and see how many are in queue
   ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = PEER_SETUP_PACKET_SIZE;
-  while (bytes_in != 0) {
-    bytes_in = recvfrom(
-      peer_sock, // fd
-      in_buf,  // buffer
-      pkt_size, // bytes to send
-      MSG_PEEK, // flags
-      (struct sockaddr*)&peer_sockaddr, // sockaddr
-      &sockaddr_len // socklen
-    );
-    total_bytes_in += bytes_in;
-    if (bytes_in < 0) {
-      if (ENABLE_NETCODE_ERROR) {
-        COLORS.printError("[Error] Failed to PEEK peer setup packet(s)\n");
-      }
-      return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(),clientAddrInfo(0,0));
-    }
-  }
-
-  std::stringstream ss;
-  ss << "[PEER SETUP PEEK] There are " << total_bytes_in << " / " << PEER_SETUP_PACKET_SIZE 
-  << " bytes in queue from ";
-  ss << convertSockAddrToClientAddrInfo(peer_sockaddr).rep_str << std::endl;
-  COLORS.printInColor(ss.str(), COLORS.brt_cyan_fg);
-
   // Ensure full packet is read
-  bytes_in = 0; total_bytes_in = 0;
   while (total_bytes_in < pkt_size) {
     bytes_in = recvfrom(
       peer_sock, // fd
