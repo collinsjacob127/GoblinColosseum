@@ -71,8 +71,7 @@ int NetEngine::serverConnect() {
     // Create a SOCKET for connecting to server
     ServerSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
     if (ServerSocket == INVALID_SOCKET) {
-      printf("socket failed with error: %ld\n", WSAGetLastError());
-      WSACleanup();
+      printWindowsError("create socket");
       return -1;
     }
 
@@ -88,13 +87,13 @@ int NetEngine::serverConnect() {
     // so is SO_RCVTIMEO & SO_SNDTIMEO
     if (setsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&bOptVal, bOptLen) == SOCKET_ERROR) {
       printWindowsError("setsockopt - SO_REUSEADDR");
-      peerDisconnect();
+      serverDisconnect();
       return -1;
     }
 
     if (getsockopt(ServerSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&iOptVal, &iOptLen) == SOCKET_ERROR) {
       printWindowsError("getsockopt for SO_REUSEADDR");
-      peerDisconnect();
+      serverDisconnect();
       return -1;
     } else {
       std::cout << "[TEMP] SO_REUSEADDR Value: " << iOptVal << std::endl;
@@ -113,8 +112,7 @@ int NetEngine::serverConnect() {
   freeaddrinfo(result);
 
   if (ServerSocket == INVALID_SOCKET) {
-    printf("connection failed with error: %ld\n", WSAGetLastError());
-    WSACleanup();
+    printWindowsError("invalid server socket");
     return -1;
   }
 
@@ -504,17 +502,17 @@ int NetEngine::serverConnect() {
 
   // Enable safe reuse of port
   int opt = 1;
-  if (setsockopt(peer_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+  if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
     perror("[Error] setsockopt\n");
-    close(peer_sock);
-    return (peer_sock = -1);
+    disconnectServer();
+    return -1;
   }
 
   // Set non-blocking
-  if (fcntl(peer_sock, F_SETFL, O_NONBLOCK) < 0) {
+  if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0) {
     perror("[Error] fcntl\n");
-    close(peer_sock);
-    return (peer_sock = -1);
+    disconnectServer();
+    return -1;
   }
 
   // Connect to the server
