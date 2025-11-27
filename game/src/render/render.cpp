@@ -113,6 +113,9 @@ RenderEngine::~RenderEngine() {
   SDL_DestroyTexture(start_menu.online_tex);
   SDL_DestroyTexture(start_menu.settings_tex);
   SDL_DestroyTexture(start_menu.quit_tex);
+
+  SDL_DestroyTexture(online_menu.prompt_tex);
+
   SDL_DestroyTexture(game_background);
   SDL_DestroyTexture(player_tex);
   SDL_DestroyTexture(buffer_tex);
@@ -279,8 +282,64 @@ void RenderEngine::renderStartMenu(int selection) {
   SDL_RenderPresent(ren);
 }
 
-void RenderEngine::renderOnlineMenu(NetEngine* net_engine) {
-  return;
+void RenderEngine::initializeOnlineMenuPrompt() {
+  online_menu.prompt_tex = SDL_CreateTexture(
+    ren, 
+    SDL_PIXELFORMAT_ARGB32,
+    SDL_TEXTUREACCESS_TARGET,
+    DEFAULT_XDIM, DEFAULT_YDIM);
+
+  SDL_SetRenderTarget(ren, online_menu.prompt_tex);
+  // Set render color to black
+  SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+  // Draw full black on canvas
+  SDL_RenderClear(ren);
+
+  // Define text color
+  SDL_Color color = { 255, 255, 255, 255 };
+
+  // Define the message
+  std::stringstream ss;
+  ss << "Please use the command-line interface to navigate matchmaking.";
+  std::string prompt_string = ss.str();
+  
+  // Build text surface
+  SDL_Surface *surface = TTF_RenderText_Solid(font, prompt_string.c_str(), prompt_string.size()-1, color);
+  if (!surface) { std::cerr << "Bad surface\n"; }
+
+  // Build text texture
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(ren, surface);
+  if (!texture) { std::cerr << "Bad texture\n"; }
+
+  // Clean up surface
+  SDL_DestroySurface(surface);
+
+  float texW = 0, texH = 0;
+  SDL_GetTextureSize(texture, &texW, &texH);
+
+  int ren_w, ren_h;
+  SDL_GetCurrentRenderOutputSize(ren, &ren_w, &ren_h);
+
+  // Define dimensions of text output
+  SDL_FRect dst = {(ren_w/2) - (texW*scale/2), ren_h/2, texW*scale, texH*scale};
+  // Render to prompt_tex
+  SDL_RenderTexture(ren, texture, NULL, &dst);
+
+  // Clean up tmp texture
+  SDL_DestroyTexture(texture);
+
+  // Reset render target to window
+  SDL_SetRenderTarget(ren, NULL);
+}
+
+void RenderEngine::renderOnlineMenu(const NetEngine* net_engine) {
+  if (online_menu.prompt_tex == nullptr) {initializeOnlineMenuPrompt();}
+
+  // Render the online menu prompt
+  SDL_RenderTexture(ren, online_menu.prompt_tex, NULL, NULL);
+
+  // Present the rendered texture
+  SDL_RenderPresent(ren);
 }
 
 void RenderEngine::renderGameScene(GameManager* game) {

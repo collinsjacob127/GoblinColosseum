@@ -215,21 +215,23 @@ int onlineMenu(RenderEngine* renderer) {
   // Select character
   // Send / recv inputs
   // Display lobby list
+  double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
+  double frame_rate = -1.0;
+  Timer timer, fps_timer;
+  timer.start(); fps_timer.start();
+  unsigned long long n_ticks = 1;
   
   /*
   START NET TEST 
   */
    
-  int return_val = 2;
-  while (return_val == 2) {
-    net_engine.getLocalUserName();
-    if (!continue_program) { exit(0); } // Prevent loop from continuing if int signal handled
-    return_val = net_engine.testNetClient();
-  }
+  renderer->renderOnlineMenu(&net_engine);
+  net_engine.getLocalUserName();
+  net_engine.testNetClient();
 
   COLORS.printSuccess("\nReached end of current online functionality\n");
 
-  // return 0;
+  return 0;
 
   /*
   END NET TEST 

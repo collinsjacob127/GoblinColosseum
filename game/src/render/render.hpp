@@ -27,6 +27,10 @@ struct StartMenu {
   SDL_Texture* quit_tex;
 };
 
+struct OnlineMenu {
+  SDL_Texture* prompt_tex = nullptr;
+};
+
 struct CharacterTextures {
   int character_id;
   SDL_Texture* standing;
@@ -57,6 +61,7 @@ class RenderEngine {
   SDL_FRect output_rect;
 
   StartMenu start_menu;
+  OnlineMenu online_menu;
 
   float scale;
 
@@ -68,11 +73,12 @@ class RenderEngine {
   void loadTextureFromPath(std::string fname, SDL_Texture* tex_to_be);
   void initializeCharacterTextures(int p_index, int character_id);
   void renderStartMenu(int selection);
-  void renderOnlineMenu(NetEngine* net_engine);
+  void renderOnlineMenu(const NetEngine* net_engine);
   void renderGameScene(GameManager* game);
   void calculateScale(int win_width, int win_height);
 
  private:
+  void initializeOnlineMenuPrompt();
   void renderBoxes(const PlayerEntity* p);
   void renderPlayer(const PlayerEntity *player, int p_index);
   void displayFPS();

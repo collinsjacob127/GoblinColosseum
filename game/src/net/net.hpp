@@ -97,6 +97,8 @@ class NetEngine {
   clientAddrInfo peer_addr_private;
   clientAddrInfo peer_addr_public;
   bool peer_connection_established = false;
+  bool game_started = false;
+  bool game_finished = false;
   clientAddrInfo peer_addr_final;
 
   // Server connection is 2-way on this socket
