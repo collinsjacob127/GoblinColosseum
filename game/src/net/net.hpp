@@ -138,6 +138,11 @@ class NetEngine {
    */
   int testNetClient();
 
+  /**
+   * @brief Function to test the packing of buttons
+   */
+  int testButtonPacket(const ButtonStates *buttons);
+
   /*
   SERVER - CLIENT FUNCTIONS 
   */

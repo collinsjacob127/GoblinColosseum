@@ -32,6 +32,16 @@ void CoutEscapes::printSuccess(std::string message) {
   std::cout << white_fg;
 }
 
+std::string getBinaryString(char input, size_t n_bytes) {
+  std::stringstream ss;
+  int i;
+  size_t n_bits = 8 * n_bytes;
+  for (i = 0; i < n_bits; i++) {
+    ss << (int)!!((input << i) & 0x80);
+  }
+  return ss.str();
+}
+
 /***************************
  ********* TIMER ***********
  ***************************/

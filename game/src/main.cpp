@@ -44,6 +44,24 @@ int main(int argc, char* argv[]) {
   // std::signal(SIGTERM, handleUnexpectedClosure);
 
   /*
+    START BUTTON PACKING TEST 
+  */
+  ButtonStates example_buttons;
+  example_buttons.up = RELEASED;
+  example_buttons.down = HELD;
+  example_buttons.left = HELD;
+  example_buttons.right = HELD;
+  example_buttons.b1 = HELD;
+  example_buttons.b2 = HELD;
+  example_buttons.b3 = RELEASED;
+  example_buttons.b4 = RELEASED;
+  net_engine.testButtonPacket(&example_buttons);
+  return 0;
+  /*
+    END BUTTON PACKING TEST 
+  */
+
+  /*
   START NET TEST 
   */
    

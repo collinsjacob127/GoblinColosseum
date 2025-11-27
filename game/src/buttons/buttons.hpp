@@ -29,8 +29,9 @@ struct Keybinds {
 
 enum Button {
   PRESSED = 2, // Pressed this frame
-  HELD = 1,    // Still being held
-  RELEASED = 0 // Released
+  HELD = 1,    // Still being held (also basic held, for binary scenarios)
+  RELEASED = 0, // Un-Held (also basic NOT held, for binary scenarios)
+  JUST_RELEASED = -1 // JUST released
 };
 
 enum NumPadDir {
@@ -74,6 +75,14 @@ struct ButtonStates {
   Button r1 = RELEASED;
   Button l2 = RELEASED;
   Button r2 = RELEASED;
+  // Not yet bound
+  Button l3 = RELEASED;
+  Button r3 = RELEASED;
+
+  // Not sent
+  Button start = RELEASED;
+  Button select = RELEASED;
+
   NumPadDir dir_buffer[MAX_INPUT_FRAMES];
 };
 

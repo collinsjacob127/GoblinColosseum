@@ -1326,3 +1326,9 @@ int NetEngine::testNetClient() {
 
   return 0;
 }
+
+int NetEngine::testButtonPacket(const ButtonStates *buttons) {
+  NetInputs inputs(false, 0, buttons);
+  inputs.printContents();
+  return 0;
+}

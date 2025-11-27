@@ -167,8 +167,63 @@ void PeerSetupPacket::printContents() {
   }
 }
 
+NetInputs::NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in) {
+  // Set local variables
+  is_repeat_request = is_request;
+  if (is_request) {
+    frame_n = 65535;
+  } else {
+    frame_n = f_n;
+  }
+
+  unsigned char* tmp_buf_ptr = (unsigned char*)packet_buf;
+  
+  // Populate buffer with frame_n
+  packi16(tmp_buf_ptr, frame_n);
+
+  // If it's a request packet, second 2 bytes are the frame we're requesting
+  if (is_request) {
+    tmp_buf_ptr += sizeof(f_n);
+    packi16(tmp_buf_ptr, f_n);
+    if (ENABLE_INPUTPACKET_INSPECTION) {
+      std::cout << "[InputPacket] Populated request packet with frame " << f_n << std::endl;
+    }
+    return; // The rest can remain 0 in request packets.
+  }
+
+  // Not a request packet -> now we populate buttons
+  // Initialize pointer to current buffer position
+  char *buf_ptr = (char*)packet_buf + sizeof(frame_n);
+  // Variable to store states of 8 buttons at a time
+  char btn_subset = 0; int i = 8;
+
+  if (in->up) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->down) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->left) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->right) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->b1) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->b2) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->b3) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->b4) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  
+  std::cout << getBinaryString(btn_subset, 1) << std::endl;
+}
+
+NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
+
+}
+
+std::pair<ButtonStates, uint16_t> NetInputs::parse() {
+  ButtonStates tmp;
+  return std::pair<ButtonStates, uint16_t>(tmp, 65535);
+}
+
+void NetInputs::printContents() {
+
+}
+
 /**
- * DEFAULT PACKET DEFINITIONS
+ * CLIENT / SERVER PACKET DEFINITIONS
  */
 
 ssize_t MatchmakingPacket::buildPacket(unsigned char* buf) {

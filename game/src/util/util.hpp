@@ -77,6 +77,8 @@ struct CoutEscapes {
 };
 static CoutEscapes COLORS;
 
+std::string getBinaryString(char input, size_t n_bytes);
+
 /***************************
  ********* TIMER ***********
  ***************************/

@@ -32,6 +32,7 @@ typedef SSIZE_T ssize_t;
 
 #define ENABLE_CLIENTPACKET_INSPECTION true
 #define ENABLE_PEERPACKET_INSPECTION true
+#define ENABLE_INPUTPACKET_INSPECTION true
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
@@ -197,22 +198,42 @@ struct PeerSetupPacket {
   void printContents();
 };
 
-constexpr size_t PEER_INPUTS_PACKET_SIZE = 0; //TODO: Update this
+constexpr size_t NET_INPUTS_PACKET_SIZE = 2+2; // Frame # & 14 buttons
 
 /**
  * @brief Packet for p2p input send/recv once the game has started.
  * @note - 1111111 as frame number to indiciate bad packet
  * @note instead of inputs it will then contain the actual frame number needed
+ * @note Packet Organization:
+ * @note Standard: [Frame # - 2b] [Inputs - 2b]
+ * @note [up, down, left, right, b1, b2, b3, b4] [l1, r1, l2, r2, l3, r3, start, select]
+ * @note Request: 
  */
-struct NetInputs {
+class NetInputs {
+ public:
   uint16_t frame_n = 0;
-  unsigned char packet_buf[PEER_INPUTS_PACKET_SIZE];
+  bool is_repeat_request = false;
+  char packet_buf[NET_INPUTS_PACKET_SIZE] = "";
 
   NetInputs(){}
-  NetInputs(uint16_t f_n, const ButtonStates* in);
+  NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in);
   NetInputs(char* net_buf, size_t n_bytes);
 
+  /**
+   * @brief Parses the buttonstate from a packet. If packet was a
+   * request for a repeat send, parses as all inputs off and frame 1111...1111
+   */
   std::pair<ButtonStates, uint16_t> parse();
+
+  void printContents();
+
+ private:
+
+  /**
+   * @brief Helper function to populate the input portion of the packet buffer
+   * @return -1 on failure, 1 on success
+   */
+  int populateInputs(const ButtonStates* in);
 };
 
 
