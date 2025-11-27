@@ -1211,7 +1211,8 @@ std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs() {
   // If 25565 -> only read next 2 bytes (requested frame); end of packet.
 
   // Else -> populate NetInputs w buffer
-  return NetInputs(tmp_buf,NET_INPUTS_PACKET_SIZE);
+  NetInputs packet_contents(tmp_buf,NET_INPUTS_PACKET_SIZE);
+  return packet_contents.parse();
 }
 
 int NetEngine::testNetClient() {

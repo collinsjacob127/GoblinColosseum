@@ -16,9 +16,18 @@ InputSystem::InputSystem() {
 }
 
 void applyButtonUpdate(const Button* prev_btn, Button* cur_btn) {
-  if (*cur_btn == 0) { return; }
-  if (*prev_btn > 0) { *cur_btn = HELD; }
-  return;
+  // Button currently held
+  if (*cur_btn >= 1) {
+    // Previous button not held
+    if (*prev_btn <= 0) { *cur_btn = PRESSED; }
+    // Previous button held
+    else { *cur_btn = HELD; }
+  } else { // Button currently NOT held
+    // Previous button not held
+    if (*prev_btn <= 0) { *cur_btn = RELEASED; }
+    // Previous button held
+    else { *cur_btn = JUST_RELEASED; }
+  }
 }
 
 void handleButtonStateTick(const ButtonStates* prev_buttons, ButtonStates* cur_buttons) {

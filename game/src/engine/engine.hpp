@@ -370,11 +370,12 @@ class GameAllocator {
 
   void fillCurrentMotionBuffer(ButtonStates* buf);
 
+  GameScene* getSceneAtTick(unsigned int tick);
+
  private:
   GameScene history_buffer[HISTORY_BUFFER_SIZE];
   unsigned int getCurrentIndex();
   unsigned int getIndexOfTick(unsigned int tick);
-  GameScene* getSceneAtTick(unsigned int tick);
 };
 
 class GameManager {

@@ -198,7 +198,7 @@ class NetEngine {
 
   ssize_t requestPeerInputs(uint16_t f_num);
 
-  std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs();
+  std::pair<ButtonStates, uint16_t> getPeerInputs();
 
  private:
 

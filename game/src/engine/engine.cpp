@@ -724,7 +724,10 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
   // Update current tick label (marking that we've rolled back)
   cur_tick = prev_tick;
   // Copy net inputs from param to scene's net pindex input
-  memcpy(&getCurrentScene()->inputs[net_pindex], in, sizeof(ButtonStates));
+  GameScene *cur_scene = getCurrentScene();
+  memcpy(&cur_scene->inputs[net_pindex], in, sizeof(ButtonStates));
+  // Update the button states based on previous scene's inputs
+  handleButtonStateTick(getInputsAtTick(net_pindex, cur_tick-1), &cur_scene->inputs[net_pindex]);
   // Returns the scene at that point in time
   return getCurrentScene();  
 }
@@ -745,6 +748,10 @@ GameScene* GameAllocator::rollForward() {
   memcpy(next_scene, cur_scene, sizeof(GameScene));
   // Copy saved inputs to next frame
   memcpy(&next_scene->inputs[loc_pindex], &tmp, sizeof(ButtonStates));
+
+  // Update button states (held / press / released / just_released)
+  handleButtonStateTick(&cur_scene->inputs[net_pindex], &next_scene->inputs[net_pindex]);
+  handleButtonStateTick(&cur_scene->inputs[loc_pindex], &next_scene->inputs[loc_pindex]);
 
   return next_scene;
 }
@@ -830,7 +837,7 @@ void GameManager::setInitialPlayerPositions() {
 }
 
 /**
- * @brief Sends inputs from SDL_Event to InputSystem
+ * @brief Sends local inputs to the game engine at the current tick
  */
 void GameManager::updateInputs(const ButtonStates* btns, int pindex) {
   // Player index must be 0 or 1
@@ -847,6 +854,9 @@ void GameManager::updateInputs(const ButtonStates* btns, int pindex) {
   memcpy(cur_inputs, 
          btns, 
          sizeof(ButtonStates));
+
+  // Clean up local input states (held vs pressed, etc)
+  handleButtonStateTick(allocator.getInputsAtTick(pindex, cur_tick-1), cur_inputs);
 }
 
 void GameManager::tick() {
@@ -858,11 +868,13 @@ void GameManager::tick() {
 /**
  * @brief Roll the allocator back to a given frame, insert the recieved inputs,
  * then resimulate forwards until the current frame.
+ * @note rollBack only changes the inputs of the remote player.
  */
 void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
   // Move the current game scene back to when this input was sent
   // Send the input to the allocator
   allocator.rollBack(frame, in);
+  
   // Ensure that roll *back* is *back*
   if (frame >= cur_tick) {return;}
   GameScene* scene = allocator.rollForward();

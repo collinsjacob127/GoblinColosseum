@@ -33,6 +33,7 @@
  */ 
 int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
+int startOnlineGame(RenderEngine* renderer);
 
 // Global so cleanup can be guaranteed
 NetEngine net_engine;
@@ -42,54 +43,6 @@ int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
   // std::signal(SIGABRT, handleUnexpectedClosure);
   // std::signal(SIGTERM, handleUnexpectedClosure);
-
-  /*
-    START BUTTON PACKING TEST 
-  */
-  // ButtonStates example_buttons;
-  // example_buttons.up = HELD;
-  // example_buttons.down = HELD;
-  // example_buttons.left = RELEASED;
-  // example_buttons.right = HELD;
-  // example_buttons.b1 = HELD;
-  // example_buttons.b2 = HELD;
-  // example_buttons.b3 = RELEASED;
-  // example_buttons.b4 = RELEASED;
-  // example_buttons.l1 = RELEASED;
-  // example_buttons.l2 = RELEASED;
-  // example_buttons.l3 = RELEASED;
-  // example_buttons.r1 = RELEASED;
-  // example_buttons.r2 = RELEASED;
-  // example_buttons.r3 = HELD;
-  // example_buttons.start = RELEASED;
-  // example_buttons.select = RELEASED;
-  // net_engine.testButtonPacket(&example_buttons);
-  // std::cout << "Ctrl:\n";
-  // showButtonStates(&example_buttons);
-  // std::cout <<"works...\n";
-  // return 0;
-  /*
-    END BUTTON PACKING TEST 
-  */
-
-  /*
-  START NET TEST 
-  */
-   
-  int return_val = 2;
-  while (return_val == 2) {
-    net_engine.getLocalUserName();
-    if (!continue_program) { exit(0); } // Prevent loop from continuing if int signal handled
-    return_val = net_engine.testNetClient();
-  }
-
-  // COLORS.printSuccess("\nClient program exited normally\n");
-
-  // return 0;
-
-  /*
-  END NET TEST 
-  */
 
   RenderEngine renderer;
 
@@ -165,9 +118,6 @@ int startLocalGame(RenderEngine* renderer) {
   PlayerController* p2 = new Hunko();
   GameManager game(p1, p2, 1);
 
-  // renderer->initializeCharacterTextures(0, p1->getCharacterId());
-  // renderer->initializeCharacterTextures(1, p2->getCharacterId());
-
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
   InputSystem* p2_inputs = new InputSystem();
@@ -205,15 +155,6 @@ int startLocalGame(RenderEngine* renderer) {
       // Reset Timer
       frame_rate = (double) 1 / fps_timer.duration();
       fps_timer.start();
-
-      // Clean inputs based on previous input state
-      handleButtonStateTick(game.allocator.getInputsAtTick(0, game.cur_tick-1), &p1_inputs->buttons);
-      handleButtonStateTick(game.allocator.getInputsAtTick(1, game.cur_tick-1), &p2_inputs->buttons);
-
-      // ROLLBACK FUNCTIONALITY DEMO
-      // if (game.cur_tick > 120 && game.cur_tick % 20 == 0) {
-      //   game.rollBack(game.cur_tick-20, &p2_inputs->buttons);
-      // }
 
       // Send accumulated inputs to game engine
       game.updateInputs(&p1_inputs->buttons, 0);
@@ -264,11 +205,85 @@ int startLocalGame(RenderEngine* renderer) {
     }
   }
 
-  // Clean up game 
-  // delete p1;
-  // delete p2;
-  // delete p1_inputs;
-  // delete p2_inputs;
+  return 1;
+}
+
+int startOnlineGame(RenderEngine* renderer) {
+  /*
+  START NET TEST 
+  */
+   
+  int return_val = 2;
+  while (return_val == 2) {
+    net_engine.getLocalUserName();
+    if (!continue_program) { exit(0); } // Prevent loop from continuing if int signal handled
+    return_val = net_engine.testNetClient();
+  }
+
+  COLORS.printSuccess("\nClient program exited normally\n");
+
+  return 0;
+
+  /*
+  END NET TEST 
+  */
+
+  PlayerController* p1 = new Hunko();
+  PlayerController* p2 = new Hunko();
+  GameManager game(p1, p2, 1);
+
+  // Testing local 2-player
+  InputSystem* p1_inputs = new InputSystem();
+  InputSystem* p2_inputs = new InputSystem();
+  p2_inputs->setP2DefaultBindings();
+
+  // Define duration of each frame
+  double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
+  // Used to display FPS
+  double frame_rate = -1.0;
+  Timer game_timer, fps_timer;
+  game_timer.start(); fps_timer.start();
+
+  // MAIN GAME LOOP
+  bool quit = false;
+  while (!quit) {
+
+    // Handle Events / Hardware Inputs
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+      // Let the game quit lol
+      if (e.type == SDL_EVENT_QUIT) { quit = true; }
+      // Escape will quit also
+      if (e.type == SDL_EVENT_KEY_DOWN)
+        if (e.key.key == SDLK_ESCAPE) { quit = true; }
+      if (e.type == SDL_EVENT_WINDOW_RESIZED) { renderer->calculateScale(e.window.data1, e.window.data2); }
+      // Send keyboard to game inputs
+
+      p1_inputs->updateButtonStates(&e);
+      p2_inputs->updateButtonStates(&e);
+    }
+
+    // Cap frame rate at 60 fps
+    if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
+    // if (game_timer.duration() >= 0) {
+      // Reset Timer
+      frame_rate = (double) 1 / fps_timer.duration();
+      fps_timer.start();
+
+      // Send accumulated inputs to game engine
+      game.updateInputs(&p1_inputs->buttons, 0);
+      game.updateInputs(&p2_inputs->buttons, 1);
+
+      // Move to next frame
+      game.tick();
+
+      // Only render if game engine is caught up
+      if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
+        renderer->FPS = frame_rate;
+        renderer->renderGameScene(&game);
+      }
+    }
+  }
 
   return 1;
 }
