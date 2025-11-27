@@ -195,7 +195,7 @@ class NetEngine {
   * @brief Function to clear the queue of a UDP buffer
   * @note Only use when you know you have time and won't destroy anything
   */
- ssize_t clearSocketQueue(int s); //TODO: Implement this
+ ssize_t clearSocketQueue(int s); // TODO: Implement this
 
   /**
    * @brief Function to update my_local_addr based on the current connection
