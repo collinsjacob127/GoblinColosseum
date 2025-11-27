@@ -210,6 +210,12 @@ int startLocalGame(RenderEngine* renderer) {
 }
 
 int onlineMenu(RenderEngine* renderer) {
+  // TODO: 
+  // Select p1 vs p2
+  // Select character
+  // Send / recv inputs
+  // Display lobby list
+  
   /*
   START NET TEST 
   */
@@ -223,7 +229,7 @@ int onlineMenu(RenderEngine* renderer) {
 
   COLORS.printSuccess("\nReached end of current online functionality\n");
 
-  return 0;
+  // return 0;
 
   /*
   END NET TEST 

@@ -86,6 +86,8 @@ constexpr int SERVER_PORT = 53243;
 class NetEngine {
  public:
   std::string username = "";
+  std::string warning_text = "";
+
   uint64_t session_id = 0;
   uint64_t lobby_id = 0;
   // std::vector<std::string> lobby_list = {};

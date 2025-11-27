@@ -814,15 +814,11 @@ void NetEngine::getLocalUserName() {
 }
 
 void NetEngine::setLocalUserName(std::string user_name) {
-  if (user_name.size() < MAX_USERNAME_SIZE) {
+  if (user_name.size() < MAX_USERNAME_SIZE && user_name.size() > 0) {
     username = user_name;
+    warning_text = "";
   } else {
-    std::stringstream ss;
-    ss << "[Error] ";
-    ss << "Net engine failed to set username (" << user_name << ") ";
-    ss << "too long (" << user_name.size() << " > " << MAX_USERNAME_SIZE-1 << ")";
-    ss << std::endl;
-    COLORS.printError(ss.str());
+    warning_text = "[Error] Invalid username length (1 - 25 characters)\n";
   }
 }
 
