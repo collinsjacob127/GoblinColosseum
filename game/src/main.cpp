@@ -47,15 +47,26 @@ int main(int argc, char* argv[]) {
     START BUTTON PACKING TEST 
   */
   ButtonStates example_buttons;
-  example_buttons.up = RELEASED;
+  example_buttons.up = HELD;
   example_buttons.down = HELD;
-  example_buttons.left = HELD;
+  example_buttons.left = RELEASED;
   example_buttons.right = HELD;
   example_buttons.b1 = HELD;
   example_buttons.b2 = HELD;
   example_buttons.b3 = RELEASED;
   example_buttons.b4 = RELEASED;
+  example_buttons.l1 = RELEASED;
+  example_buttons.l2 = RELEASED;
+  example_buttons.l3 = RELEASED;
+  example_buttons.r1 = RELEASED;
+  example_buttons.r2 = RELEASED;
+  example_buttons.r3 = HELD;
+  example_buttons.start = RELEASED;
+  example_buttons.select = RELEASED;
   net_engine.testButtonPacket(&example_buttons);
+  std::cout << "Ctrl:\n";
+  showButtonStates(&example_buttons);
+  std::cout <<"works...\n";
   return 0;
   /*
     END BUTTON PACKING TEST 

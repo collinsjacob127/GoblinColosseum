@@ -197,6 +197,7 @@ NetInputs::NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in) {
   // Variable to store states of 8 buttons at a time
   char btn_subset = 0; int i = 8;
 
+  // set buttons 0 - 7
   if (in->up) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   if (in->down) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   if (in->left) {btn_subset = btn_subset | (1 << --i); } else { i--; }
@@ -206,16 +207,82 @@ NetInputs::NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in) {
   if (in->b3) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   if (in->b4) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   
-  std::cout << getBinaryString(btn_subset, 1) << std::endl;
+  memcpy(buf_ptr++, &btn_subset, 1);
+  btn_subset = 0; i = 8;
+
+  // set buttons 8 - 15
+  if (in->l1) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->r1) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->l2) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->r2) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->l3) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->r3) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->start) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  if (in->select) {btn_subset = btn_subset | (1 << --i); } else { i--; }
+  memcpy(buf_ptr++, &btn_subset, 1);
+
+  // verify
+  if (ENABLE_INPUTPACKET_INSPECTION)
+    std::cout << getBinaryString(packet_buf[2], 1) << getBinaryString(packet_buf[3],1) << std::endl;
+
+
 }
 
 NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
+  // Verify good pointer
+  if (net_buf == nullptr || n_bytes < 2) { return; }
 
+  // Cast buf ptr for unpack
+  unsigned char *in_buf_ptr = (unsigned char *)net_buf;
+
+  // Check if packet is request
+  if (unpacku16(in_buf_ptr) == 65535 || n_bytes == 4) {
+    is_repeat_request = true;
+    frame_n = unpacku16(in_buf_ptr+sizeof(frame_n));
+    return;
+  }
+
+  // Good packet, set frame_n
+  frame_n = unpacku16(in_buf_ptr);
+  if (n_bytes != NET_INPUTS_PACKET_SIZE) { 
+    COLORS.printError("[Error] Attempted packet parse with invalid size\n");
+  }
+
+  // Copy packet contents into buffer
+  memcpy(packet_buf, in_buf_ptr, NET_INPUTS_PACKET_SIZE);
 }
 
 std::pair<ButtonStates, uint16_t> NetInputs::parse() {
   ButtonStates tmp;
-  return std::pair<ButtonStates, uint16_t>(tmp, 65535);
+  std::pair<ButtonStates, uint16_t> ret_val(tmp,25565);
+
+  // Check good packet
+  if (is_repeat_request) { return ret_val; }
+
+  // Good packet, parse packet
+  char cur_subset = packet_buf[2]; int i = 8;
+  if ((cur_subset & (1 << --i)) > 0) { tmp.up = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.down = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.left = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.right = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.b1 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.b2 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.b3 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.b4 = HELD; }
+  cur_subset = packet_buf[3]; i = 8;
+  if ((cur_subset & (1 << --i)) > 0) {tmp.l1 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.r1 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.l2 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.r2 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.l3 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.r3 = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.start = HELD; }
+  if ((cur_subset & (1 << --i)) > 0) {tmp.select = HELD; }
+
+  // Set both values and return
+  ret_val.first = tmp;
+  ret_val.second = frame_n;
+  return ret_val;
 }
 
 void NetInputs::printContents() {

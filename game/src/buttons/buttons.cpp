@@ -78,18 +78,18 @@ std::string printButtonState(const Button* btn) {
 
 void showButtonStates(const ButtonStates* btn_state) {
   std::cout << "Buttons: ";
-  if (btn_state->up) {std::cout << "up_" << printButtonState(&btn_state->up);}
-  if (btn_state->down) {std::cout << "down_" << printButtonState(&btn_state->down);}
-  if (btn_state->left) {std::cout << "left_" << printButtonState(&btn_state->left);}
-  if (btn_state->right) {std::cout << "right_" << printButtonState(&btn_state->right);}
-  if (btn_state->b1) {std::cout << "b1_" << printButtonState(&btn_state->b1);}
-  if (btn_state->b2) {std::cout << "b2_" << printButtonState(&btn_state->b2);}
-  if (btn_state->b3) {std::cout << "b3_" << printButtonState(&btn_state->b3);}
-  if (btn_state->b4) {std::cout << "b4_" << printButtonState(&btn_state->b4);}
-  if (btn_state->l1) {std::cout << "l1_" << printButtonState(&btn_state->l1);}
-  if (btn_state->l2) {std::cout << "l2_" << printButtonState(&btn_state->l2);}
-  if (btn_state->r1) {std::cout << "r1_" << printButtonState(&btn_state->r1);}
-  if (btn_state->r2) {std::cout << "r2_" << printButtonState(&btn_state->r2);}
+  if (btn_state->up) {std::cout << " up_" << printButtonState(&btn_state->up);}
+  if (btn_state->down) {std::cout << " down_" << printButtonState(&btn_state->down);}
+  if (btn_state->left) {std::cout << " left_" << printButtonState(&btn_state->left);}
+  if (btn_state->right) {std::cout << " right_" << printButtonState(&btn_state->right);}
+  if (btn_state->b1) {std::cout << " b1_" << printButtonState(&btn_state->b1);}
+  if (btn_state->b2) {std::cout << " b2_" << printButtonState(&btn_state->b2);}
+  if (btn_state->b3) {std::cout << " b3_" << printButtonState(&btn_state->b3);}
+  if (btn_state->b4) {std::cout << " b4_" << printButtonState(&btn_state->b4);}
+  if (btn_state->l1) {std::cout << " l1_" << printButtonState(&btn_state->l1);}
+  if (btn_state->l2) {std::cout << " l2_" << printButtonState(&btn_state->l2);}
+  if (btn_state->r1) {std::cout << " r1_" << printButtonState(&btn_state->r1);}
+  if (btn_state->r2) {std::cout << " r2_" << printButtonState(&btn_state->r2);}
   std::cout << std::endl;
 }
 

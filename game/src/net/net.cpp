@@ -1197,21 +1197,6 @@ int NetEngine::testNetClient() {
   Timer timer;
   timer.start();
 
-  // crossPlatformSleep(150);
-  // double test_sleep_dur = timer.duration();
-  // std::stringstream test_sleep_log;
-  // test_sleep_log << "Sleep of 150ms completed in: " << test_sleep_dur << "s\n";
-  // COLORS.printInColor(test_sleep_log.str(), COLORS.brt_yellow_fg);
-
-  // std::cout << "[TEMP] Testing local addr record & save\n";
-  // serverConnect();
-  // updateLocalAddress(server_sock);
-  // serverDisconnect();
-  // std::stringstream ss;
-  // ss << "\nRetrieved local addr as: " << my_local_addr.rep_str << std::endl;
-  // COLORS.printSuccess(ss.str());
-  // return -1;
-
   // Send username and get session ID
   std::cout << "\n[Log] Initializing server communication (requesting session id)\n";
   result = initializeServerCommunication();
@@ -1330,5 +1315,7 @@ int NetEngine::testNetClient() {
 int NetEngine::testButtonPacket(const ButtonStates *buttons) {
   NetInputs inputs(false, 0, buttons);
   inputs.printContents();
+  std::pair<ButtonStates, uint16_t> vals = inputs.parse();
+  showButtonStates(&vals.first);
   return 0;
 }
