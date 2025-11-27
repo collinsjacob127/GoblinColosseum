@@ -12,6 +12,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_image/SDL_image.h>
 
+#include "net.hpp"
 #include "engine.hpp"
 #include "util.hpp"
 
@@ -32,7 +33,6 @@ struct CharacterTextures {
   SDL_Texture* jumping;
   SDL_Texture* crouching;
 };
-
 
 class RenderEngine {
  public:
@@ -67,8 +67,9 @@ class RenderEngine {
   
   void loadTextureFromPath(std::string fname, SDL_Texture* tex_to_be);
   void initializeCharacterTextures(int p_index, int character_id);
-  void renderGameScene(GameManager* game);
   void renderStartMenu(int selection);
+  void renderOnlineMenu(NetEngine* net_engine);
+  void renderGameScene(GameManager* game);
   void calculateScale(int win_width, int win_height);
 
  private:

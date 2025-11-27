@@ -20,6 +20,7 @@ target_link_libraries(render
 PRIVATE
     libs
     buttons
+    net
     engine
     util
 )

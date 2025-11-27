@@ -279,6 +279,9 @@ void RenderEngine::renderStartMenu(int selection) {
   SDL_RenderPresent(ren);
 }
 
+void RenderEngine::renderOnlineMenu(NetEngine* net_engine) {
+  return;
+}
 
 void RenderEngine::renderGameScene(GameManager* game) {
   const GameScene* scene = game->allocator.getCurrentScene();

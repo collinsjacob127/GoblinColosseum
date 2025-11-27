@@ -33,6 +33,7 @@
  */ 
 int start(RenderEngine* renderer);
 int startLocalGame(RenderEngine* renderer);
+int onlineMenu(RenderEngine* renderer);
 int startOnlineGame(RenderEngine* renderer);
 
 // Global so cleanup can be guaranteed
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
   // Selection has been chosen
   switch (selection) {
     case 0: { startLocalGame(&renderer); break; }
-    case 1: { std::cout << "Online not yet implemented" << std::endl; break; }
+    case 1: { onlineMenu(&renderer); break; }
     case 2: { std::cout << "Settings not yet implemented" << std::endl; break; }
   }
 
@@ -208,7 +209,7 @@ int startLocalGame(RenderEngine* renderer) {
   return 1;
 }
 
-int startOnlineGame(RenderEngine* renderer) {
+int onlineMenu(RenderEngine* renderer) {
   /*
   START NET TEST 
   */
@@ -220,14 +221,17 @@ int startOnlineGame(RenderEngine* renderer) {
     return_val = net_engine.testNetClient();
   }
 
-  COLORS.printSuccess("\nClient program exited normally\n");
+  COLORS.printSuccess("\nReached end of current online functionality\n");
 
   return 0;
 
   /*
   END NET TEST 
   */
+  startOnlineGame(renderer);
+}
 
+int startOnlineGame(RenderEngine* renderer) {
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
   GameManager game(p1, p2, 1);
