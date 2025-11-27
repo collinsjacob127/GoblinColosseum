@@ -1191,6 +1191,29 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   return in_pkt; 
 }
 
+ssize_t NetEngine::sendPeerInputs(uint16_t f_num, const ButtonStates* btns) {
+  return -1;
+}
+
+ssize_t NetEngine::requestPeerInputs(uint16_t f_num) {
+  return -1;
+}
+
+std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs() {
+  // Receive inputs (recv loop)
+
+  char tmp_buf[NET_INPUTS_PACKET_SIZE] = "";
+
+  // First read first 2 bytes - check if 25565
+
+  // ...
+
+  // If 25565 -> only read next 2 bytes (requested frame); end of packet.
+
+  // Else -> populate NetInputs w buffer
+  return NetInputs(tmp_buf,NET_INPUTS_PACKET_SIZE);
+}
+
 int NetEngine::testNetClient() {
   COLORS.printInColor("\n[Log] Running network test...\n", COLORS.brt_magenta_fg);
   ssize_t result;
@@ -1304,10 +1327,10 @@ int NetEngine::testNetClient() {
   std::cout << "[TEMP] Peer addr final: " << peer_addr_final.rep_str << std::endl;
 
   // Close peer connection
-  peerDisconnect();
+  // peerDisconnect();
 
-  std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
-  << timer.duration() << "s\n";
+  // std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
+  // << timer.duration() << "s\n";
 
   return 0;
 }

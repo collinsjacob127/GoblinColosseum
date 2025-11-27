@@ -194,6 +194,12 @@ class NetEngine {
    */
   PeerSetupPacket initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id);
 
+  ssize_t sendPeerInputs(uint16_t f_num, const ButtonStates* btns);
+
+  ssize_t requestPeerInputs(uint16_t f_num);
+
+  std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs();
+
  private:
 
  /**
