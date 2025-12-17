@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_blank" rel="noopener noreferrer">
+</head>
+
+<style>
+
+/*  
+BG: #161618
+Bright text: #69ec28
+Medium text: #4ebb00
+Dull text: #398206
+*/
+
+body {
+  background-color: #161618;
+  align-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+
+h1 {
+  color: #69ec28;
+  text-align: center;
+}
+
+.download-button {
+    background-color: #409900; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    width: 50%; /* A defined width is required */
+    margin-left: auto;
+    margin-right: auto;
+}
+.download-button:hover {
+  background-color: #398206;
+}
+
+.center-horizontal {
+  width: 50%; /* A defined width is required */
+  margin-left: auto;
+  margin-right: auto;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  /* Shorthand: margin: 0 auto; */
+}
+
+.game-diagram {
+  width: 100%;
+}
+
+</style>
+
+<body>
+
+<h1>
+  Goblin Colosseum
+</h1>
+
+<div class="center-horizontal">
+<a href="test-file.txt" download class="download-button">
+    Download for Windows
+</a>
+</div>
+
+<br>
+
+<div class="center-horizontal">
+<a href="https://github.com/collinsjacob127/GoblinColosseum" download class="download-button" rel="noopener noreferrer">
+    GitHub Source Code
+</a>
+</div>
+
+<br>
+
+<img src="Poster.png" alt="Goblin Colosseum Diagram" class="game-diagram">
+
+</body>
+</html>
+

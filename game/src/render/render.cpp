@@ -283,6 +283,7 @@ void RenderEngine::renderStartMenu(int selection) {
 }
 
 void RenderEngine::initializeOnlineMenuPrompt() {
+  COLORS.printInColor("Initializing online menu prompt...\n", COLORS.magenta_fg);
   online_menu.prompt_tex = SDL_CreateTexture(
     ren, 
     SDL_PIXELFORMAT_ARGB32,
@@ -311,21 +312,23 @@ void RenderEngine::initializeOnlineMenuPrompt() {
   SDL_Texture *texture = SDL_CreateTextureFromSurface(ren, surface);
   if (!texture) { std::cerr << "Bad texture\n"; }
 
-  // Clean up surface
-  SDL_DestroySurface(surface);
-
   float texW = 0, texH = 0;
   SDL_GetTextureSize(texture, &texW, &texH);
 
   int ren_w, ren_h;
   SDL_GetCurrentRenderOutputSize(ren, &ren_w, &ren_h);
 
+  std::stringstream warn_str;
+  warn_str << "Ren w: " << ren_w << "\nRen h: " << ren_h << std::endl;
+  COLORS.printWarning(warn_str.str());
+  
   // Define dimensions of text output
-  SDL_FRect dst = {(ren_w/2) - (texW*scale/2), ren_h/2, texW*scale, texH*scale};
+  SDL_FRect dst = {(ren_w/(float)2) - (texW*scale/(float)2), ren_h/(float)2, texW*scale, texH*scale};
   // Render to prompt_tex
   SDL_RenderTexture(ren, texture, NULL, &dst);
 
-  // Clean up tmp texture
+  // Clean up surface & temp texture
+  SDL_DestroySurface(surface);
   SDL_DestroyTexture(texture);
 
   // Reset render target to window
@@ -335,11 +338,17 @@ void RenderEngine::initializeOnlineMenuPrompt() {
 void RenderEngine::renderOnlineMenu(const NetEngine* net_engine) {
   if (online_menu.prompt_tex == nullptr) {initializeOnlineMenuPrompt();}
 
+  COLORS.printInColor("Rendering online menu...\n", COLORS.magenta_fg);
+  // Reset render target to window
+  SDL_SetRenderTarget(ren, NULL);
+
   // Render the online menu prompt
   SDL_RenderTexture(ren, online_menu.prompt_tex, NULL, NULL);
 
   // Present the rendered texture
   SDL_RenderPresent(ren);
+
+  COLORS.printSuccess("Finished presenting online menu...\n");
 }
 
 void RenderEngine::renderGameScene(GameManager* game) {

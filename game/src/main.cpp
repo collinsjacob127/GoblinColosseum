@@ -226,6 +226,7 @@ int onlineMenu(RenderEngine* renderer) {
   */
    
   renderer->renderOnlineMenu(&net_engine);
+  // renderer->renderOnlineMenu(&net_engine);
   net_engine.getLocalUserName();
   net_engine.testNetClient();
 
