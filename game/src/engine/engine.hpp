@@ -40,10 +40,12 @@
 
 // For rollback functionality demo:
 #define MAX_ROLLBACK_FRAMES 60
+#define FRAME_ADVANTAGE_LIMIT 5
 #define INITIAL_FRAME 60
+constexpr uint16_t MAX_GAME_DURATION = 60*60*5;
+
 #define HISTORY_BUFFER_SIZE 120
 
-#define FRAME_ADVANTAGE_LIMIT 5
 
 #define MAX_N_HITBOXES 4
 #define MAX_N_HURTBOXES 4

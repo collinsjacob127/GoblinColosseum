@@ -226,7 +226,6 @@ int onlineMenu(RenderEngine* renderer) {
   */
    
   renderer->renderOnlineMenu(&net_engine);
-  // renderer->renderOnlineMenu(&net_engine);
   net_engine.getLocalUserName();
   net_engine.getPlayerSelection();
   // Handle server connection & p2p initialization
@@ -236,10 +235,7 @@ int onlineMenu(RenderEngine* renderer) {
 
   // return 0;
 
-  /*
-  END NET TEST 
-  */
-  startOnlineGame(renderer);
+  return startOnlineGame(renderer);
 }
 
 // References rollback pseudocode by rcmagic: https://gist.github.com/rcmagic/f8d76bca32b5609e85ab156db38387e9
@@ -301,7 +297,10 @@ int startOnlineGame(RenderEngine* renderer) {
     // Update synchronization
 
     // Verify still synced
-    if (!)
+    if (!rb_tracker.timeSynced()) {
+      printf("GAME STATES NOT SYNCHRONIZED - WAITING TO SYNC...\n");
+      crossPlatformSleep(5);
+    }
 
     // Game tick:
     if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
@@ -310,7 +309,7 @@ int startOnlineGame(RenderEngine* renderer) {
       fps_timer.start();
 
       // Send accumulated inputs to game engine
-      game.updateInputs(&p1_inputs->buttons, net_engine.p_num-1);
+      game.updateInputs(&local_inputs->buttons, net_engine.p_num-1);
 
       // Move to next frame
       game.tick();

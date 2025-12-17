@@ -1435,7 +1435,7 @@ int NetEngine::testNetClient() {
 
   // Connect to peer and test communication
   std::cout << "\n[Log] Initializing peer communication\n";
-  initializePeerCommunication((uint16_t)(60*60*5), CHARACTER_ID_HUNKO);
+  initializePeerCommunication(MAX_GAME_DURATION, CHARACTER_ID_HUNKO);
 
   std::cout << "[TEMP] Peer socket fd: " << peer_sock << std::endl;
   std::cout << "[TEMP] Local addr: " << my_local_addr.rep_str << std::endl;
