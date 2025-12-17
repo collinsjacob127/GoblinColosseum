@@ -4,7 +4,7 @@
 # https://stackoverflow.com/questions/13703647/how-to-properly-add-include-directories-with-cmake
 
 cmake_minimum_required(VERSION 3.16)
-project(GOBLIN VERSION 0.1.1)
+project(GOBLIN VERSION 0.1.2)
 
 # Using C++ Version 17
 set(CMAKE_CXX_STANDARD 17)
