@@ -390,11 +390,10 @@ ssize_t NetEngine::sendPeerSetupPacket(PeerSetupPacket out_pkt, clientAddrInfo s
 }
 
 std::pair<PeerSetupPacket,clientAddrInfo> NetEngine::recvPeerSetupPacket() {
-  //TODO: delete this ig
   clientAddrInfo peer_addr_tmp(0, 0);  // = convertSockAddrToClientAddrInfo(peer_sock)
 
   if (PeerSocket == INVALID_SOCKET) {
-    printf("[Error] Unable to connect to server!\n");
+    printf("[Error] Unable to connect to peer!\n");
     WSACleanup();
     return std::pair<PeerSetupPacket,clientAddrInfo>(PeerSetupPacket(), peer_addr_tmp);
   }
@@ -446,6 +445,114 @@ void NetEngine::peerDisconnect() {
     PeerSocket = INVALID_SOCKET;
   }
   peer_sock = -1; 
+}
+
+ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
+  if (PeerSocket == INVALID_SOCKET) {
+    COLORS.printError("[Error] Unable to connect to peer while attempting to send net inputs\n");
+    return -1;
+  }
+
+  ssize_t pkt_size = NET_INPUTS_PACKET_SIZE;
+
+  struct sockaddr_in peer_sockaddr = convertClientAddrInfoToSockAddr(peer_addr_final);
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = (ssize_t)sendto(
+      PeerSocket, 
+      inputs.packet_buf+total_bytes_sent, 
+      pkt_size-total_bytes_sent, 
+      0,
+      (sockaddr *)&peer_sockaddr, 
+      sizeof(peer_sockaddr));
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent == SOCKET_ERROR) {
+      peerDisconnect();
+      if (ENABLE_NETCODE_ERROR) {
+        COLORS.printError("[Error] Failed to send inputs:\n");
+        inputs.printContents();
+        printWindowsError("send inputs failed");
+      }
+      return bytes_sent;
+    }
+  }
+
+  return total_bytes_sent;
+}
+
+std::pair<bool, NetInputs> NetEngine::recvPeerInputs() {
+  // Default to return val for invalid packet
+  std::pair<bool, NetInputs> return_val(false, NetInputs());
+
+  // Verify good connection
+  if (PeerSocket == INVALID_SOCKET) {
+    printf("[Error] Unable to connect to peer!\n");
+    WSACleanup();
+    return return_val;
+  }
+
+  // Buffer for reading in the packet
+  char buf[NET_INPUTS_PACKET_SIZE] = "";
+
+  // Addr for verifying source address
+  struct sockaddr_in peer_sockaddr = {};
+  int sockaddr_len = (int) sizeof(peer_sockaddr);
+
+  // Variables for counting bytes
+  ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = NET_INPUTS_PACKET_SIZE;
+
+  // Ensure full packet is read
+  while (total_bytes_in < pkt_size) {
+    bytes_in = (ssize_t)recvfrom(
+      PeerSocket, 
+      buf+total_bytes_in, 
+      pkt_size-total_bytes_in, 
+      0,
+      (sockaddr *)&peer_sockaddr,
+      &sockaddr_len);
+    total_bytes_in += bytes_in;
+    if (bytes_in == SOCKET_ERROR) {
+      return return_val;
+    }
+  }
+
+  // Else -> populate NetInputs w buffer
+  NetInputs packet_contents(buf,NET_INPUTS_PACKET_SIZE);
+  return std::pair<bool, NetInputs>(true, packet_contents);
+}
+
+ssize_t NetEngine::clearSocketQueue() {
+  // Verify good connection
+  if (PeerSocket == INVALID_SOCKET) {
+    printf("[Error] Unable to connect to peer!\n");
+    WSACleanup();
+    return -1;
+  }
+
+  char buf[1024];
+
+  int total_bytes_in=0, bytes_in = 99;
+  while (bytes_in > 0) {
+    bytes_in = (ssize_t)recvfrom(
+      PeerSocket, 
+      buf, 
+      1024, 
+      0,
+      NULL,
+      NULL);
+    total_bytes_in += bytes_in;
+    if (bytes_in == SOCKET_ERROR) {
+      bytes_in = WSAGetLastError();
+      // Continue if winsock being wacky
+      if (bytes_in == WSAEINPROGRESS)
+        continue;
+      // Return 0 if nothing in queue
+      return bytes_in == WSAEWOULDBLOCK ? 0 : -1;
+    }
+  }
+  return total_bytes_in;
 }
 
 #else
@@ -780,6 +887,27 @@ void NetEngine::peerDisconnect() {
   }
 }
 
+ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
+
+  return -1;
+}
+
+std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs() {
+  // Receive inputs (recv loop)
+
+  char tmp_buf[NET_INPUTS_PACKET_SIZE] = "";
+
+  // First read first 2 bytes - check if 25565
+
+  // ...
+
+  // If 25565 -> only read next 2 bytes (requested frame); end of packet.
+
+  // Else -> populate NetInputs w buffer
+  NetInputs packet_contents(tmp_buf,NET_INPUTS_PACKET_SIZE);
+  return packet_contents.parse();
+}
+
 #endif
 
 /**
@@ -811,6 +939,14 @@ void NetEngine::getLocalUserName() {
   // std::cout << "Username \"" << usr_name << "\" Received!\n";
   // Set the username in NetEngine
   setLocalUserName(usr_name);
+}
+
+void NetEngine::getPlayerSelection() {
+  printf("Player 1 or player 2?\nEnter 1 or 2:\n");
+  while (p_num != 1 && p_num != 2) {
+    std::cin >> p_num; 
+  }
+  printf("Player %u selected\n", p_num);
 }
 
 void NetEngine::setLocalUserName(std::string user_name) {
@@ -1187,28 +1323,10 @@ PeerSetupPacket NetEngine::initializePeerCommunication(uint16_t game_dur_f, uint
   return in_pkt; 
 }
 
-ssize_t NetEngine::sendPeerInputs(uint16_t f_num, const ButtonStates* btns) {
-  return -1;
-}
-
-ssize_t NetEngine::requestPeerInputs(uint16_t f_num) {
-  return -1;
-}
-
-std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs() {
-  // Receive inputs (recv loop)
-
-  char tmp_buf[NET_INPUTS_PACKET_SIZE] = "";
-
-  // First read first 2 bytes - check if 25565
-
-  // ...
-
-  // If 25565 -> only read next 2 bytes (requested frame); end of packet.
-
-  // Else -> populate NetInputs w buffer
-  NetInputs packet_contents(tmp_buf,NET_INPUTS_PACKET_SIZE);
-  return packet_contents.parse();
+ssize_t NetEngine::requestPeerResendInputs(uint16_t f_num) {
+  ButtonStates tmp_btns;
+  NetInputs out_inputs(true, f_num, &tmp_btns);
+  return sendNetInputs(out_inputs);
 }
 
 int NetEngine::testNetClient() {
@@ -1324,7 +1442,11 @@ int NetEngine::testNetClient() {
   std::cout << "[TEMP] Peer addr final: " << peer_addr_final.rep_str << std::endl;
 
   // Close peer connection
-  // peerDisconnect();
+  crossPlatformSleep(2000);
+  // Flush the buffer
+  clearSocketQueue();
+  // Wait another second before starting the game
+  crossPlatformSleep(1000);
 
   // std::cout << "Network test finished in " << std::fixed << std::setprecision(17)
   // << timer.duration() << "s\n";

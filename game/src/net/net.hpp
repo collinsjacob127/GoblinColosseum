@@ -89,6 +89,8 @@ class NetEngine {
   std::string username = "";
   std::string warning_text = "";
 
+  uint16_t p_num = 0;
+
   uint64_t session_id = 0;
   uint64_t lobby_id = 0;
   // std::vector<std::string> lobby_list = {};
@@ -118,6 +120,11 @@ class NetEngine {
    * @note Verifies that the name is valid and sets the username
    */
   void getLocalUserName();
+
+  /**
+   * @brief Get if p1 or p2
+   */
+  void getPlayerSelection();
 
   /**
    * @brief Function to set the value of the username
@@ -199,19 +206,32 @@ class NetEngine {
    */
   PeerSetupPacket initializePeerCommunication(uint16_t game_dur_f, uint8_t character_id);
 
-  ssize_t sendPeerInputs(uint16_t f_num, const ButtonStates* btns);
+  /**
+   * @brief Build a packet with these inputs and send it
+   * @note Packet requests should be handled by `requestPeerInputs()`
+   */
+  ssize_t sendNetInputs(NetInputs inputs);
 
-  ssize_t requestPeerInputs(uint16_t f_num);
+  /**
+   * @brief Check for incoming peer input packets.
+   * @note If receiving an invalid packet, ignore and flush it
+   * @return pair: ( T/F - is packet valid ) ( NetInputs packet )
+   */
+  std::pair<bool, NetInputs> recvPeerInputs();
 
-  std::pair<ButtonStates, uint16_t> getPeerInputs();
+  /**
+   * @brief Alert a peer that we need inputs of frame `f_num` resent.
+   */
+  ssize_t requestPeerResendInputs(uint16_t f_num);
 
  private:
 
  /**
-  * @brief Function to clear the queue of a UDP buffer
+  * @brief Function to clear the queue of the UDP buffer used for p2p
   * @note Only use when you know you have time and won't destroy anything
+  * @return -1 on failure, else # bytes cleared
   */
- ssize_t clearSocketQueue(int s); // TODO: Implement this
+ ssize_t clearSocketQueue();
 
   /**
    * @brief Function to update my_local_addr based on the current connection

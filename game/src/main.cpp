@@ -228,11 +228,13 @@ int onlineMenu(RenderEngine* renderer) {
   renderer->renderOnlineMenu(&net_engine);
   // renderer->renderOnlineMenu(&net_engine);
   net_engine.getLocalUserName();
-  net_engine.testNetClient();
+  net_engine.getPlayerSelection();
+  // Handle server connection & p2p initialization
+  net_engine.testNetClient(); // Waits and clears buffer afterwards
 
-  COLORS.printSuccess("\nReached end of current online functionality\n");
+  COLORS.printSuccess("\nGame Starting...\n");
 
-  return 0;
+  // return 0;
 
   /*
   END NET TEST 
@@ -240,15 +242,34 @@ int onlineMenu(RenderEngine* renderer) {
   startOnlineGame(renderer);
 }
 
+// References rollback pseudocode by rcmagic: https://gist.github.com/rcmagic/f8d76bca32b5609e85ab156db38387e9
+struct RollbackTracker {
+  ssize_t local_frame = INITIAL_FRAME;
+  ssize_t remote_frame = INITIAL_FRAME;
+  ssize_t sync_frame = INITIAL_FRAME;
+  ssize_t remote_frame_advantage = 0;
+
+  bool rollbackCondition() {
+    return (local_frame > sync_frame) && (remote_frame > sync_frame);
+  }
+
+  bool timeSynced() {
+    ssize_t local_frame_advantage = local_frame - remote_frame;
+    ssize_t frame_advantage_difference = local_frame_advantage - remote_frame_advantage;
+    return (local_frame_advantage < MAX_ROLLBACK_FRAMES) && (frame_advantage_difference <= FRAME_ADVANTAGE_LIMIT);
+  }
+} rb_tracker;
+
 int startOnlineGame(RenderEngine* renderer) {
+  // Character selection
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
-  GameManager game(p1, p2, 1);
 
-  // Testing local 2-player
-  InputSystem* p1_inputs = new InputSystem();
-  InputSystem* p2_inputs = new InputSystem();
-  p2_inputs->setP2DefaultBindings();
+  // Game initialization
+  GameManager game(p1, p2, net_engine.p_num);
+  
+  // Input startup
+  InputSystem* local_inputs = new InputSystem();
 
   // Define duration of each frame
   double min_frame_duration = (double)1 / (double)FRAME_RATE_CAP;
@@ -261,7 +282,7 @@ int startOnlineGame(RenderEngine* renderer) {
   bool quit = false;
   while (!quit) {
 
-    // Handle Events / Hardware Inputs
+    // Handle Local Events / Hardware Inputs
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       // Let the game quit lol
@@ -272,20 +293,24 @@ int startOnlineGame(RenderEngine* renderer) {
       if (e.type == SDL_EVENT_WINDOW_RESIZED) { renderer->calculateScale(e.window.data1, e.window.data2); }
       // Send keyboard to game inputs
 
-      p1_inputs->updateButtonStates(&e);
-      p2_inputs->updateButtonStates(&e);
+      local_inputs->updateButtonStates(&e);
     }
 
-    // Cap frame rate at 60 fps
+    // Update Network
+
+    // Update synchronization
+
+    // Verify still synced
+    if (!)
+
+    // Game tick:
     if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
-    // if (game_timer.duration() >= 0) {
       // Reset Timer
       frame_rate = (double) 1 / fps_timer.duration();
       fps_timer.start();
 
       // Send accumulated inputs to game engine
-      game.updateInputs(&p1_inputs->buttons, 0);
-      game.updateInputs(&p2_inputs->buttons, 1);
+      game.updateInputs(&p1_inputs->buttons, net_engine.p_num-1);
 
       // Move to next frame
       game.tick();
