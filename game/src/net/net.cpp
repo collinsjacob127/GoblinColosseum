@@ -474,7 +474,7 @@ ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
         inputs.printContents();
         printWindowsError("send inputs failed");
       }
-      return bytes_sent;
+      return -1;
     }
   }
 

@@ -249,7 +249,7 @@ struct RemoteInputNode {
 
 // References rollback pseudocode by rcmagic: https://gist.github.com/rcmagic/f8d76bca32b5609e85ab156db38387e9
 struct RollbackTracker {
-  ssize_t local_frame = INITIAL_FRAME;    // Latest updated frame
+  ssize_t local_frame = INITIAL_FRAME;    // Latest updated frame - actual local game current frame
   ssize_t remote_frame = INITIAL_FRAME;   // Latest frame received from remote
   ssize_t sync_frame = INITIAL_FRAME;     // Last frame where sync occured (known that all inputs recvd through here)
   ssize_t rb_frame = INITIAL_FRAME;       // Rollbacks have been applied up to at least this point
@@ -267,6 +267,7 @@ struct RollbackTracker {
     // In the guide it says this is reported by peer, but i'll just hazard estimate it
     ssize_t frame_advantage_difference = local_frame_advantage - remote_frame_advantage;
 
+    // True if frames are in valid range
     return (local_frame_advantage < MAX_ROLLBACK_FRAMES) && (frame_advantage_difference <= FRAME_ADVANTAGE_LIMIT);
   }
 
@@ -421,6 +422,7 @@ int startOnlineGame(RenderEngine* renderer) {
 
       NetInputs cur_inputs(false, game.cur_tick, &local_inputs->buttons);
       net_engine.sendNetInputs(cur_inputs);
+      rb_tracker.local_frame = game.cur_tick;
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
