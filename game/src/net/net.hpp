@@ -66,12 +66,12 @@ typedef SSIZE_T ssize_t;
 #include "util.hpp"
 #include "packets.hpp"
 
-#define ENABLE_NETCODE_DEBUG true
-#define ENABLE_NETCODE_ERROR true
-#define ENABLE_NETCODE_LOG true
-#define ENABLE_PACKET_INSPECTION true
+#define ENABLE_NETCODE_DEBUG false
+#define ENABLE_NETCODE_ERROR false
+#define ENABLE_NETCODE_LOG false
+#define ENABLE_PACKET_INSPECTION false
 
-#define ENABLE_DENSE_PACKET_INSPECTION true
+#define ENABLE_DENSE_PACKET_INSPECTION false
 
 // IPV4 addr of the server
 // constexpr char *SERVER_ADDR = (char*)"192.168.1.100"; // Server PC

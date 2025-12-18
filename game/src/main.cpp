@@ -420,7 +420,7 @@ int startOnlineGame(RenderEngine* renderer) {
         std::cout << "[RB Tracker] rmt_fadv====: " << rb_tracker.remote_frame_advantage << std::endl;
         std::cout << std::endl;
       }
-      crossPlatformSleep(500);
+      crossPlatformSleep(2);
       continue;
     }
 

@@ -37,7 +37,7 @@
 
 #define ENABLE_HELPER_PRINTOUTS true
 #define ENABLE_MOTIONSCANNING_DEBUG true
-#define ENABLE_NET_INPUT_HANDLER_DEBUGS true
+#define ENABLE_NET_INPUT_HANDLER_DEBUGS false
 
 // For rollback functionality demo:
 #define MAX_ROLLBACK_FRAMES 60

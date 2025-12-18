@@ -30,9 +30,9 @@ typedef SSIZE_T ssize_t;
 #include "util.hpp"
 #include "buttons.hpp"
 
-#define ENABLE_CLIENTPACKET_INSPECTION true
-#define ENABLE_PEERPACKET_INSPECTION true
-#define ENABLE_INPUTPACKET_INSPECTION true
+#define ENABLE_CLIENTPACKET_INSPECTION false
+#define ENABLE_PEERPACKET_INSPECTION false
+#define ENABLE_INPUTPACKET_INSPECTION false
 
 constexpr ssize_t CLIENT_CONTENTS_SIZE = 25;
 constexpr ssize_t CLIENT_PACKET_N_BYTES = 42;
