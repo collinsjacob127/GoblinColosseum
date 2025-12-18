@@ -274,9 +274,8 @@ std::pair<ButtonStates, uint16_t> NetInputs::parse() {
   if ((cur_subset & (1 << --i)) > 0) {tmp.select = HELD; }
 
   // Set both values and return
-  ret_val.first = tmp;
-  ret_val.second = frame_n;
-  return ret_val;
+  std::pair<ButtonStates, uint16_t> ret_val2(tmp,frame_n);
+  return ret_val2;
 }
 
 std::string NetInputs::getContentsBinary() {

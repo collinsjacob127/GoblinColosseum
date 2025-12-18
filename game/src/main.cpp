@@ -254,8 +254,8 @@ struct RollbackTracker {
   ssize_t remote_frame_advantage = 0;     // Latest frame adv. received
 
   bool rollbackCondition() {
-    // No ned to rollback is we don't have frame after the previous sync
-    return (local_frame > sync_frame) && (remote_frame > sync_frame) && (rb_frame == sync_frame);
+    // No ned to rollback if we don't have frame after the previous sync
+    return (local_frame > sync_frame) && (remote_frame > sync_frame) && (rb_frame < sync_frame);
   }
 
   bool timeSynced() {
@@ -287,11 +287,15 @@ struct RollbackTracker {
   }
 
   void executeRollbacks(GameManager* game, std::vector<RemoteInputNode> &remote_input_list) {
-    for (ssize_t f = rb_frame+1; f <= sync_frame; ++f) {
+    for (ssize_t f = rb_frame+1; f < sync_frame; ++f) {
       game->rollBack(f, &remote_input_list[f].btns);
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+        std::cout << "Rolled back to f" << f << " with buttons: ";
+        showButtonStates(&remote_input_list[f].btns);
+      }
       remote_input_list[f].been_applied = true;
     }
-    rb_frame = sync_frame;
+    rb_frame = sync_frame-1;
   }
 };
 
