@@ -424,12 +424,7 @@ int startOnlineGame(RenderEngine* renderer) {
         std::cout << std::endl;
       }
 
-      for (ssize_t i = rb_tracker.sync_frame + 1; i < rb_tracker.local_frame; ++i) {
-        net_engine.requestPeerResendInputs((uint32_t)i);
-        std::cout << "Requesting inputs from frame " << i << std::endl;
-      }
-
-      //TODO: Add connection timeout timer somewhere hereish
+      // net_engine.requestPeerResendInputs(rb_tracker.sync_frame + 1);
 
       crossPlatformSleep(2);
       continue;
