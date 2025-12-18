@@ -517,6 +517,12 @@ std::pair<bool, NetInputs> NetEngine::recvPeerInputs() {
     }
   }
 
+  // Verify correct source
+  clientAddrInfo this_addr = convertSockAddrToClientAddrInfo(peer_sockaddr);
+  if (this_addr.addr != peer_addr_final.addr) {
+    return return_val;
+  }
+
   // Else -> populate NetInputs w buffer
   NetInputs packet_contents(buf,NET_INPUTS_PACKET_SIZE);
   return std::pair<bool, NetInputs>(true, packet_contents);
