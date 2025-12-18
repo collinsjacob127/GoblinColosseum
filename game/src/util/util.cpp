@@ -71,7 +71,9 @@ double Timer::duration() {
 void crossPlatformSleep(uint32_t milliseconds) {
   Timer sleep_timer;
   sleep_timer.start();
-  while (sleep_timer.duration() * 1000 <= milliseconds) { continue; }
+  while (true) { 
+    if (sleep_timer.duration() * 1000 <= milliseconds) { break; }
+  }
 }
 
 BoxEntity::BoxEntity() {};

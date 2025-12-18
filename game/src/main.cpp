@@ -348,7 +348,7 @@ int startOnlineGame(RenderEngine* renderer) {
       // This line might not be right - testing imputation of remote frame advantage
       rb_tracker.remote_frame_advantage = rb_tracker.remote_frame - (ssize_t)f_requested;
       if (ENABLE_NET_INPUT_HANDLER_DEBUGS)
-        printf("[DEBUG] Opponent requested repeat send of inputs from frame %u\n", f_requested);
+        printf("[DEBUG] Opponent requested repeat send of inputs from frame %u\n", (unsigned int)f_requested);
 
       ssize_t bytes_sent = 0;
       // Only respond to requests that are for frames we have
