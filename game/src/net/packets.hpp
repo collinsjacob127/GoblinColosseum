@@ -225,7 +225,7 @@ class NetInputs {
    */
   std::pair<ButtonStates, uint16_t> parse();
 
-  void printContents();
+  std::string getContentsBinary();
 
  private:
 

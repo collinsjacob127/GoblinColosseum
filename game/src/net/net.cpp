@@ -471,7 +471,7 @@ ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
     if (bytes_sent == SOCKET_ERROR) {
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to send inputs:\n");
-        inputs.printContents();
+        std::cout << inputs.getContentsBinary() << std::endl;
         printWindowsError("send inputs failed");
       }
       return -1;
@@ -1548,7 +1548,7 @@ int NetEngine::testNetClient() {
 
 int NetEngine::testButtonPacket(const ButtonStates *buttons) {
   NetInputs inputs(false, 0, buttons);
-  inputs.printContents();
+  std::cout << "test pkt: " << inputs.getContentsBinary() << std::endl;
   std::pair<ButtonStates, uint16_t> vals = inputs.parse();
   showButtonStates(&vals.first);
   return 0;

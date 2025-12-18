@@ -220,10 +220,6 @@ NetInputs::NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in) {
   if (in->start) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   if (in->select) {btn_subset = btn_subset | (1 << --i); } else { i--; }
   memcpy(buf_ptr++, &btn_subset, 1);
-
-  // verify
-  if (ENABLE_INPUTPACKET_INSPECTION)
-    std::cout << getBinaryString(packet_buf[2], 1) << getBinaryString(packet_buf[3],1) << std::endl;
 }
 
 NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
@@ -283,8 +279,8 @@ std::pair<ButtonStates, uint16_t> NetInputs::parse() {
   return ret_val;
 }
 
-void NetInputs::printContents() {
-
+std::string NetInputs::getContentsBinary() {
+  return getBinaryString(packet_buf[2], 1) + getBinaryString(packet_buf[3],1);
 }
 
 /**

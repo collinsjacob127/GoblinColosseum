@@ -362,6 +362,9 @@ int startOnlineGame(RenderEngine* renderer) {
         NetInputs out_pkt(false, f_requested, req_inputs);
         // Send it
         bytes_sent = net_engine.sendNetInputs(out_pkt);
+        if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+          std::cout << "rpt out: " << out_pkt.getContentsBinary() << std::endl;
+        }
       }
 
       // Check that it sent right
@@ -381,6 +384,7 @@ int startOnlineGame(RenderEngine* renderer) {
           std::stringstream ss;
           ss << "[P2P INPUTS] Received inputs from peer @ frame " << remote_pkt.second << "\n";
           COLORS.printSuccess(ss.str());
+          std::cout << "in: " << net_response.second.getContentsBinary() << std::endl;
         }
         // Set remote frame to the highest frame received by peer
         rb_tracker.remote_frame = std::max((ssize_t)remote_pkt.second, rb_tracker.remote_frame);
@@ -428,6 +432,9 @@ int startOnlineGame(RenderEngine* renderer) {
       NetInputs cur_inputs(false, game.cur_tick, &local_inputs->buttons);
       net_engine.sendNetInputs(cur_inputs);
       rb_tracker.local_frame = game.cur_tick;
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+        std::cout << "out: " << cur_inputs.getContentsBinary() << std::endl;
+      }
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
