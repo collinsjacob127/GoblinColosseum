@@ -47,6 +47,7 @@ std::string getBinaryString(char input, size_t n_bytes) {
  ***************************/
 Timer::Timer() {
   has_started = false;
+  start();
 }
 
 void Timer::start() {
@@ -71,9 +72,22 @@ double Timer::duration() {
 void crossPlatformSleep(uint32_t milliseconds) {
   Timer sleep_timer;
   sleep_timer.start();
+  double requested_duration = (double)milliseconds / 1000;
+  double sleep_duration = 0;
   while (true) { 
-    if (sleep_timer.duration() * 1000 <= milliseconds) { break; }
+    sleep_duration = sleep_timer.duration();
+    if (sleep_duration >= requested_duration) { break; }
   }
+}
+
+void _testCrossPlatformSleep() {
+  Timer test_timer;
+  std::cout << "Testing crossPlatformSleep()" << std::endl;
+  std::cout << std::fixed;
+  test_timer.start();
+  crossPlatformSleep(1020);
+  double test_dur = test_timer.duration();
+  std::cout << "Observed sleep time: " << test_dur << std::endl;
 }
 
 BoxEntity::BoxEntity() {};
