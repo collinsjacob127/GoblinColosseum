@@ -638,5 +638,3 @@ uint64_t unpacku64(unsigned char *buf)
            ((uint64_t)buf[6]<<8)  |
            buf[7];
 }
-
-
