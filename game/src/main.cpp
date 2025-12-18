@@ -161,8 +161,8 @@ int startLocalGame(RenderEngine* renderer) {
       // Send accumulated inputs to game engine
       // game.updateInputs(&p1_inputs->buttons, 0);
       // game.updateInputs(&p2_inputs->buttons, 1);
-      game.rollBack(game.cur_tick-5, &p1_inputs->buttons);
-      game.updateInputs(&p2_inputs->buttons, 0);
+      game.updateInputs(&p2_inputs->buttons, 1);
+      game.rollBack(game.cur_tick, &p1_inputs->buttons);
 
       // Move to next frame
       game.tick();

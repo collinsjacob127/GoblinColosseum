@@ -716,10 +716,12 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
     << "f rollback" << std::endl
     << "  cur_tick: " << cur_tick << std::endl
     << "  prev_tick: " << prev_tick << std::endl;
+    return nullptr;
   }
   if (net_pindex > 1) {
     std::cerr << "Error: Rollback requested when allocator initialized with no defined"
     << " online player" << std::endl;
+    return nullptr;
   }
   // Update current tick label (marking that we've rolled back)
   cur_tick = prev_tick;
@@ -873,15 +875,16 @@ void GameManager::tick() {
 void GameManager::rollBack(unsigned int frame, const ButtonStates* in) {
   // Move the current game scene back to when this input was sent
   // Send the input to the allocator
-  allocator.rollBack(frame, in);
+  GameScene *scene = allocator.rollBack(frame, in);
   
   // Ensure that roll *back* is *back*
-  if (frame >= cur_tick) {return;}
-  GameScene* scene = allocator.rollForward();
+  if (!scene) {return;}
+  applyTickUpdates(scene);
+
   // Iterate through previous frames until the present
   for (unsigned int i = frame; i < cur_tick-1; ++i) {
-    applyTickUpdates(scene);
     scene = allocator.rollForward();
+    applyTickUpdates(scene);
   }
 }
 
