@@ -18,7 +18,7 @@
 #include "render/render.hpp"
 #include "characters/characters.hpp"
 
-#define FRAME_RATE_CAP 60
+#define FRAME_RATE_CAP 30
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -291,6 +291,7 @@ struct RollbackTracker {
 
   void executeRollbacks(GameManager* game, std::vector<RemoteInputNode> &remote_input_list) {
     for (ssize_t f = rb_frame+1; f < sync_frame; ++f) {
+      if (!remote_input_list[f].been_received) { break; } // Don't rollback with frames we don't have
       game->rollBack(f, &remote_input_list[f].btns);
       if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
         std::cout << "Rolled back to f" << f << " with buttons: ";
@@ -369,7 +370,7 @@ int startOnlineGame(RenderEngine* renderer) {
         NetInputs out_pkt(false, f_requested, req_inputs);
         // Send it
         bytes_sent = net_engine.sendNetInputs(out_pkt);
-        if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+        if (ENABLE_NET_INPUT_HANDLER_DEBUGS_DENSE) {
           std::cout << "rpt out: " << out_pkt.getContentsBinary() << std::endl;
         }
       }
@@ -391,6 +392,8 @@ int startOnlineGame(RenderEngine* renderer) {
           std::stringstream ss;
           ss << "[P2P INPUTS] Received inputs from peer @ frame " << remote_pkt.second << "\n";
           COLORS.printSuccess(ss.str());
+        }
+        if (ENABLE_NET_INPUT_HANDLER_DEBUGS_DENSE) {
           std::cout << "in: " << net_response.second.getContentsBinary() << std::endl;
         }
         // Set remote frame to the highest frame received by peer
@@ -420,12 +423,29 @@ int startOnlineGame(RenderEngine* renderer) {
         std::cout << "[RB Tracker] rmt_fadv====: " << rb_tracker.remote_frame_advantage << std::endl;
         std::cout << std::endl;
       }
+
+      for (ssize_t i = rb_tracker.sync_frame + 1; i < rb_tracker.local_frame; ++i) {
+        net_engine.requestPeerResendInputs((uint32_t)i);
+        std::cout << "Requesting inputs from frame " << i << std::endl;
+      }
+
+      //TODO: Add connection timeout timer somewhere hereish
+
       crossPlatformSleep(2);
       continue;
     }
 
+
     // Game tick:
     if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
+      // std::cout << "gframe:" << game.cur_tick << ' ';
+      // std::cout << "lframe:" << rb_tracker.local_frame << ' ';
+      // std::cout << "rframe:" << rb_tracker.remote_frame << ' ';
+      // std::cout << "sframe:" << rb_tracker.sync_frame << ' ';
+      // std::cout << "rbfrme:" << rb_tracker.rb_frame << ' ';
+      // std::cout << "rfadv :" << rb_tracker.remote_frame_advantage << ' ';
+      // std::cout << std::endl;
+
       // Reset Timer
       frame_rate = (double) 1 / fps_timer.duration();
       fps_timer.start();
@@ -439,7 +459,7 @@ int startOnlineGame(RenderEngine* renderer) {
       NetInputs cur_inputs(false, game.cur_tick, &local_inputs->buttons);
       net_engine.sendNetInputs(cur_inputs);
       rb_tracker.local_frame = game.cur_tick;
-      if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS_DENSE) {
         std::cout << "out: " << cur_inputs.getContentsBinary() << std::endl;
       }
 
