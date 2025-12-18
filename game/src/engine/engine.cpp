@@ -729,7 +729,7 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
   GameScene *cur_scene = getCurrentScene();
   memcpy(&cur_scene->inputs[net_pindex], in, sizeof(ButtonStates));
   // Update the button states based on previous scene's inputs
-  handleButtonStateTick(getInputsAtTick(net_pindex, prev_tick-1), &cur_scene->inputs[net_pindex]);
+  handleButtonStateTick(getInputsAtTick(net_pindex, cur_tick-1), &cur_scene->inputs[net_pindex]);
   // Returns the scene at that point in time
   return getCurrentScene();  
 }
