@@ -916,7 +916,7 @@ ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
     if (bytes_sent < 0) {
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to send inputs:\n");
-        inputs.printContents();
+        std::cout << "send: " << inputs.getContentsBinary() << std::endl;;
       }
       return bytes_sent;
     }
