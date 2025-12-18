@@ -43,8 +43,6 @@ void handleUnexpectedClosure(int signal_num);
 int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
 
-  return 0;
-
   // std::signal(SIGABRT, handleUnexpectedClosure);
   // std::signal(SIGTERM, handleUnexpectedClosure);
 
