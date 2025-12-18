@@ -298,6 +298,8 @@ int startOnlineGame(RenderEngine* renderer) {
 
   // Structure for storing remote inputs
   std::vector<RemoteInputNode> remote_inputs_list(MAX_GAME_DURATION);
+  remote_inputs_list[INITIAL_FRAME].been_applied = true;
+  remote_inputs_list[INITIAL_FRAME].been_received = true;
 
   // Character selection
   PlayerController* p1 = new Hunko();
@@ -398,7 +400,7 @@ int startOnlineGame(RenderEngine* renderer) {
         std::cout << "[RB Tracker] rb_frame====: " << rb_tracker.rb_frame << std::endl;
         std::cout << std::endl;
       }
-      crossPlatformSleep(5);
+      crossPlatformSleep(500);
       continue;
     }
 
