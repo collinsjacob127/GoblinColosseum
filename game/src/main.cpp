@@ -18,7 +18,7 @@
 #include "render/render.hpp"
 #include "characters/characters.hpp"
 
-#define FRAME_RATE_CAP 30
+#define FRAME_RATE_CAP 60
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
@@ -159,10 +159,10 @@ int startLocalGame(RenderEngine* renderer) {
       fps_timer.start();
 
       // Send accumulated inputs to game engine
-      // game.updateInputs(&p1_inputs->buttons, 0);
-      // game.updateInputs(&p2_inputs->buttons, 1);
-      game.rollBack(game.cur_tick-5, &p2_inputs->buttons);
       game.updateInputs(&p1_inputs->buttons, 0);
+      game.updateInputs(&p2_inputs->buttons, 1);
+      // game.rollBack(game.cur_tick-5, &p2_inputs->buttons);
+      // game.updateInputs(&p1_inputs->buttons, 0);
 
       // Move to next frame
       game.tick();
