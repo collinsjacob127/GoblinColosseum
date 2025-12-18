@@ -376,6 +376,11 @@ int startOnlineGame(RenderEngine* renderer) {
         // Save the inputs we got
         remote_inputs_list[remote_pkt.second].btns = remote_pkt.first;
         remote_inputs_list[remote_pkt.second].been_received = true;
+        if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+          std::stringstream ss;
+          ss << "[P2P INPUTS] Received inputs from peer @ frame " << remote_pkt.second << ":\n";
+          COLORS.printSuccess(ss.str());
+        }
         // Set remote frame to the highest frame received by peer
         rb_tracker.remote_frame = std::max((ssize_t)remote_pkt.second, rb_tracker.remote_frame);
         // This *should* be sent from the peer, but let's try and see if we can do without
@@ -400,6 +405,7 @@ int startOnlineGame(RenderEngine* renderer) {
         std::cout << "[RB Tracker] remote_frame: " << rb_tracker.remote_frame << std::endl;
         std::cout << "[RB Tracker] sync_frame==: " << rb_tracker.sync_frame << std::endl;
         std::cout << "[RB Tracker] rb_frame====: " << rb_tracker.rb_frame << std::endl;
+        std::cout << "[RB Tracker] rmt_fadv====: " << rb_tracker.remote_frame_advantage << std::endl;
         std::cout << std::endl;
       }
       crossPlatformSleep(500);
