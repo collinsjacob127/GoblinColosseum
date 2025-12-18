@@ -249,7 +249,7 @@ struct RemoteInputNode {
 
 // References rollback pseudocode by rcmagic: https://gist.github.com/rcmagic/f8d76bca32b5609e85ab156db38387e9
 struct RollbackTracker {
-  ssize_t local_frame = INITIAL_FRAME;    // Latest updated frame - actual local game current frame
+  ssize_t local_frame = INITIAL_FRAME;    // Actual local game current frame
   ssize_t remote_frame = INITIAL_FRAME;   // Latest frame received from remote
   ssize_t sync_frame = INITIAL_FRAME;     // Last frame where sync occured (known that all inputs recvd through here)
   ssize_t rb_frame = INITIAL_FRAME;       // Rollbacks have been applied up to at least this point
@@ -427,11 +427,9 @@ int startOnlineGame(RenderEngine* renderer) {
       }
 
       // net_engine.requestPeerResendInputs(rb_tracker.sync_frame + 1);
-
       crossPlatformSleep(2);
       continue;
     }
-
 
     // Game tick:
     if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
