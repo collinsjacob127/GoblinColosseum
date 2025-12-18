@@ -207,7 +207,7 @@ constexpr size_t NET_INPUTS_PACKET_SIZE = 2+2; // Frame # & 14 buttons
  * @note Packet Organization:
  * @note Standard: [Frame # - 2b] [Inputs - 2b]
  * @note [up, down, left, right, b1, b2, b3, b4] [l1, r1, l2, r2, l3, r3, start, select]
- * @note Request: 
+ * @note Request: [11111111] [requested frame #]
  */
 class NetInputs {
  public:
@@ -221,7 +221,7 @@ class NetInputs {
 
   /**
    * @brief Parses the buttonstate from a packet. If packet was a
-   * request for a repeat send, parses as all inputs off and frame 1111...1111
+   * request for a repeat send, parses as all inputs off and frame as requested #
    */
   std::pair<ButtonStates, uint16_t> parse();
 

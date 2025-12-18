@@ -254,7 +254,7 @@ NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
 
 std::pair<ButtonStates, uint16_t> NetInputs::parse() {
   ButtonStates tmp;
-  std::pair<ButtonStates, uint16_t> ret_val(tmp,25565);
+  std::pair<ButtonStates, uint16_t> ret_val(tmp,frame_n);
 
   // Check good packet
   if (is_repeat_request) { return ret_val; }

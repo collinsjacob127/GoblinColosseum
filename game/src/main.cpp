@@ -238,31 +238,73 @@ int onlineMenu(RenderEngine* renderer) {
   return startOnlineGame(renderer);
 }
 
+struct RemoteInputNode {
+  bool been_received = false;
+  bool been_applied = false;
+  ButtonStates btns;
+};
+
 // References rollback pseudocode by rcmagic: https://gist.github.com/rcmagic/f8d76bca32b5609e85ab156db38387e9
 struct RollbackTracker {
-  ssize_t local_frame = INITIAL_FRAME;
-  ssize_t remote_frame = INITIAL_FRAME;
-  ssize_t sync_frame = INITIAL_FRAME;
-  ssize_t remote_frame_advantage = 0;
+  ssize_t local_frame = INITIAL_FRAME;    // Latest updated frame
+  ssize_t remote_frame = INITIAL_FRAME;   // Latest frame received from remote
+  ssize_t sync_frame = INITIAL_FRAME;     // Last frame where sync occured (known that all inputs recvd through here)
+  ssize_t rb_frame = INITIAL_FRAME;       // Rollbacks have been applied up to at least this point
+  ssize_t remote_frame_advantage = 0;     // Latest frame adv. received
 
   bool rollbackCondition() {
+    // No ned to rollback is we don't have frame after the previous sync
     return (local_frame > sync_frame) && (remote_frame > sync_frame);
   }
 
   bool timeSynced() {
+    // How far the client is ahead of last recvd frame
     ssize_t local_frame_advantage = local_frame - remote_frame;
+
+    // In the guide it says this is reported by peer, but i'll just hazard estimate it
     ssize_t frame_advantage_difference = local_frame_advantage - remote_frame_advantage;
+
     return (local_frame_advantage < MAX_ROLLBACK_FRAMES) && (frame_advantage_difference <= FRAME_ADVANTAGE_LIMIT);
   }
-} rb_tracker;
+
+  void updateSyncFrame(std::vector<RemoteInputNode> &remote_input_list) {
+    ssize_t final_frame = remote_frame;
+    if (remote_frame > local_frame) {
+      final_frame = local_frame;
+    }
+    // This should instead check the game allocator and only rollback when a prediction failed
+    // Currently marks based on recvd y/n instead of correct inputs y/n
+    ssize_t tmp_sync_frame = final_frame;
+    for (ssize_t found_frame = sync_frame+1; found_frame <= final_frame; ++found_frame) {
+      if (!remote_input_list[found_frame].been_received) {
+        tmp_sync_frame = found_frame-1;
+        break;
+      }
+    }
+    sync_frame = tmp_sync_frame;
+  }
+
+  void executeRollbacks(GameManager* game, std::vector<RemoteInputNode> &remote_input_list) {
+    for (ssize_t f = rb_frame+1; f <= sync_frame; ++f) {
+      game->rollBack(f, &remote_input_list[f].btns);
+      remote_input_list[f].been_applied = true;
+    }
+  }
+};
 
 int startOnlineGame(RenderEngine* renderer) {
+  // Tracker for rollback
+  RollbackTracker rb_tracker;
+
+  // Structure for storing remote inputs
+  std::vector<RemoteInputNode> remote_inputs_list(MAX_GAME_DURATION);
+
   // Character selection
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
 
   // Game initialization
-  GameManager game(p1, p2, net_engine.p_num);
+  GameManager game(p1, p2, (net_engine.p_num == 1 ? 2 : 1));
   
   // Input startup
   InputSystem* local_inputs = new InputSystem();
@@ -293,13 +335,64 @@ int startOnlineGame(RenderEngine* renderer) {
     }
 
     // Update Network
+    std::pair<bool, NetInputs> net_response = net_engine.recvPeerInputs();
+    if (!net_response.first) {
+      //// Received no (or bad) packet ////
+
+    } else if (net_response.second.is_repeat_request) {
+      //// Received repeat request ////
+      // What frame we need?
+      uint16_t f_requested = net_response.second.parse().second;
+      // This line might not be right - testing imputation of remote frame advantage
+      rb_tracker.remote_frame_advantage = rb_tracker.remote_frame - (ssize_t)f_requested;
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS)
+        printf("[DEBUG] Opponent requested repeat send of inputs from frame %u\n", f_requested);
+
+      ssize_t bytes_sent = 0;
+      // Only respond to requests that are for frames we have
+      if (f_requested <= game.cur_tick) {
+        // Get local inputs from that frame
+        const ButtonStates *req_inputs = game.allocator.getInputsAtTick(game.loc_pindex, f_requested);
+        // Build packet with the inputs
+        NetInputs out_pkt(false, f_requested, req_inputs);
+        // Send it
+        bytes_sent = net_engine.sendNetInputs(out_pkt);
+      }
+
+      // Check that it sent right
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS && bytes_sent <= 0) { 
+        COLORS.printError("[Error] Failed to send requested net inputs\n"); 
+      }
+
+    } else {
+      //// Received valid input from peer ////
+      std::pair<ButtonStates, uint16_t> remote_pkt = net_response.second.parse();
+      // Don't overwrite valid inputs (anything we've already received)
+      if (!remote_inputs_list[remote_pkt.second].been_received) {
+        // Save the inputs we got
+        remote_inputs_list[remote_pkt.second].btns = remote_pkt.first;
+        remote_inputs_list[remote_pkt.second].been_received = true;
+        // Set remote frame to the highest frame received by peer
+        rb_tracker.remote_frame = std::max((ssize_t)remote_pkt.second, rb_tracker.remote_frame);
+        // This *should* be sent from the peer, but let's try and see if we can do without
+        // Instead, updating remote_frame_advantage when we receive a repeat request
+        // rb_tracker.remote_frame_advantage = rb_tracker.local_frame - rb_tracker.remote_frame;
+      }
+    }
 
     // Update synchronization
+    rb_tracker.updateSyncFrame(remote_inputs_list);
 
-    // Verify still synced
+    // Rollback if necessary
+    if (rb_tracker.rollbackCondition()) {
+      rb_tracker.executeRollbacks(&game, remote_inputs_list);
+    }
+
+    // Verify p2p synchronization
     if (!rb_tracker.timeSynced()) {
       printf("GAME STATES NOT SYNCHRONIZED - WAITING TO SYNC...\n");
       crossPlatformSleep(5);
+      continue;
     }
 
     // Game tick:
@@ -309,10 +402,13 @@ int startOnlineGame(RenderEngine* renderer) {
       fps_timer.start();
 
       // Send accumulated inputs to game engine
-      game.updateInputs(&local_inputs->buttons, net_engine.p_num-1);
+      game.updateInputs(&local_inputs->buttons, game.loc_pindex);
 
       // Move to next frame
       game.tick();
+
+      NetInputs cur_inputs(false, game.cur_tick, &local_inputs->buttons);
+      net_engine.sendNetInputs(cur_inputs);
 
       // Only render if game engine is caught up
       if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
@@ -320,7 +416,8 @@ int startOnlineGame(RenderEngine* renderer) {
         renderer->renderGameScene(&game);
       }
     }
-  }
+
+  } // Game loop
 
   return 1;
 }
