@@ -118,7 +118,7 @@ int start(RenderEngine* renderer) {
 int startLocalGame(RenderEngine* renderer) {
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
-  GameManager game(p1, p2, 0);
+  GameManager game(p1, p2, 1);
 
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
@@ -161,8 +161,8 @@ int startLocalGame(RenderEngine* renderer) {
       // Send accumulated inputs to game engine
       // game.updateInputs(&p1_inputs->buttons, 0);
       // game.updateInputs(&p2_inputs->buttons, 1);
-      game.updateInputs(&p2_inputs->buttons, 1);
-      game.rollBack(game.cur_tick, &p1_inputs->buttons);
+      game.rollBack(game.cur_tick-5, &p2_inputs->buttons);
+      game.updateInputs(&p1_inputs->buttons, 0);
 
       // Move to next frame
       game.tick();
