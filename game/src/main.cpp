@@ -43,13 +43,6 @@ void handleUnexpectedClosure(int signal_num);
 int main(int argc, char* argv[]) {
   std::signal(SIGINT, handleUnexpectedClosure);
 
-  Timer test_timer;
-  std::cout << "Testing crossPlatformSleep()" << std::endl;
-  std::cout << std::setprecision(5) << std::fixed;
-  test_timer.start();
-  crossPlatformSleep(20);
-  double test_dur = test_timer.duration();
-  std::cout << "Observed sleep time: " << test_dur << std::endl;
   return 0;
 
   // std::signal(SIGABRT, handleUnexpectedClosure);
