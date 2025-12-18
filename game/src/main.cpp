@@ -290,6 +290,7 @@ struct RollbackTracker {
     for (ssize_t f = rb_frame+1; f <= sync_frame; ++f) {
       game->rollBack(f, &remote_input_list[f].btns);
       remote_input_list[f].been_applied = true;
+      rb_frame = f;
     }
   }
 };
