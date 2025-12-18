@@ -668,7 +668,7 @@ void PlayerController::applyAirStrafe(PlayerEntity* p, const ButtonStates* in) {
  *****************************/
 GameAllocator::GameAllocator() {
   cur_tick = INITIAL_FRAME;
-  net_pindex = 99;
+  net_pindex = 1;
   loc_pindex = 0;
   if (ENABLE_HELPER_PRINTOUTS) {
     std::cout << std::fixed << std::setprecision(2);
@@ -717,7 +717,7 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
     << "  cur_tick: " << cur_tick << std::endl
     << "  prev_tick: " << prev_tick << std::endl;
   }
-  if (net_pindex > 2) {
+  if (net_pindex > 1) {
     std::cerr << "Error: Rollback requested when allocator initialized with no defined"
     << " online player" << std::endl;
   }

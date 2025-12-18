@@ -118,7 +118,7 @@ int start(RenderEngine* renderer) {
 int startLocalGame(RenderEngine* renderer) {
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
-  GameManager game(p1, p2, 1);
+  GameManager game(p1, p2, 0);
 
   // Testing local 2-player
   InputSystem* p1_inputs = new InputSystem();
@@ -159,10 +159,10 @@ int startLocalGame(RenderEngine* renderer) {
       fps_timer.start();
 
       // Send accumulated inputs to game engine
-      game.updateInputs(&p1_inputs->buttons, 0);
-      game.updateInputs(&p2_inputs->buttons, 1);
-      // game.rollBack(game.cur_tick-5, &p2_inputs->buttons);
       // game.updateInputs(&p1_inputs->buttons, 0);
+      // game.updateInputs(&p2_inputs->buttons, 1);
+      game.rollBack(game.cur_tick-5, &p1_inputs->buttons);
+      game.updateInputs(&p2_inputs->buttons, 0);
 
       // Move to next frame
       game.tick();
@@ -307,17 +307,19 @@ int startOnlineGame(RenderEngine* renderer) {
   // Tracker for rollback
   RollbackTracker rb_tracker;
 
-  // Structure for storing remote inputs
-  std::vector<RemoteInputNode> remote_inputs_list(MAX_GAME_DURATION);
-  remote_inputs_list[INITIAL_FRAME].been_applied = true;
-  remote_inputs_list[INITIAL_FRAME].been_received = true;
-
   // Character selection
   PlayerController* p1 = new Hunko();
   PlayerController* p2 = new Hunko();
 
   // Game initialization
   GameManager game(p1, p2, (net_engine.p_num == 1 ? 2 : 1)-1);
+  std::cout << "Game initialized with loc@pindex-" << game.loc_pindex 
+  << " and net@pindex-" << game.net_pindex << std::endl; 
+
+  // Structure for storing remote inputs
+  std::vector<RemoteInputNode> remote_inputs_list(MAX_GAME_DURATION);
+  remote_inputs_list[INITIAL_FRAME].been_applied = true;
+  remote_inputs_list[INITIAL_FRAME].been_received = true;
   
   // Input startup
   InputSystem* local_inputs = new InputSystem();
@@ -433,14 +435,6 @@ int startOnlineGame(RenderEngine* renderer) {
 
     // Game tick:
     if (game_timer.duration() >= (double) min_frame_duration*(game.cur_tick-INITIAL_FRAME)) {
-      // std::cout << "gframe:" << game.cur_tick << ' ';
-      // std::cout << "lframe:" << rb_tracker.local_frame << ' ';
-      // std::cout << "rframe:" << rb_tracker.remote_frame << ' ';
-      // std::cout << "sframe:" << rb_tracker.sync_frame << ' ';
-      // std::cout << "rbfrme:" << rb_tracker.rb_frame << ' ';
-      // std::cout << "rfadv :" << rb_tracker.remote_frame_advantage << ' ';
-      // std::cout << std::endl;
-
       // Reset Timer
       frame_rate = (double) 1 / fps_timer.duration();
       fps_timer.start();
