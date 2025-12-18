@@ -453,10 +453,8 @@ int startOnlineGame(RenderEngine* renderer) {
       }
 
       // Only render if game engine is caught up
-      if (game_timer.duration() <= (double) min_frame_duration*(game.cur_tick+1-INITIAL_FRAME)) {
-        renderer->FPS = frame_rate;
-        renderer->renderGameScene(&game);
-      }
+      renderer->FPS = frame_rate;
+      renderer->renderGameScene(&game);
     }
 
   } // Game loop
