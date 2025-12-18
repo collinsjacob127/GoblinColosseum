@@ -1447,49 +1447,51 @@ int NetEngine::testNetClient() {
       return -1;
     }
   } else {
-    // Receive list of first 10 lobbies
-    // Request next 10 lobbies
-    size_t n_requested_lobbies = 10;
-    size_t min_idx = lobby_list.size();
-    size_t max_idx = min_idx + (n_requested_lobbies-1);
+    while (lobby_list.size() == 0) {
+      // Receive list of first 10 lobbies
+      // Request next 10 lobbies
+      size_t n_requested_lobbies = 10;
+      size_t min_idx = lobby_list.size();
+      size_t max_idx = min_idx + (n_requested_lobbies-1);
 
-    // Get lobby list from server
-    std::cout << "\n[Log] Requesting list of lobbies...\n";
-    result = getLobbies(min_idx, max_idx);
-    if (result < 0) {
-      COLORS.printError("[Error] Failed to get lobby list\n");
-      return -1;
+      // Get lobby list from server
+      std::cout << "\n[Log] Requesting list of lobbies...\n";
+      result = getLobbies(min_idx, max_idx);
+      if (result < 0) {
+        COLORS.printError("[Error] Failed to get lobby list\n");
+        return -1;
+      }
+
+      // Display to user
+      printLobbyList();
+      if (lobby_list.size() <= 0) {
+        return -1;
+      }
+
+      // Update n lobbies
+      max_idx = lobby_list.size()-1;
+
+      // Ask user for input
+      std::cout << "\nSelect one of the above lobbies (" 
+      << min_idx << " - " << max_idx << ")\n";
+
+      // Retrieve and verify user input
+      int selected_idx = -1;
+      while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
+        crossPlatformSleep(100);
+        if (!continue_program) { exit(0); }
+        std::cin >> selected_idx;
+        std::cout << std::flush;
+      }
+
+      // Set ID of selected lobby
+      lobby_id = lobby_list.at(selected_idx).second;
+
+      // Inform Server of Lobby Join
+      std::cout << "\n[Log] Sending server join request for lobby #"
+      << selected_idx << ": \"" << lobby_list.at(selected_idx).first << "\"\n";
+      if (joinLobby() < 0) { return -1; }
     }
-
-    // Display to user
-    printLobbyList();
-    if (lobby_list.size() <= 0) {
-      return -1;
-    }
-
-    // Update n lobbies
-    max_idx = lobby_list.size()-1;
-
-    // Ask user for input
-    std::cout << "\nSelect one of the above lobbies (" 
-    << min_idx << " - " << max_idx << ")\n";
-
-    // Retrieve and verify user input
-    int selected_idx = -1;
-    while (selected_idx < (int)0 || selected_idx > (int)lobby_list.size()) {
-      crossPlatformSleep(100);
-      if (!continue_program) { exit(0); }
-      std::cin >> selected_idx;
-      std::cout << std::flush;
-    }
-
-    // Set ID of selected lobby
-    lobby_id = lobby_list.at(selected_idx).second;
-
-    // Inform Server of Lobby Join
-    std::cout << "\n[Log] Sending server join request for lobby #"
-    << selected_idx << ": \"" << lobby_list.at(selected_idx).first << "\"\n";
-    if (joinLobby() < 0) { return -1; }
   }
 
   // Lobby creation & joining is now finished.

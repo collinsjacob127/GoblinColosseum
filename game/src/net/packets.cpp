@@ -224,8 +224,6 @@ NetInputs::NetInputs(bool is_request, uint16_t f_n, const ButtonStates* in) {
   // verify
   if (ENABLE_INPUTPACKET_INSPECTION)
     std::cout << getBinaryString(packet_buf[2], 1) << getBinaryString(packet_buf[3],1) << std::endl;
-
-
 }
 
 NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
@@ -236,7 +234,7 @@ NetInputs::NetInputs(char* net_buf, size_t n_bytes) {
   unsigned char *in_buf_ptr = (unsigned char *)net_buf;
 
   // Check if packet is request
-  if (unpacku16(in_buf_ptr) == 65535 || n_bytes == 4) {
+  if (unpacku16(in_buf_ptr) == 65535) {
     is_repeat_request = true;
     frame_n = unpacku16(in_buf_ptr+sizeof(frame_n));
     return;
