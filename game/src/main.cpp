@@ -304,7 +304,7 @@ int startOnlineGame(RenderEngine* renderer) {
   PlayerController* p2 = new Hunko();
 
   // Game initialization
-  GameManager game(p1, p2, (net_engine.p_num == 1 ? 2 : 1));
+  GameManager game(p1, p2, (net_engine.p_num == 1 ? 2 : 1)-1);
   
   // Input startup
   InputSystem* local_inputs = new InputSystem();
