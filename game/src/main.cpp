@@ -255,7 +255,8 @@ struct RollbackTracker {
 
   bool rollbackCondition() {
     // No ned to rollback if we don't have frame after the previous sync
-    return (local_frame > sync_frame) && (remote_frame > sync_frame) && (rb_frame < sync_frame);
+    // return (local_frame > sync_frame) && (remote_frame > sync_frame);
+    return (rb_frame < sync_frame - 1) || ((local_frame > sync_frame) && (remote_frame > sync_frame));
   }
 
   bool timeSynced() {
