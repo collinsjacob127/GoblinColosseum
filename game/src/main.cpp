@@ -390,7 +390,14 @@ int startOnlineGame(RenderEngine* renderer) {
 
     // Verify p2p synchronization
     if (!rb_tracker.timeSynced()) {
-      printf("GAME STATES NOT SYNCHRONIZED - WAITING TO SYNC...\n");
+      if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
+        printf("GAME STATES NOT SYNCHRONIZED - WAITING TO SYNC...\n");
+        std::cout << "[RB Tracker] local_frame=: " << rb_tracker.local_frame << std::endl;
+        std::cout << "[RB Tracker] remote_frame: " << rb_tracker.remote_frame << std::endl;
+        std::cout << "[RB Tracker] sync_frame==: " << rb_tracker.sync_frame << std::endl;
+        std::cout << "[RB Tracker] rb_frame====: " << rb_tracker.rb_frame << std::endl;
+        std::cout << std::endl;
+      }
       crossPlatformSleep(5);
       continue;
     }

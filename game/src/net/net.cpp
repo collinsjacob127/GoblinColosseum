@@ -469,7 +469,6 @@ ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
       sizeof(peer_sockaddr));
     total_bytes_sent += bytes_sent;
     if (bytes_sent == SOCKET_ERROR) {
-      peerDisconnect();
       if (ENABLE_NETCODE_ERROR) {
         COLORS.printError("[Error] Failed to send inputs:\n");
         inputs.printContents();
@@ -888,24 +887,103 @@ void NetEngine::peerDisconnect() {
 }
 
 ssize_t NetEngine::sendNetInputs(NetInputs inputs) {
+  if (peer_sock <= 0) {
+    COLORS.printError("[Error] Unable to connect to peer while attempting to send net inputs\n");
+    return -1;
+  }
 
-  return -1;
+  ssize_t pkt_size = NET_INPUTS_PACKET_SIZE;
+
+  struct sockaddr_in peer_sockaddr = convertClientAddrInfoToSockAddr(peer_addr_final);
+
+  // Ensure full packet is sent
+  ssize_t bytes_sent = 0, total_bytes_sent = 0;
+  while (total_bytes_sent < pkt_size) {
+    bytes_sent = (ssize_t)sendto(
+      peer_sock, 
+      inputs.packet_buf+total_bytes_sent, 
+      pkt_size-total_bytes_sent, 
+      0,
+      (sockaddr *)&peer_sockaddr, 
+      sizeof(peer_sockaddr));
+    total_bytes_sent += bytes_sent;
+    if (bytes_sent < 0) {
+      if (ENABLE_NETCODE_ERROR) {
+        COLORS.printError("[Error] Failed to send inputs:\n");
+        inputs.printContents();
+      }
+      return bytes_sent;
+    }
+  }
+
+  return total_bytes_sent;
 }
 
-std::pair<ButtonStates, uint16_t> NetEngine::getPeerInputs() {
-  // Receive inputs (recv loop)
+std::pair<bool, NetInputs> NetEngine::recvPeerInputs() {
+  // Default to return val for invalid packet
+  std::pair<bool, NetInputs> return_val(false, NetInputs());
 
-  char tmp_buf[NET_INPUTS_PACKET_SIZE] = "";
+  // Verify good connection
+  if (peer_sock <= 0) {
+    printf("[Error] Unable to connect to peer!\n");
+    return return_val;
+  }
 
-  // First read first 2 bytes - check if 25565
+  // Buffer for reading in the packet
+  char buf[NET_INPUTS_PACKET_SIZE] = "";
 
-  // ...
+  // Addr for verifying source address
+  struct sockaddr_in peer_sockaddr = {};
+  socklen_t sockaddr_len = sizeof(peer_sockaddr);
 
-  // If 25565 -> only read next 2 bytes (requested frame); end of packet.
+  // Variables for counting bytes
+  ssize_t bytes_in = 0, total_bytes_in = 0, pkt_size = NET_INPUTS_PACKET_SIZE;
+
+  // Ensure full packet is read
+  while (total_bytes_in < pkt_size) {
+    bytes_in = (ssize_t)recvfrom(
+      peer_sock, 
+      buf+total_bytes_in, 
+      pkt_size-total_bytes_in, 
+      0,
+      (sockaddr *)&peer_sockaddr,
+      &sockaddr_len);
+    total_bytes_in += bytes_in;
+    if (bytes_in < 0) {
+      return return_val;
+    }
+  }
 
   // Else -> populate NetInputs w buffer
-  NetInputs packet_contents(tmp_buf,NET_INPUTS_PACKET_SIZE);
-  return packet_contents.parse();
+  NetInputs packet_contents(buf,NET_INPUTS_PACKET_SIZE);
+  return std::pair<bool, NetInputs>(true, packet_contents);
+}
+
+ssize_t NetEngine::clearSocketQueue() {
+  // Verify good connection
+  if (peer_sock <= 0) {
+    printf("[Error] Unable to connect to peer!\n");
+    return -1;
+  }
+
+  char buf[1024];
+
+  int total_bytes_in=0, bytes_in = 99;
+  while (bytes_in > 0) {
+    bytes_in = (ssize_t)recvfrom(
+      peer_sock, 
+      buf, 
+      1024, 
+      0,
+      NULL,
+      NULL);
+    total_bytes_in += bytes_in;
+    if (bytes_in < 0) {
+      // Return 0 if nothing in queue
+      return (errno == EAGAIN || errno == EWOULDBLOCK) ? 0 : -1;
+    }
+  }
+  return total_bytes_in;
 }
 
 #endif
