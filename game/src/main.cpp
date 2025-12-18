@@ -378,7 +378,7 @@ int startOnlineGame(RenderEngine* renderer) {
         remote_inputs_list[remote_pkt.second].been_received = true;
         if (ENABLE_NET_INPUT_HANDLER_DEBUGS) {
           std::stringstream ss;
-          ss << "[P2P INPUTS] Received inputs from peer @ frame " << remote_pkt.second << ":\n";
+          ss << "[P2P INPUTS] Received inputs from peer @ frame " << remote_pkt.second << "\n";
           COLORS.printSuccess(ss.str());
         }
         // Set remote frame to the highest frame received by peer
