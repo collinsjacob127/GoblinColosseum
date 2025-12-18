@@ -18,7 +18,7 @@
 #include "render/render.hpp"
 #include "characters/characters.hpp"
 
-#define FRAME_RATE_CAP 60
+#define FRAME_RATE_CAP 45
 
 // Skeleton of SDL basic calls provided by
 // [glusoft](https://glusoft.com/sdl3-tutorials/install-sdl3-linux-cmake/)
