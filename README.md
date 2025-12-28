@@ -3,6 +3,12 @@
 
 ## Download Instructions
 
+For Windows users, visit [https://www.goblin-colosseum.xyz/](https://www.goblin-colosseum.xyz/) to download the latest installation tool.
+
+UNIX users and developers should use the following instructions to build from source.
+
+## Build Instructions
+
 Make sure you have git installed
 
 ```{sh}
@@ -12,8 +18,6 @@ git clone --recurse-submodules git@github.com:collinsjacob127/GoblinColosseum.gi
 # Enter the project's directory
 cd GoblinColosseum/
 ```
-
-## Build Instructions
 
 ### Building on Linux
 
