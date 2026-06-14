@@ -727,6 +727,7 @@ GameScene* GameAllocator::rollBack(unsigned int prev_tick, const ButtonStates* i
   cur_tick = prev_tick;
   // Copy net inputs from param to scene's net pindex input
   GameScene *cur_scene = getCurrentScene();
+  // TODO: Replace memcpy with assignment (=)
   memcpy(&cur_scene->inputs[net_pindex], in, sizeof(ButtonStates));
   // Update the button states based on previous scene's inputs
   handleButtonStateTick(getInputsAtTick(net_pindex, cur_tick-1), &cur_scene->inputs[net_pindex]);
