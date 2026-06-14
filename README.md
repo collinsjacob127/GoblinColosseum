@@ -1,6 +1,8 @@
 
 # Goblin Colosseum
 
+![](docs/poster/Poster.png)
+
 ## Download Instructions
 
 For Windows users, visit [https://www.goblin-colosseum.xyz/](https://www.goblin-colosseum.xyz/) to download the latest installation tool.
